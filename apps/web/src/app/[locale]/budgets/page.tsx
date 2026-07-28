@@ -3,6 +3,14 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { AmountInput } from '@/components/ui/amount-input';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const PERIODS = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'] as const;
 
@@ -92,66 +100,81 @@ export default function BudgetsPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {current === null && <p>...</p>}
-      {current?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {current === null && <p className="text-neutral-600">...</p>}
+      {current?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {current && current.length > 0 && (
-        <ul>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {current.map(({ budget, period: budgetPeriod }) => (
-            <li key={budget.id}>
-              {budget.name} — {tPeriod(budget.period)} — {t('spent')}: {budgetPeriod.spentMinor} / {budgetPeriod.allocatedMinor}
-              <button type="button" onClick={() => onDelete(budget.id)}>
-                {t('delete')}
-              </button>
-            </li>
+            <Card key={budget.id} className="p-5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-lg font-medium text-neutral-900">{budget.name}</h3>
+                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(budget.id)}>
+                  {t('delete')}
+                </Button>
+              </div>
+              <p className="mt-1 text-sm text-neutral-600">{tPeriod(budget.period)}</p>
+              <p className="mt-3 text-neutral-900">
+                {t('spent')}: {budgetPeriod.spentMinor} / {budgetPeriod.allocatedMinor}
+              </p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h2>{t('create')}</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          {t('nameLabel')}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t('categoryLabel')}
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-            <option value="">{t('globalCategory')}</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {resolveCategoryName(category)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('amountLabel')}
-          <input value={amountMinor} onChange={(e) => setAmountMinor(e.target.value)} required />
-        </label>
-        <label>
-          {t('periodLabel')}
-          <select value={period} onChange={(e) => setPeriod(e.target.value as (typeof PERIODS)[number])}>
-            {PERIODS.map((value) => (
-              <option key={value} value={value}>
-                {tPeriod(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('startsOnLabel')}
-          <input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
-        </label>
-        <label>
-          {t('rolloverLabel')}
-          <input type="checkbox" checked={rollover} onChange={(e) => setRollover(e.target.checked)} />
-        </label>
-        {error && <p role="alert">{tError(error as never)}</p>}
-        <button type="submit">{t('submit')}</button>
-      </form>
-    </main>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('create')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="categoryId">{t('categoryLabel')}</Label>
+              <Select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                <option value="">{t('globalCategory')}</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {resolveCategoryName(category)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="amountMinor">{t('amountLabel')}</Label>
+              <AmountInput id="amountMinor" value={amountMinor} onValueChange={setAmountMinor} required />
+            </div>
+            <div>
+              <Label htmlFor="period">{t('periodLabel')}</Label>
+              <Select id="period" value={period} onChange={(e) => setPeriod(e.target.value as (typeof PERIODS)[number])}>
+                {PERIODS.map((value) => (
+                  <option key={value} value={value}>
+                    {tPeriod(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="startsOn">{t('startsOnLabel')}</Label>
+              <Input id="startsOn" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Checkbox id="rollover" checked={rollover} onChange={(e) => setRollover(e.target.checked)} />
+              <Label htmlFor="rollover" className="mb-0">{t('rolloverLabel')}</Label>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('submit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

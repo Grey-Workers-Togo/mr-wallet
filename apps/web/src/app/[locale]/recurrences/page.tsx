@@ -3,6 +3,14 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { AmountInput } from '@/components/ui/amount-input';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY'] as const;
 
@@ -101,77 +109,96 @@ export default function RecurrencesPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {rules === null && <p>...</p>}
-      {rules?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {rules === null && <p className="text-neutral-600">...</p>}
+      {rules?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {rules && rules.length > 0 && (
-        <ul>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rules.map((rule) => (
-            <li key={rule.id}>
-              {rule.name} — {tFrequency(rule.frequency)} — {rule.amountMinor}
-              <button type="button" onClick={() => onDelete(rule.id)}>
-                {t('delete')}
-              </button>
-            </li>
+            <Card key={rule.id} className="p-5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-lg font-medium text-neutral-900">{rule.name}</h3>
+                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(rule.id)}>
+                  {t('delete')}
+                </Button>
+              </div>
+              <p className="mt-1 text-sm text-neutral-600">{tFrequency(rule.frequency)}</p>
+              <p className="mt-3 text-neutral-900">{rule.amountMinor}</p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h2>{t('upcoming')}</h2>
-      <ul>
-        {upcoming.map((item) => (
-          <li key={`${item.recurrenceId}-${item.occurrenceDate}`}>
-            {item.name} — {item.occurrenceDate.slice(0, 10)}
-            <button type="button" onClick={() => onMaterialize(item.recurrenceId, item.occurrenceDate)}>
-              {t('materialize')}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('upcoming')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 space-y-3">
+          {upcoming.map((item) => (
+            <div key={`${item.recurrenceId}-${item.occurrenceDate}`} className="flex items-center justify-between gap-2 border-b border-border pb-3 last:border-0 last:pb-0">
+              <p className="text-neutral-900">
+                {item.name} — {item.occurrenceDate.slice(0, 10)}
+              </p>
+              <Button type="button" variant="secondary" size="sm" onClick={() => onMaterialize(item.recurrenceId, item.occurrenceDate)}>
+                {t('materialize')}
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-      <h2>{t('create')}</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          {t('nameLabel')}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t('accountLabel')}
-          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('amountLabel')}
-          <input value={amountMinor} onChange={(e) => setAmountMinor(e.target.value)} required />
-        </label>
-        <label>
-          {t('frequencyLabel')}
-          <select value={frequency} onChange={(e) => setFrequency(e.target.value as (typeof FREQUENCIES)[number])}>
-            {FREQUENCIES.map((value) => (
-              <option key={value} value={value}>
-                {tFrequency(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('startsOnLabel')}
-          <input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
-        </label>
-        <label>
-          {t('autoCreateLabel')}
-          <input type="checkbox" checked={autoCreate} onChange={(e) => setAutoCreate(e.target.checked)} />
-        </label>
-        {error && <p role="alert">{tError(error as never)}</p>}
-        <button type="submit">{t('submit')}</button>
-      </form>
-    </main>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('create')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="accountId">{t('accountLabel')}</Label>
+              <Select id="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="amountMinor">{t('amountLabel')}</Label>
+              <AmountInput id="amountMinor" value={amountMinor} onValueChange={setAmountMinor} required />
+            </div>
+            <div>
+              <Label htmlFor="frequency">{t('frequencyLabel')}</Label>
+              <Select id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value as (typeof FREQUENCIES)[number])}>
+                {FREQUENCIES.map((value) => (
+                  <option key={value} value={value}>
+                    {tFrequency(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="startsOn">{t('startsOnLabel')}</Label>
+              <Input id="startsOn" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Checkbox id="autoCreate" checked={autoCreate} onChange={(e) => setAutoCreate(e.target.checked)} />
+              <Label htmlFor="autoCreate" className="mb-0">{t('autoCreateLabel')}</Label>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('submit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

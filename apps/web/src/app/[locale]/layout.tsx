@@ -4,7 +4,9 @@ import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { PinLockGate } from '@/components/PinLockGate';
+import { ConditionalShell } from '@/components/layouts/ConditionalShell';
 import type { ReactNode } from 'react';
+import '@/styles/globals.css';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -40,7 +42,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <PinLockGate />
-          {children}
+          <ConditionalShell>{children}</ConditionalShell>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -8,23 +8,46 @@
   },
   "home": {
     "title": "Tableau de bord",
-    "subtitle": "Où va mon argent ce mois-ci ?"
+    "subtitle": "Où va mon argent ce mois-ci ?",
+    "login": "Se connecter",
+    "register": "S'inscrire"
+  },
+  "nav": {
+    "mainNavigation": "Navigation principale",
+    "sidebar": "Menu latéral",
+    "accounts": "Comptes",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "categories": "Catégories",
+    "debts": "Dettes",
+    "goals": "Objectifs",
+    "recurrences": "Récurrences",
+    "reports": "Rapports",
+    "forecast": "Prévisions",
+    "preferences": "Réglages",
+    "logout": "Se déconnecter",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu"
   },
   "auth": {
     "register": {
       "title": "Créer un compte",
+      "subtitle": "Commencez à suivre vos finances en quelques minutes",
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
       "baseCurrencyLabel": "Devise de référence",
       "submit": "S'inscrire",
+      "submitting": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
       "loginLink": "Se connecter"
     },
     "login": {
       "title": "Connexion",
+      "subtitle": "Gérez vos finances en toute confiance",
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
       "submit": "Se connecter",
+      "submitting": "Connexion...",
       "noAccount": "Pas encore de compte ?",
       "registerLink": "S'inscrire"
     }

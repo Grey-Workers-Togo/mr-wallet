@@ -5,6 +5,12 @@ import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { clearLocalPin, setLocalPin } from '@/lib/local-pin';
 import { purgeOfflineCache } from '@/lib/offline-cache';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 interface Profile {
   id: string;
@@ -143,105 +149,141 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      {error && <p role="alert">{tError(error as never)}</p>}
-      {!profile && <p>...</p>}
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {!profile && <p className="text-neutral-600">...</p>}
 
       {profile && (
         <>
-          <form onSubmit={onSaveProfile}>
-            <label>
-              {t('displayNameLabel')}
-              <input name="displayName" defaultValue={profile.displayName ?? ''} />
-            </label>
-            <label>
-              {t('localeLabel')}
-              <select name="locale" defaultValue={profile.locale}>
-                <option value="fr-FR">Français</option>
-                <option value="en-US">English</option>
-              </select>
-            </label>
-            <label>
-              {t('timezoneLabel')}
-              <input name="timezone" defaultValue={profile.timezone} />
-            </label>
-            <label>
-              {t('weekStartsOnLabel')}
-              <input name="weekStartsOn" type="number" min={0} max={6} defaultValue={profile.weekStartsOn} />
-            </label>
-            <label>
-              {t('monthStartDayLabel')}
-              <input name="monthStartDay" type="number" min={1} max={31} defaultValue={profile.monthStartDay} />
-            </label>
-            <button type="submit">{t('save')}</button>
-          </form>
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('title')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <form onSubmit={onSaveProfile} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="displayName">{t('displayNameLabel')}</Label>
+                  <Input id="displayName" name="displayName" defaultValue={profile.displayName ?? ''} />
+                </div>
+                <div>
+                  <Label htmlFor="locale">{t('localeLabel')}</Label>
+                  <Select id="locale" name="locale" defaultValue={profile.locale}>
+                    <option value="fr-FR">Français</option>
+                    <option value="en-US">English</option>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="timezone">{t('timezoneLabel')}</Label>
+                  <Input id="timezone" name="timezone" defaultValue={profile.timezone} />
+                </div>
+                <div>
+                  <Label htmlFor="weekStartsOn">{t('weekStartsOnLabel')}</Label>
+                  <Input id="weekStartsOn" name="weekStartsOn" type="number" min={0} max={6} defaultValue={profile.weekStartsOn} />
+                </div>
+                <div>
+                  <Label htmlFor="monthStartDay">{t('monthStartDayLabel')}</Label>
+                  <Input
+                    id="monthStartDay"
+                    name="monthStartDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    defaultValue={profile.monthStartDay}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Button type="submit">{t('save')}</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2>{t('pinSection')}</h2>
-            <p>{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
-            <form onSubmit={onSetPin}>
-              <label>
-                {t('pinLabel')}
-                <input
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  pattern="\d{4,8}"
-                  minLength={4}
-                  maxLength={8}
-                  required
-                />
-              </label>
-              <label>
-                {t('pinLockMinutesLabel')}
-                <input
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={pinLockMinutes}
-                  onChange={(e) => setPinLockMinutes(Number(e.target.value))}
-                />
-              </label>
-              <button type="submit">{t('setPin')}</button>
-            </form>
-            {profile.pinEnabled && (
-              <button type="button" onClick={onRemovePin}>
-                {t('removePin')}
-              </button>
-            )}
-          </section>
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('pinSection')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 space-y-4">
+              <p className="text-neutral-600">{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
+              <form onSubmit={onSetPin} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="pin">{t('pinLabel')}</Label>
+                  <Input
+                    id="pin"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    pattern="\d{4,8}"
+                    minLength={4}
+                    maxLength={8}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pinLockMinutes">{t('pinLockMinutesLabel')}</Label>
+                  <Input
+                    id="pinLockMinutes"
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={pinLockMinutes}
+                    onChange={(e) => setPinLockMinutes(Number(e.target.value))}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Button type="submit">{t('setPin')}</Button>
+                </div>
+              </form>
+              {profile.pinEnabled && (
+                <Button type="button" variant="destructive" size="sm" onClick={onRemovePin}>
+                  {t('removePin')}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2>{t('pushSection')}</h2>
-            {devices?.length === 0 && <p>{t('pushEmpty')}</p>}
-            {devices && devices.length > 0 && (
-              <ul>
-                {devices.map((d) => (
-                  <li key={d.id}>
-                    {d.deviceLabel ?? d.id}
-                    <button type="button" onClick={() => onRemoveDevice(d.id)}>
-                      {t('pushRemove')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button type="button" onClick={onEnablePush}>
-              {t('pushEnable')}
-            </button>
-            <button type="button" onClick={onTestPush}>
-              {t('pushTest')}
-            </button>
-          </section>
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('pushSection')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 space-y-4">
+              {devices?.length === 0 && <p className="text-neutral-600">{t('pushEmpty')}</p>}
+              {devices && devices.length > 0 && (
+                <div className="space-y-2">
+                  {devices.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
+                      <span className="text-neutral-900">{d.deviceLabel ?? d.id}</span>
+                      <Button type="button" variant="destructive" size="sm" onClick={() => onRemoveDevice(d.id)}>
+                        {t('pushRemove')}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={onEnablePush}>
+                  {t('pushEnable')}
+                </Button>
+                <Button type="button" variant="secondary" onClick={onTestPush}>
+                  {t('pushTest')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2>{t('deleteAccountSection')}</h2>
-            <button type="button" onClick={onDeleteAccount}>
-              {t('deleteAccount')}
-            </button>
-          </section>
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('deleteAccountSection')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Button type="button" variant="destructive" onClick={onDeleteAccount}>
+                {t('deleteAccount')}
+              </Button>
+            </CardContent>
+          </Card>
         </>
       )}
-    </main>
+    </div>
   );
 }

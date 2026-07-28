@@ -8,23 +8,46 @@
   },
   "home": {
     "title": "Dashboard",
-    "subtitle": "Where is my money going this month?"
+    "subtitle": "Where is my money going this month?",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "nav": {
+    "mainNavigation": "Main navigation",
+    "sidebar": "Sidebar",
+    "accounts": "Accounts",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "categories": "Categories",
+    "debts": "Debts",
+    "goals": "Goals",
+    "recurrences": "Recurrences",
+    "reports": "Reports",
+    "forecast": "Forecast",
+    "preferences": "Settings",
+    "logout": "Log out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "auth": {
     "register": {
       "title": "Create an account",
+      "subtitle": "Start tracking your money in minutes",
       "emailLabel": "Email address",
       "passwordLabel": "Password",
       "baseCurrencyLabel": "Base currency",
       "submit": "Sign up",
+      "submitting": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Log in"
     },
     "login": {
       "title": "Log in",
+      "subtitle": "Manage your finances with confidence",
       "emailLabel": "Email address",
       "passwordLabel": "Password",
       "submit": "Log in",
+      "submitting": "Logging in...",
       "noAccount": "No account yet?",
       "registerLink": "Sign up"
     }

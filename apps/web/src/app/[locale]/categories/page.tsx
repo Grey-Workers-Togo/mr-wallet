@@ -3,6 +3,13 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 const CATEGORY_KINDS = ['EXPENSE', 'INCOME'] as const;
 
@@ -68,72 +75,90 @@ export default function CategoriesPage() {
   const parentOptions = categories?.filter((c) => !c.parentId && c.kind === kind) ?? [];
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {categories === null && <p>...</p>}
-      {categories?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {categories === null && <p className="text-neutral-600">...</p>}
+      {categories?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {categories && categories.length > 0 && (
-        <ul>
+        <div className="space-y-4">
           {topLevel.map((category) => (
-            <li key={category.id}>
-              {resolveName(category)} — {tKind(category.kind as never)}
-              {category.isSystem && ` (${t('system')})`}
-              {!category.isSystem && (
-                <button type="button" onClick={() => onDelete(category.id)}>
-                  {t('delete')}
-                </button>
+            <Card key={category.id} className="p-5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium text-neutral-900">{resolveName(category)}</h3>
+                  <Badge variant="primary">{tKind(category.kind as never)}</Badge>
+                  {category.isSystem && <Badge variant="neutral">{t('system')}</Badge>}
+                </div>
+                {!category.isSystem && (
+                  <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(category.id)}>
+                    {t('delete')}
+                  </Button>
+                )}
+              </div>
+              {categories.filter((c) => c.parentId === category.id).length > 0 && (
+                <ul className="mt-3 space-y-2 border-t border-border pt-3">
+                  {categories
+                    .filter((c) => c.parentId === category.id)
+                    .map((child) => (
+                      <li key={child.id} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-neutral-900">{resolveName(child)}</span>
+                          {child.isSystem && <Badge variant="neutral">{t('system')}</Badge>}
+                        </div>
+                        {!child.isSystem && (
+                          <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(child.id)}>
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                </ul>
               )}
-              <ul>
-                {categories
-                  .filter((c) => c.parentId === category.id)
-                  .map((child) => (
-                    <li key={child.id}>
-                      {resolveName(child)}
-                      {child.isSystem && ` (${t('system')})`}
-                      {!child.isSystem && (
-                        <button type="button" onClick={() => onDelete(child.id)}>
-                          {t('delete')}
-                        </button>
-                      )}
-                    </li>
-                  ))}
-              </ul>
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h2>{t('create')}</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          {t('nameLabel')}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t('kindLabel')}
-          <select value={kind} onChange={(e) => setKind(e.target.value as (typeof CATEGORY_KINDS)[number])}>
-            {CATEGORY_KINDS.map((value) => (
-              <option key={value} value={value}>
-                {tKind(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('parentLabel')}
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">{t('noParent')}</option>
-            {parentOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {resolveName(option)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error && <p role="alert">{tError(error as never)}</p>}
-        <button type="submit">{t('submit')}</button>
-      </form>
-    </main>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('create')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="kind">{t('kindLabel')}</Label>
+              <Select id="kind" value={kind} onChange={(e) => setKind(e.target.value as (typeof CATEGORY_KINDS)[number])}>
+                {CATEGORY_KINDS.map((value) => (
+                  <option key={value} value={value}>
+                    {tKind(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="parentId">{t('parentLabel')}</Label>
+              <Select id="parentId" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+                <option value="">{t('noParent')}</option>
+                {parentOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {resolveName(option)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('submit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

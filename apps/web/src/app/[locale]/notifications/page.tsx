@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface Notification {
   id: string;
@@ -67,29 +71,38 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      {error && <p role="alert">{tError(error as never)}</p>}
-      <button type="button" onClick={onMarkAllRead}>
-        {t('markAllRead')}
-      </button>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <Button type="button" variant="secondary" size="sm" onClick={onMarkAllRead}>
+          {t('markAllRead')}
+        </Button>
+      </div>
 
-      {notifications === null && <p>...</p>}
-      {notifications?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {notifications === null && <p className="text-neutral-600">...</p>}
+      {notifications?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {notifications && notifications.length > 0 && (
-        <ul>
+        <div className="space-y-3">
           {notifications.map((notification) => (
-            <li key={notification.id}>
-              {renderMessage(notification)} — {notification.createdAt.slice(0, 10)}
+            <Card key={notification.id} className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                {!notification.readAt && <Badge variant="info">•</Badge>}
+                <div>
+                  <p className="text-neutral-900">{renderMessage(notification)}</p>
+                  <p className="text-sm text-neutral-600">{notification.createdAt.slice(0, 10)}</p>
+                </div>
+              </div>
               {!notification.readAt && (
-                <button type="button" onClick={() => onMarkRead(notification.id)}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => onMarkRead(notification.id)}>
                   ✓
-                </button>
+                </Button>
               )}
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
-    </main>
+    </div>
   );
 }

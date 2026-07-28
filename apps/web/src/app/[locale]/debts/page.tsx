@@ -3,6 +3,13 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { AmountInput } from '@/components/ui/amount-input';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
 
@@ -73,59 +80,88 @@ export default function DebtsPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {debts === null && <p>...</p>}
-      {debts?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {debts === null && <p className="text-neutral-600">...</p>}
+      {debts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {debts && debts.length > 0 && (
-        <ul>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {debts.map((debt) => (
-            <li key={debt.id}>
-              {debt.name} — {tDirection(debt.direction)} — {t('outstanding')}: {debt.outstandingPrincipalMinor} {debt.currency}
-              <button type="button" onClick={() => onDelete(debt.id)}>
-                {t('delete')}
-              </button>
-            </li>
+            <Card key={debt.id} className="p-5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-lg font-medium text-neutral-900">{debt.name}</h3>
+                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(debt.id)}>
+                  {t('delete')}
+                </Button>
+              </div>
+              <p className="mt-1 text-sm text-neutral-600">{tDirection(debt.direction)}</p>
+              <p className="mt-3 text-neutral-900">
+                {t('outstanding')}: {debt.outstandingPrincipalMinor} {debt.currency}
+              </p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h2>{t('create')}</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          {t('nameLabel')}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t('directionLabel')}
-          <select value={direction} onChange={(e) => setDirection(e.target.value as (typeof DIRECTIONS)[number])}>
-            {DIRECTIONS.map((value) => (
-              <option key={value} value={value}>
-                {tDirection(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('principalLabel')}
-          <input value={principalMinor} onChange={(e) => setPrincipalMinor(e.target.value)} required />
-        </label>
-        <label>
-          {t('rateLabel')}
-          <input value={annualRatePct} onChange={(e) => setAnnualRatePct(e.target.value)} />
-        </label>
-        <label>
-          {t('termLabel')}
-          <input value={termMonths} onChange={(e) => setTermMonths(e.target.value)} />
-        </label>
-        <label>
-          {t('startedOnLabel')}
-          <input type="date" value={startedOn} onChange={(e) => setStartedOn(e.target.value)} required />
-        </label>
-        {error && <p role="alert">{tError(error as never)}</p>}
-        <button type="submit">{t('submit')}</button>
-      </form>
-    </main>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('create')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="direction">{t('directionLabel')}</Label>
+              <Select id="direction" value={direction} onChange={(e) => setDirection(e.target.value as (typeof DIRECTIONS)[number])}>
+                {DIRECTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {tDirection(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="principalMinor">{t('principalLabel')}</Label>
+              <AmountInput id="principalMinor" value={principalMinor} onValueChange={setPrincipalMinor} required />
+            </div>
+            <div>
+              <Label htmlFor="annualRatePct">{t('rateLabel')}</Label>
+              <Input
+                id="annualRatePct"
+                type="number"
+                min={0}
+                step="0.01"
+                value={annualRatePct}
+                onChange={(e) => setAnnualRatePct(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="termMonths">{t('termLabel')}</Label>
+              <Input
+                id="termMonths"
+                type="number"
+                min={1}
+                step={1}
+                value={termMonths}
+                onChange={(e) => setTermMonths(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="startedOn">{t('startedOnLabel')}</Label>
+              <Input id="startedOn" type="date" value={startedOn} onChange={(e) => setStartedOn(e.target.value)} required />
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('submit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

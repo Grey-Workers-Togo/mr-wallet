@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert } from '@/components/ui/alert';
 
 interface Dashboard {
   netWorth: { currency: string; netWorthMinor: string; assetsMinor: string; liabilitiesMinor: string };
@@ -25,40 +27,53 @@ export default function ReportsPage() {
   }, []);
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      {error && <p role="alert">{tError(error as never)}</p>}
-      {dashboard === null && !error && <p>...</p>}
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {dashboard === null && !error && <p className="text-neutral-600">...</p>}
       {dashboard && (
-        <>
-          <section>
-            <h2>{t('netWorth')}</h2>
-            <p>
-              {dashboard.netWorth.netWorthMinor} {dashboard.netWorth.currency}
-            </p>
-          </section>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('netWorth')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <p className="text-2xl font-semibold text-neutral-900">
+                {dashboard.netWorth.netWorthMinor} <span className="text-base font-normal text-neutral-600">{dashboard.netWorth.currency}</span>
+              </p>
+            </CardContent>
+          </Card>
 
           {dashboard.currentMonth && (
-            <section>
-              <h2>{t('monthlySummary')}</h2>
-              <p>
-                {dashboard.currentMonth.month}: +{dashboard.currentMonth.incomeMinor} / -{dashboard.currentMonth.expenseMinor}
-              </p>
-            </section>
+            <Card className="p-6">
+              <CardHeader className="p-0 pb-4">
+                <CardTitle>{t('monthlySummary')}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <p className="text-neutral-900">
+                  {dashboard.currentMonth.month}: +{dashboard.currentMonth.incomeMinor} / -{dashboard.currentMonth.expenseMinor}
+                </p>
+              </CardContent>
+            </Card>
           )}
 
-          <section>
-            <h2>{t('budgetVsActual')}</h2>
-            <ul>
+          <Card className="p-6 md:col-span-2">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('budgetVsActual')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 space-y-2">
               {dashboard.budgets.map((b) => (
-                <li key={b.budgetId}>
-                  {b.budgetName}: {b.spentMinor} / {b.allocatedMinor}
-                </li>
+                <div key={b.budgetId} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
+                  <span className="text-neutral-900">{b.budgetName}</span>
+                  <span className="text-neutral-900">
+                    {b.spentMinor} / {b.allocatedMinor}
+                  </span>
+                </div>
               ))}
-            </ul>
-          </section>
-        </>
+            </CardContent>
+          </Card>
+        </div>
       )}
-    </main>
+    </div>
   );
 }

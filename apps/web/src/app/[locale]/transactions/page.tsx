@@ -3,6 +3,13 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { AmountInput } from '@/components/ui/amount-input';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 const TX_TYPES = ['EXPENSE', 'INCOME'] as const;
 
@@ -134,105 +141,132 @@ export default function TransactionsPage() {
   const availableCategories = categories.filter((c) => c.kind === type);
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {transactions === null && <p>...</p>}
-      {transactions?.length === 0 && <p>{t('empty')}</p>}
+      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+
+      {transactions === null && <p className="text-neutral-600">...</p>}
+      {transactions?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {transactions && transactions.length > 0 && (
-        <ul>
+        <div className="space-y-3">
           {transactions.map((tx) => (
-            <li key={tx.id}>
-              {tx.occurredAt.slice(0, 10)} — {tx.description} — {tType(tx.type)} — {tx.amountMinor} {tx.currency}
-              <button type="button" onClick={() => onDelete(tx.id)}>
-                {t('delete')}
-              </button>
-            </li>
+            <Card key={tx.id} className="p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-neutral-600">{tx.occurredAt.slice(0, 10)}</p>
+                <p className="text-neutral-900">
+                  {tx.description} — {tType(tx.type)}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <p className="font-semibold text-neutral-900">
+                  {tx.amountMinor} {tx.currency}
+                </p>
+                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(tx.id)}>
+                  {t('delete')}
+                </Button>
+              </div>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h2>{t('create')}</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          {t('accountLabel')}
-          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('typeLabel')}
-          <select value={type} onChange={(e) => setType(e.target.value as (typeof TX_TYPES)[number])}>
-            {TX_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {tType(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('amountLabel')}
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} required />
-        </label>
-        <label>
-          {t('occurredAtLabel')}
-          <input type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
-        </label>
-        <label>
-          {t('descriptionLabel')}
-          <input value={description} onChange={(e) => setDescription(e.target.value)} required />
-        </label>
-        <label>
-          {t('categoryLabel')}
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-            <option value="">{t('noCategory')}</option>
-            {availableCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {resolveCategoryName(category)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error && <p role="alert">{tError(error as never)}</p>}
-        <button type="submit">{t('submit')}</button>
-      </form>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('create')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="accountId">{t('accountLabel')}</Label>
+              <Select id="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="type">{t('typeLabel')}</Label>
+              <Select id="type" value={type} onChange={(e) => setType(e.target.value as (typeof TX_TYPES)[number])}>
+                {TX_TYPES.map((value) => (
+                  <option key={value} value={value}>
+                    {tType(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="amount">{t('amountLabel')}</Label>
+              <AmountInput id="amount" value={amount} onValueChange={setAmount} required />
+            </div>
+            <div>
+              <Label htmlFor="occurredAt">{t('occurredAtLabel')}</Label>
+              <Input id="occurredAt" type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="description">{t('descriptionLabel')}</Label>
+              <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="categoryId">{t('categoryLabel')}</Label>
+              <Select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                <option value="">{t('noCategory')}</option>
+                {availableCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {resolveCategoryName(category)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('submit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-      <h2>{t('transferTitle')}</h2>
-      <form onSubmit={onTransfer}>
-        <label>
-          {t('fromAccountLabel')}
-          <select value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('toAccountLabel')}
-          <select value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t('amountLabel')}
-          <input value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} required />
-        </label>
-        <label>
-          {t('occurredAtLabel')}
-          <input type="date" value={transferAt} onChange={(e) => setTransferAt(e.target.value)} required />
-        </label>
-        <button type="submit">{t('transferSubmit')}</button>
-      </form>
-    </main>
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4">
+          <CardTitle>{t('transferTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={onTransfer} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="fromAccountId">{t('fromAccountLabel')}</Label>
+              <Select id="fromAccountId" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="toAccountId">{t('toAccountLabel')}</Label>
+              <Select id="toAccountId" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="transferAmount">{t('amountLabel')}</Label>
+              <AmountInput id="transferAmount" value={transferAmount} onValueChange={setTransferAmount} required />
+            </div>
+            <div>
+              <Label htmlFor="transferAt">{t('occurredAtLabel')}</Label>
+              <Input id="transferAt" type="date" value={transferAt} onChange={(e) => setTransferAt(e.target.value)} required />
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit">{t('transferSubmit')}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
