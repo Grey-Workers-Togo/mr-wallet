@@ -283,6 +283,35 @@
       "UNKNOWN": "Notification"
     }
   },
+  "pwa": {
+    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour."
+  },
+  "preferences": {
+    "title": "Préférences",
+    "displayNameLabel": "Nom affiché",
+    "baseCurrencyLabel": "Devise de référence",
+    "localeLabel": "Langue",
+    "timezoneLabel": "Fuseau horaire",
+    "weekStartsOnLabel": "Premier jour de la semaine",
+    "monthStartDayLabel": "Jour de début du mois",
+    "save": "Enregistrer",
+    "pinSection": "Verrouillage par code PIN",
+    "pinEnabled": "Code PIN activé",
+    "pinDisabled": "Aucun code PIN défini",
+    "pinLabel": "Code PIN (4 à 8 chiffres)",
+    "pinLockMinutesLabel": "Verrouiller après (minutes d'inactivité)",
+    "setPin": "Définir le code PIN",
+    "removePin": "Supprimer le code PIN",
+    "pushSection": "Appareils pour les notifications push",
+    "pushEmpty": "Aucun appareil enregistré.",
+    "pushEnable": "Activer les notifications sur cet appareil",
+    "pushRemove": "Retirer",
+    "pushTest": "Envoyer une notification de test",
+    "deleteAccountSection": "Supprimer mon compte",
+    "deleteAccount": "Supprimer définitivement mon compte",
+    "exportSection": "Export intégral",
+    "exportFull": "Télécharger toutes mes données"
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",

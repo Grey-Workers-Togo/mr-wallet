@@ -283,6 +283,35 @@
       "UNKNOWN": "Notification"
     }
   },
+  "pwa": {
+    "offlineBanner": "Offline — the data shown may not be up to date."
+  },
+  "preferences": {
+    "title": "Preferences",
+    "displayNameLabel": "Display name",
+    "baseCurrencyLabel": "Base currency",
+    "localeLabel": "Language",
+    "timezoneLabel": "Timezone",
+    "weekStartsOnLabel": "Week start day",
+    "monthStartDayLabel": "Month start day",
+    "save": "Save",
+    "pinSection": "PIN lock",
+    "pinEnabled": "PIN lock enabled",
+    "pinDisabled": "No PIN set",
+    "pinLabel": "PIN (4 to 8 digits)",
+    "pinLockMinutesLabel": "Lock after (minutes of inactivity)",
+    "setPin": "Set PIN",
+    "removePin": "Remove PIN",
+    "pushSection": "Push notification devices",
+    "pushEmpty": "No device registered.",
+    "pushEnable": "Enable push notifications on this device",
+    "pushRemove": "Remove",
+    "pushTest": "Send a test notification",
+    "deleteAccountSection": "Delete my account",
+    "deleteAccount": "Permanently delete my account",
+    "exportSection": "Full export",
+    "exportFull": "Download all my data"
+  },
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",
