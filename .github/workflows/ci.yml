@@ -46,6 +46,9 @@ jobs:
       - name: Prisma migrate deploy
         run: npm run prisma:migrate:deploy -w apps/api
 
+      - name: Prisma seed
+        run: npm run prisma:seed -w apps/api
+
       - name: Test
         run: npm run test
 

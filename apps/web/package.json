@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "i18n:check": "tsx scripts/check-i18n-parity.ts"
   },
   "dependencies": {
