@@ -118,10 +118,11 @@ export class TransactionsService {
     userId: string,
     dto: CreateTransactionDto,
     opts?: {
-      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE';
+      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT';
       importBatchId?: string;
       externalRef?: string;
       recurrenceId?: string;
+      debtPaymentId?: string;
     },
   ) {
     const amountMinor = BigInt(dto.amountMinor);
@@ -184,6 +185,7 @@ export class TransactionsService {
           importBatchId: opts?.importBatchId,
           externalRef: opts?.externalRef,
           recurrenceId: opts?.recurrenceId,
+          debtPaymentId: opts?.debtPaymentId,
         },
       });
       if (tagIds.length > 0) {
@@ -274,9 +276,9 @@ export class TransactionsService {
     return this.attachTagsOne(updated);
   }
 
-  async remove(userId: string, id: string): Promise<void> {
+  async remove(userId: string, id: string, opts?: { allowDebtPayment?: boolean }): Promise<void> {
     const existing = await this.getById(userId, id);
-    if (existing.source === 'DEBT_PAYMENT') {
+    if (existing.source === 'DEBT_PAYMENT' && !opts?.allowDebtPayment) {
       // RG-T10
       throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
     }

@@ -28,6 +28,20 @@ interface BudgetThresholdCrossedPayload {
   exceeded: boolean;
 }
 
+interface DebtInstallmentEventPayload {
+  userId: string;
+  debtId: string;
+  debtName: string;
+  installmentId: string;
+  dueOn: Date;
+}
+
+interface DebtPaidOffPayload {
+  userId: string;
+  debtId: string;
+  debtName: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -135,6 +149,54 @@ export class NotificationsService {
       });
     } catch (error) {
       this.logger.warn(`Failed to create budget notification for period ${payload.budgetPeriodId}: ${error}`);
+    }
+  }
+
+  @OnEvent('debt.installment_overdue')
+  async onDebtInstallmentOverdue(payload: DebtInstallmentEventPayload): Promise<void> {
+    try {
+      await this.create({
+        userId: payload.userId,
+        type: 'DEBT_OVERDUE',
+        params: { debtName: payload.debtName, dueOn: payload.dueOn.toISOString() },
+        entityType: 'DebtInstallment',
+        entityId: payload.installmentId,
+        severity: 'CRITICAL',
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to create overdue notification for installment ${payload.installmentId}: ${error}`);
+    }
+  }
+
+  @OnEvent('debt.installment_due_soon')
+  async onDebtInstallmentDueSoon(payload: DebtInstallmentEventPayload): Promise<void> {
+    try {
+      await this.create({
+        userId: payload.userId,
+        type: 'DEBT_DUE_SOON',
+        params: { debtName: payload.debtName, dueOn: payload.dueOn.toISOString() },
+        entityType: 'DebtInstallment',
+        entityId: payload.installmentId,
+        severity: 'WARNING',
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to create due-soon notification for installment ${payload.installmentId}: ${error}`);
+    }
+  }
+
+  @OnEvent('debt.paid_off')
+  async onDebtPaidOff(payload: DebtPaidOffPayload): Promise<void> {
+    try {
+      await this.create({
+        userId: payload.userId,
+        type: 'DEBT_PAID_OFF',
+        params: { debtName: payload.debtName },
+        entityType: 'Debt',
+        entityId: payload.debtId,
+        severity: 'INFO',
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to create paid-off notification for debt ${payload.debtId}: ${error}`);
     }
   }
 

@@ -197,6 +197,35 @@
       "CUSTOM": "Personnalisé"
     }
   },
+  "debts": {
+    "title": "Dettes",
+    "create": "Ajouter une dette",
+    "empty": "Aucune dette pour l'instant.",
+    "nameLabel": "Nom",
+    "directionLabel": "Sens",
+    "principalLabel": "Capital",
+    "rateLabel": "Taux annuel (%)",
+    "termLabel": "Durée (mois)",
+    "startedOnLabel": "Date de départ",
+    "submit": "Créer la dette",
+    "delete": "Supprimer",
+    "outstanding": "Capital restant dû",
+    "schedule": "Échéancier",
+    "payments": "Paiements",
+    "recordPayment": "Enregistrer un paiement",
+    "simulatePayoff": "Simuler un remboursement anticipé",
+    "direction": {
+      "OWED_BY_ME": "Je dois",
+      "OWED_TO_ME": "On me doit"
+    },
+    "installmentStatus": {
+      "SCHEDULED": "À venir",
+      "PAID": "Payée",
+      "PARTIAL": "Partielle",
+      "LATE": "En retard",
+      "SKIPPED": "Ignorée"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification pour l'instant.",
@@ -261,6 +290,14 @@
     "RECURRENCE_OCCURRENCE_ALREADY_MATERIALIZED": "Cette occurrence a déjà été confirmée.",
     "BUDGET_NOT_FOUND": "Budget introuvable.",
     "BUDGET_PERIOD_NOT_FOUND": "Période budgétaire introuvable.",
-    "BUDGET_CATEGORY_OVERLAP": "Un budget actif existe déjà sur cette catégorie pour une période qui chevauche."
+    "BUDGET_CATEGORY_OVERLAP": "Un budget actif existe déjà sur cette catégorie pour une période qui chevauche.",
+    "DEBT_NOT_FOUND": "Dette introuvable.",
+    "DEBT_NOT_ACTIVE": "Cette dette n'est plus active.",
+    "DEBT_INSTALLMENT_NOT_FOUND": "Échéance introuvable.",
+    "DEBT_INSTALLMENT_ALREADY_SETTLED": "Cette échéance est déjà entièrement payée.",
+    "DEBT_PAYMENT_NOT_FOUND": "Paiement introuvable.",
+    "DEBT_PAYMENT_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",
+    "DEBT_PAYMENT_EXCEEDS_OUTSTANDING": "Le montant dépasse le capital restant dû.",
+    "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "Le montant dépasse ce qui reste dû sur cette échéance."
   }
 }
