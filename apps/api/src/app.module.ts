@@ -12,6 +12,12 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { RulesModule } from './modules/rules/rules.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
+import { ImportModule } from './modules/import/import.module';
+import { ExportModule } from './modules/export/export.module';
 
 @Module({
   imports: [
@@ -22,6 +28,12 @@ import { AccountsModule } from './modules/accounts/accounts.module';
     AuthModule,
     CurrencyModule,
     AccountsModule,
+    CategoriesModule,
+    TagsModule,
+    RulesModule,
+    TransactionsModule,
+    ImportModule,
+    ExportModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotFoundAppError } from '../../common/errors/app-error';
+import { ConflictAppError, NotFoundAppError } from '../../common/errors/app-error';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
 @Injectable()
@@ -59,10 +60,19 @@ export class AccountsService {
     });
   }
 
-  /** Refused if the account still has transactions (docs/05 §4) — enforced once `transactions` exists (Lot 2). */
+  /** Refused if the account still has transactions (docs/05 §4). */
   async remove(userId: string, id: string): Promise<void> {
     await this.getById(userId, id);
+    const usedCount = await this.prisma.transaction.count({ where: { userId, accountId: id } });
+    if (usedCount > 0) {
+      throw new ConflictAppError('ACCOUNT_HAS_TRANSACTIONS', { usedCount });
+    }
     await this.prisma.account.delete({ where: { id } });
+  }
+
+  /** Called by `transactions` (docs/02 §5) to keep `currentBalanceMinor` incrementally maintained. */
+  adjustBalance(id: string, deltaMinor: bigint, tx: Prisma.TransactionClient = this.prisma) {
+    return tx.account.update({ where: { id }, data: { currentBalanceMinor: { increment: deltaMinor } } });
   }
 
   async archive(userId: string, id: string) {
@@ -77,12 +87,23 @@ export class AccountsService {
 
   /**
    * Compares the stored balance against opening balance + Σ transactions and records the
-   * result in `BalanceCheck` (docs/03 §16). With no `transactions` module yet (Lot 2), the
-   * computed balance is simply the opening balance — the nightly scheduled task lands in Lot 2.
+   * result in `BalanceCheck` (docs/03 §16). Never corrects the stored balance silently.
    */
   async reconcile(userId: string, id: string) {
     const account = await this.getById(userId, id);
-    const computedMinor = account.openingBalanceMinor;
+    // amountMinor is stored unsigned; EXPENSE subtracts, INCOME adds (transactions module convention).
+    const [expense, income] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: { userId, accountId: id, type: 'EXPENSE' },
+        _sum: { amountMinor: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { userId, accountId: id, type: 'INCOME' },
+        _sum: { amountMinor: true },
+      }),
+    ]);
+    const computedMinor =
+      account.openingBalanceMinor + (income._sum.amountMinor ?? 0n) - (expense._sum.amountMinor ?? 0n);
     const deltaMinor = account.currentBalanceMinor - computedMinor;
     const isMatch = deltaMinor === 0n;
 
