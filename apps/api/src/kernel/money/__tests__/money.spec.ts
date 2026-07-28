@@ -84,8 +84,22 @@ describe('money kernel', () => {
   describe('convert', () => {
     it('converts 10.00 EUR to XOF at the fixed peg 655.957', () => {
       const eur = Money.of(1000n, 'EUR'); // 10.00 EUR
-      const xof = Money.convert(eur, 'XOF', 655.957, 2, 0);
+      const xof = Money.convert(eur, 'XOF', '655.957', 2, 0);
       expect(xof).toEqual({ amountMinor: 6560n, currency: 'XOF' }); // 6 560 XOF
+    });
+
+    it('applies banker\'s rounding exactly at the .5 boundary', () => {
+      // 5 minor units at rate 0.5, no unit shift: 2.5 rounds to even -> 2
+      const source = Money.of(5n, 'EUR');
+      expect(Money.convert(source, 'EUR', '0.5', 2, 2).amountMinor).toBe(2n);
+      // 3 minor units at rate 0.5: 1.5 rounds to even -> 2
+      expect(Money.convert(Money.of(3n, 'EUR'), 'EUR', '0.5', 2, 2).amountMinor).toBe(2n);
+    });
+
+    it('handles a currency with 3 minor units (TND)', () => {
+      const eur = Money.of(100000n, 'EUR'); // 1000.00 EUR
+      const tnd = Money.convert(eur, 'TND', '3.1', 2, 3);
+      expect(tnd).toEqual({ amountMinor: 3100000n, currency: 'TND' }); // 3100.000 TND
     });
   });
 

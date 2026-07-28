@@ -88,22 +88,58 @@ export function allocate(a: Money, ratios: readonly number[]): Money[] {
   return shares.map((s) => ({ amountMinor: isNeg ? -s : s, currency: a.currency }));
 }
 
+/** Parses a decimal string ("655.957") into an exact numerator/denominator pair — no float involved. */
+function parseDecimal(value: string): { numerator: bigint; denominator: bigint } {
+  const negative = value.startsWith('-');
+  const unsigned = negative ? value.slice(1) : value;
+  const [whole, fraction = ''] = unsigned.split('.');
+  const numerator = BigInt(`${whole}${fraction}` || '0');
+  const denominator = 10n ** BigInt(fraction.length);
+  return { numerator: negative ? -numerator : numerator, denominator };
+}
+
+/** Round-half-to-even ("banker's rounding") on an exact `num/den` fraction, den > 0. */
+function bankersRoundDiv(num: bigint, den: bigint): bigint {
+  const negative = num < 0n !== den < 0n;
+  const n = num < 0n ? -num : num;
+  const d = den < 0n ? -den : den;
+  const quotient = n / d;
+  const remainder = n % d;
+  const twiceRemainder = remainder * 2n;
+
+  let result = quotient;
+  if (twiceRemainder > d || (twiceRemainder === d && quotient % 2n === 1n)) {
+    result += 1n;
+  }
+  return negative ? -result : result;
+}
+
 /**
- * Converts to a target currency using a decimal rate expressed as toCurrency per 1 fromCurrency
- * (whole units, not minor units — e.g. 655.957 XOF per 1 EUR).
- * Rounds half up at the target currency's minor unit precision — rounding happens once, at conversion, never silently elsewhere.
+ * Converts to a target currency using a decimal rate string (toCurrency per 1 fromCurrency,
+ * e.g. "655.957" XOF per 1 EUR — docs/08-devises.md RG-X5/RG-X6). Exact bigint arithmetic
+ * throughout, banker's rounding applied once at the target currency's minor-unit precision.
+ *
+ * targetMinor = round(sourceMinor × 10^(toMinorUnits − fromMinorUnits) × rate)
  */
 export function convert(
   a: Money,
   toCurrency: string,
-  rate: number,
+  rate: string,
   fromMinorUnits: number,
   toMinorUnits: number,
 ): Money {
-  const wholeUnits = Number(a.amountMinor) / 10 ** fromMinorUnits;
-  const convertedWholeUnits = wholeUnits * rate;
-  const targetMinor = Math.round(convertedWholeUnits * 10 ** toMinorUnits);
-  return { amountMinor: BigInt(targetMinor), currency: toCurrency };
+  const { numerator, denominator } = parseDecimal(rate);
+  const delta = toMinorUnits - fromMinorUnits;
+
+  let num = a.amountMinor * numerator;
+  let den = denominator;
+  if (delta >= 0) {
+    num *= 10n ** BigInt(delta);
+  } else {
+    den *= 10n ** BigInt(-delta);
+  }
+
+  return { amountMinor: bankersRoundDiv(num, den), currency: toCurrency };
 }
 
 /**
