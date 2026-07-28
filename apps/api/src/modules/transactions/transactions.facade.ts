@@ -21,6 +21,16 @@ export class TransactionsFacade {
     return this.transactionsService.create(userId, dto, { source: 'RECURRENCE', recurrenceId });
   }
 
+  /** RG-D9: a debt payment never writes to the DB directly — always through this facade. */
+  createFromDebtPayment(userId: string, dto: CreateTransactionDto, debtPaymentId: string) {
+    return this.transactionsService.create(userId, dto, { source: 'DEBT_PAYMENT', debtPaymentId });
+  }
+
+  /** RG-D9/RG-T10: deleting a `DebtPayment` cascades to its transaction — the only caller allowed to bypass the guard. */
+  removeDebtPaymentTransaction(userId: string, id: string) {
+    return this.transactionsService.remove(userId, id, { allowDebtPayment: true });
+  }
+
   listForDedupe(userId: string, accountIds: string[]) {
     return this.transactionsService.listForDedupe(userId, accountIds);
   }

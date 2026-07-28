@@ -197,6 +197,35 @@
       "CUSTOM": "Custom"
     }
   },
+  "debts": {
+    "title": "Debts",
+    "create": "Add a debt",
+    "empty": "No debts yet.",
+    "nameLabel": "Name",
+    "directionLabel": "Direction",
+    "principalLabel": "Principal",
+    "rateLabel": "Annual rate (%)",
+    "termLabel": "Term (months)",
+    "startedOnLabel": "Start date",
+    "submit": "Create debt",
+    "delete": "Delete",
+    "outstanding": "Outstanding principal",
+    "schedule": "Schedule",
+    "payments": "Payments",
+    "recordPayment": "Record a payment",
+    "simulatePayoff": "Simulate an early payoff",
+    "direction": {
+      "OWED_BY_ME": "I owe",
+      "OWED_TO_ME": "Owed to me"
+    },
+    "installmentStatus": {
+      "SCHEDULED": "Upcoming",
+      "PAID": "Paid",
+      "PARTIAL": "Partial",
+      "LATE": "Late",
+      "SKIPPED": "Skipped"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications yet.",
@@ -261,6 +290,14 @@
     "RECURRENCE_OCCURRENCE_ALREADY_MATERIALIZED": "This occurrence has already been confirmed.",
     "BUDGET_NOT_FOUND": "Budget not found.",
     "BUDGET_PERIOD_NOT_FOUND": "Budget period not found.",
-    "BUDGET_CATEGORY_OVERLAP": "An active budget already targets this category over an overlapping period."
+    "BUDGET_CATEGORY_OVERLAP": "An active budget already targets this category over an overlapping period.",
+    "DEBT_NOT_FOUND": "Debt not found.",
+    "DEBT_NOT_ACTIVE": "This debt is no longer active.",
+    "DEBT_INSTALLMENT_NOT_FOUND": "Installment not found.",
+    "DEBT_INSTALLMENT_ALREADY_SETTLED": "This installment is already fully paid.",
+    "DEBT_PAYMENT_NOT_FOUND": "Payment not found.",
+    "DEBT_PAYMENT_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
+    "DEBT_PAYMENT_EXCEEDS_OUTSTANDING": "The amount exceeds the outstanding principal.",
+    "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "The amount exceeds what remains due on this installment."
   }
 }

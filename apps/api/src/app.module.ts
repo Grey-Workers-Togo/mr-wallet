@@ -22,6 +22,7 @@ import { ExportModule } from './modules/export/export.module';
 import { RecurrenceModule } from './modules/recurrence/recurrence.module';
 import { BudgetsModule } from './modules/budgets/budgets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DebtsModule } from './modules/debts/debts.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     RecurrenceModule,
     BudgetsModule,
     NotificationsModule,
+    DebtsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
