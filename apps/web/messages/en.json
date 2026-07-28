@@ -339,6 +339,7 @@
     "GOAL_NO_LINKED_ACCOUNT": "This goal has no linked account to receive a transfer.",
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
     "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution not found.",
-    "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion."
+    "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion.",
+    "PIN_NOT_SET": "No PIN has been set for this account."
   }
 }

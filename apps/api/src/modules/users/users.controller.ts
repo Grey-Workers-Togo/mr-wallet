@@ -1,9 +1,18 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
 import { UsersService } from './users.service';
-import { UpdateBaseCurrencyDto, UpdateMeDto, updateBaseCurrencySchema, updateMeSchema } from './dto/update-me.dto';
+import {
+  SetPinDto,
+  UpdateBaseCurrencyDto,
+  UpdateMeDto,
+  VerifyPinDto,
+  setPinSchema,
+  updateBaseCurrencySchema,
+  updateMeSchema,
+  verifyPinSchema,
+} from './dto/update-me.dto';
 
 @Controller('me')
 export class UsersController {
@@ -34,5 +43,23 @@ export class UsersController {
   @Audit({ action: 'user.delete', entityType: 'User' })
   async deleteMe(@CurrentUser() user: RequestUser) {
     await this.usersService.deleteMe(user.id);
+  }
+
+  @Post('pin')
+  @Audit({ action: 'user.pin_set', entityType: 'User' })
+  setPin(@CurrentUser() user: RequestUser, @Body(new ZodValidationPipe(setPinSchema)) dto: SetPinDto) {
+    return this.usersService.setPin(user.id, dto);
+  }
+
+  @Post('pin/verify')
+  verifyPin(@CurrentUser() user: RequestUser, @Body(new ZodValidationPipe(verifyPinSchema)) dto: VerifyPinDto) {
+    return this.usersService.verifyPin(user.id, dto);
+  }
+
+  @Delete('pin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Audit({ action: 'user.pin_remove', entityType: 'User' })
+  async removePin(@CurrentUser() user: RequestUser) {
+    await this.usersService.removePin(user.id);
   }
 }

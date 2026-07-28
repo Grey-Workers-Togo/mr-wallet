@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotFoundAppError } from '../../common/errors/app-error';
-import { UpdateBaseCurrencyDto, UpdateMeDto } from './dto/update-me.dto';
+import { NotFoundAppError, ValidationAppError } from '../../common/errors/app-error';
+import { SetPinDto, UpdateBaseCurrencyDto, UpdateMeDto, VerifyPinDto } from './dto/update-me.dto';
+import { hashPin, verifyPin } from './domain/pin';
 
 export interface UserProfile {
   id: string;
@@ -13,6 +14,8 @@ export interface UserProfile {
   timezone: string;
   weekStartsOn: number;
   monthStartDay: number;
+  pinEnabled: boolean;
+  pinLockMinutes: number;
   createdAt: Date;
 }
 
@@ -26,6 +29,8 @@ function toProfile(user: User): UserProfile {
     timezone: user.timezone,
     weekStartsOn: user.weekStartsOn,
     monthStartDay: user.monthStartDay,
+    pinEnabled: user.pinHash !== null,
+    pinLockMinutes: user.pinLockMinutes,
     createdAt: user.createdAt,
   };
 }
@@ -65,5 +70,28 @@ export class UsersService {
       this.prisma.user.delete({ where: { id: userId } }),
       this.prisma.session.updateMany({ where: { userId }, data: { revokedAt: new Date() } }),
     ]);
+  }
+
+  async setPin(userId: string, dto: SetPinDto): Promise<void> {
+    const pinHash = await hashPin(dto.pin);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { pinHash, ...(dto.lockMinutes !== undefined && { pinLockMinutes: dto.lockMinutes }) },
+    });
+  }
+
+  async verifyPin(userId: string, dto: VerifyPinDto): Promise<{ valid: boolean }> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundAppError('USER_NOT_FOUND');
+    }
+    if (!user.pinHash) {
+      throw new ValidationAppError('PIN_NOT_SET');
+    }
+    return { valid: await verifyPin(user.pinHash, dto.pin) };
+  }
+
+  async removePin(userId: string): Promise<void> {
+    await this.prisma.user.update({ where: { id: userId }, data: { pinHash: null } });
   }
 }
