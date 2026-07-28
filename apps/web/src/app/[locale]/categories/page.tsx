@@ -38,7 +38,7 @@ export default function CategoriesPage() {
 
   function resolveName(category: Category): string {
     if (category.name) return category.name;
-    if (category.i18nKey) return tCategoryType(category.i18nKey as never);
+    if (category.i18nKey) return tCategoryType(category.i18nKey.replaceAll('.', '_') as never);
     return '';
   }
 
