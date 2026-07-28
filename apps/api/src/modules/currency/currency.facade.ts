@@ -9,4 +9,8 @@ export class CurrencyFacade {
   getApplicableRate(userId: string, from: string, to: string, at: Date) {
     return this.currencyService.getApplicableRate(userId, from, to, at);
   }
+
+  getMinorUnits(code: string) {
+    return this.currencyService.getMinorUnits(code);
+  }
 }

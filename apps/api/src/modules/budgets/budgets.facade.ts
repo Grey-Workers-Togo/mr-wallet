@@ -13,4 +13,8 @@ export class BudgetsFacade {
   extendAllPeriods() {
     return this.budgetsService.extendAllPeriods();
   }
+
+  current(userId: string) {
+    return this.budgetsService.current(userId);
+  }
 }
