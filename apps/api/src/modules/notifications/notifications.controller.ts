@@ -1,11 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
 import { NotificationsService } from './notifications.service';
 import {
   ListNotificationsDto,
+  SubscribePushDto,
+  UnsubscribePushDto,
   UpdatePreferencesDto,
   listNotificationsSchema,
+  subscribePushSchema,
+  unsubscribePushSchema,
   updatePreferencesSchema,
 } from './dto/notification.dto';
 
@@ -41,5 +45,41 @@ export class NotificationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   markAllRead(@CurrentUser() user: RequestUser) {
     return this.notificationsService.markAllRead(user.id);
+  }
+
+  @Get('push/public-key')
+  publicKey() {
+    return { publicKey: this.notificationsService.publicKey() };
+  }
+
+  @Post('push/subscribe')
+  subscribe(@CurrentUser() user: RequestUser, @Body(new ZodValidationPipe(subscribePushSchema)) dto: SubscribePushDto) {
+    return this.notificationsService.subscribe(user.id, dto);
+  }
+
+  @Delete('push/subscribe')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  unsubscribe(
+    @CurrentUser() user: RequestUser,
+    @Body(new ZodValidationPipe(unsubscribePushSchema)) dto: UnsubscribePushDto,
+  ) {
+    return this.notificationsService.unsubscribe(user.id, dto);
+  }
+
+  @Get('push/devices')
+  listDevices(@CurrentUser() user: RequestUser) {
+    return this.notificationsService.listDevices(user.id);
+  }
+
+  @Delete('push/devices/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeDevice(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.notificationsService.removeDevice(user.id, id);
+  }
+
+  @Post('push/test')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  sendTestPush(@CurrentUser() user: RequestUser) {
+    return this.notificationsService.sendTestPush(user.id);
   }
 }

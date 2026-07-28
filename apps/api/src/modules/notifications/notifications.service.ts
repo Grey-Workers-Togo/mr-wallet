@@ -1,10 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationType, Prisma, Severity } from '@prisma/client';
+import * as webpush from 'web-push';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotFoundAppError } from '../../common/errors/app-error';
 import { RecurrenceFacade } from '../recurrence/recurrence.facade';
-import { UpdatePreferencesDto } from './dto/notification.dto';
+import { SubscribePushDto, UnsubscribePushDto, UpdatePreferencesDto } from './dto/notification.dto';
+import { pushContentFor } from './domain/push-content';
+
+/** Failed pushes past this count mark the device inactive (docs/09 Lot 7: "failureCount → désactivation à 5"). */
+const MAX_PUSH_FAILURES = 5;
 
 const DEFAULT_TYPES: NotificationType[] = [
   'BUDGET_THRESHOLD',
@@ -55,7 +62,15 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly recurrenceFacade: RecurrenceFacade,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
+    const subject = this.config.get<string>('VAPID_SUBJECT');
+    if (publicKey && privateKey && subject) {
+      webpush.setVapidDetails(subject, publicKey, privateKey);
+    }
+  }
 
   list(userId: string, unreadOnly: boolean) {
     return this.prisma.notification.findMany({
@@ -112,6 +127,111 @@ export class NotificationsService {
     return pref?.inAppEnabled ?? true;
   }
 
+  private async isPushEnabled(userId: string, type: NotificationType): Promise<boolean> {
+    const pref = await this.prisma.notificationPreference.findUnique({ where: { userId_type: { userId, type } } });
+    return pref?.pushEnabled ?? false;
+  }
+
+  publicKey(): string {
+    return this.config.get<string>('VAPID_PUBLIC_KEY') ?? '';
+  }
+
+  async subscribe(userId: string, dto: SubscribePushDto) {
+    return this.prisma.deviceToken.upsert({
+      where: { endpoint: dto.endpoint },
+      create: {
+        userId,
+        platform: 'WEB_PUSH',
+        endpoint: dto.endpoint,
+        p256dhKey: dto.p256dhKey,
+        authKey: dto.authKey,
+        deviceLabel: dto.deviceLabel,
+      },
+      update: {
+        userId,
+        p256dhKey: dto.p256dhKey,
+        authKey: dto.authKey,
+        deviceLabel: dto.deviceLabel,
+        isActive: true,
+        failureCount: 0,
+        revokedAt: null,
+      },
+    });
+  }
+
+  async unsubscribe(userId: string, dto: UnsubscribePushDto): Promise<void> {
+    await this.prisma.deviceToken.updateMany({
+      where: { userId, endpoint: dto.endpoint },
+      data: { isActive: false, revokedAt: new Date() },
+    });
+  }
+
+  listDevices(userId: string) {
+    return this.prisma.deviceToken.findMany({ where: { userId, isActive: true }, orderBy: { createdAt: 'desc' } });
+  }
+
+  async removeDevice(userId: string, id: string): Promise<void> {
+    const device = await this.prisma.deviceToken.findFirst({ where: { id, userId } });
+    if (!device) {
+      throw new NotFoundAppError('DEVICE_TOKEN_NOT_FOUND');
+    }
+    await this.prisma.deviceToken.update({ where: { id }, data: { isActive: false, revokedAt: new Date() } });
+  }
+
+  private async sendPushToUser(userId: string, type: NotificationType): Promise<void> {
+    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
+    if (!publicKey || !privateKey) return;
+    if (!(await this.isPushEnabled(userId, type))) return;
+
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    const devices = await this.prisma.deviceToken.findMany({
+      where: { userId, platform: 'WEB_PUSH', isActive: true },
+    });
+    const { title, body } = pushContentFor(type, user?.locale ?? 'fr');
+    const payload = JSON.stringify({ title, body });
+
+    for (const device of devices) {
+      if (!device.p256dhKey || !device.authKey) continue;
+      try {
+        await webpush.sendNotification(
+          { endpoint: device.endpoint, keys: { p256dh: device.p256dhKey, auth: device.authKey } },
+          payload,
+        );
+        if (device.failureCount > 0) {
+          await this.prisma.deviceToken.update({ where: { id: device.id }, data: { failureCount: 0 } });
+        }
+      } catch (error) {
+        const failureCount = device.failureCount + 1;
+        await this.prisma.deviceToken.update({
+          where: { id: device.id },
+          data: { failureCount, isActive: failureCount < MAX_PUSH_FAILURES },
+        });
+        this.logger.warn(`Push delivery failed for device ${device.id}: ${error}`);
+      }
+    }
+  }
+
+  async sendTestPush(userId: string): Promise<void> {
+    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
+    if (!publicKey || !privateKey) return;
+
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    const devices = await this.prisma.deviceToken.findMany({
+      where: { userId, platform: 'WEB_PUSH', isActive: true },
+    });
+    const { title, body } = pushContentFor('BALANCE_MISMATCH', user?.locale ?? 'fr');
+    const payload = JSON.stringify({ title, body });
+    for (const device of devices) {
+      if (!device.p256dhKey || !device.authKey) continue;
+      await webpush.sendNotification(
+        { endpoint: device.endpoint, keys: { p256dh: device.p256dhKey, auth: device.authKey } },
+        payload,
+      );
+    }
+  }
+
   /** RG-N1: one notification per (type, entity) — `entityId` should already encode any period/occurrence disambiguation. */
   async create(input: {
     userId: string;
@@ -140,6 +260,12 @@ export class NotificationsService {
         severity: input.severity ?? 'INFO',
       },
     });
+
+    try {
+      await this.sendPushToUser(input.userId, input.type);
+    } catch (error) {
+      this.logger.warn(`Push dispatch failed for user ${input.userId}, type ${input.type}: ${error}`);
+    }
   }
 
   @OnEvent('budget.threshold_crossed')

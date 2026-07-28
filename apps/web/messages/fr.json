@@ -340,6 +340,7 @@
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",
     "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution introuvable.",
     "EXCHANGE_RATE_UNAVAILABLE": "Aucun taux de change disponible pour cette conversion.",
-    "PIN_NOT_SET": "Aucun code PIN n'est défini pour ce compte."
+    "PIN_NOT_SET": "Aucun code PIN n'est défini pour ce compte.",
+    "DEVICE_TOKEN_NOT_FOUND": "Cet appareil n'est pas enregistré pour les notifications push."
   }
 }
