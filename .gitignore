@@ -9,3 +9,4 @@ coverage/
 *.log
 .DS_Store
 apps/api/generated/
+*.tsbuildinfo
