@@ -117,7 +117,12 @@ export class TransactionsService {
   async create(
     userId: string,
     dto: CreateTransactionDto,
-    opts?: { source?: 'MANUAL' | 'IMPORT'; importBatchId?: string; externalRef?: string },
+    opts?: {
+      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE';
+      importBatchId?: string;
+      externalRef?: string;
+      recurrenceId?: string;
+    },
   ) {
     const amountMinor = BigInt(dto.amountMinor);
     const account = await this.validateAgainstAccount(userId, dto.accountId, amountMinor, dto.occurredAt);
@@ -178,6 +183,7 @@ export class TransactionsService {
           source: opts?.source ?? 'MANUAL',
           importBatchId: opts?.importBatchId,
           externalRef: opts?.externalRef,
+          recurrenceId: opts?.recurrenceId,
         },
       });
       if (tagIds.length > 0) {
@@ -192,7 +198,7 @@ export class TransactionsService {
     if (matchedRuleId) {
       await this.rulesFacade.incrementTimesApplied(matchedRuleId);
     }
-    this.events.emit('transaction.created', { userId, transaction });
+    await this.events.emitAsync('transaction.created', { userId, transaction });
     return this.attachTagsOne(transaction);
   }
 
@@ -264,7 +270,7 @@ export class TransactionsService {
     });
 
     // RG-T9
-    this.events.emit('transaction.updated', { userId, before: existing, after: updated });
+    await this.events.emitAsync('transaction.updated', { userId, before: existing, after: updated });
     return this.attachTagsOne(updated);
   }
 
@@ -289,7 +295,7 @@ export class TransactionsService {
       await tx.transactionTag.deleteMany({ where: { transactionId: id } });
       await tx.transaction.delete({ where: { id } });
     });
-    this.events.emit('transaction.deleted', { userId, transaction: existing });
+    await this.events.emitAsync('transaction.deleted', { userId, transaction: existing });
   }
 
   private async removeTransferGroup(userId: string, transferGroupId: string): Promise<void> {
@@ -302,7 +308,7 @@ export class TransactionsService {
       await tx.transaction.deleteMany({ where: { transferGroupId } });
     });
     for (const leg of legs) {
-      this.events.emit('transaction.deleted', { userId, transaction: leg });
+      await this.events.emitAsync('transaction.deleted', { userId, transaction: leg });
     }
   }
 
@@ -365,8 +371,8 @@ export class TransactionsService {
       return [outLeg, inLeg];
     });
 
-    this.events.emit('transaction.created', { userId, transaction: fromLeg });
-    this.events.emit('transaction.created', { userId, transaction: toLeg });
+    await this.events.emitAsync('transaction.created', { userId, transaction: fromLeg });
+    await this.events.emitAsync('transaction.created', { userId, transaction: toLeg });
     return { fromLeg, toLeg };
   }
 

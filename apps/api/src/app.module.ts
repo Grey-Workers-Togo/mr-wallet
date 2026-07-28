@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { validateEnv } from './common/config/env.schema';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -18,11 +19,15 @@ import { RulesModule } from './modules/rules/rules.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { ImportModule } from './modules/import/import.module';
 import { ExportModule } from './modules/export/export.module';
+import { RecurrenceModule } from './modules/recurrence/recurrence.module';
+import { BudgetsModule } from './modules/budgets/budgets.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -34,6 +39,9 @@ import { ExportModule } from './modules/export/export.module';
     TransactionsModule,
     ImportModule,
     ExportModule,
+    RecurrenceModule,
+    BudgetsModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

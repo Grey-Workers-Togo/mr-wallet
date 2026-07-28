@@ -98,14 +98,14 @@ categories   → (aucune)
 accounts     → money, currency
 transactions → money, accounts, categories
 recurrence   → transactions
-budgets      → transactions, categories, money
+budgets      → transactions, categories, money, users
 debts        → money, accounts
 goals        → money, accounts, transactions
 import       → transactions, accounts
 export       → transactions, accounts, categories, tags, budgets, debts, goals
 reporting    → transactions, accounts, debts, currency
 forecasting  → recurrence, debts, transactions, reporting
-notifications→ budgets, debts, goals
+notifications→ budgets, debts, goals, recurrence
 ```
 
 Toute dépendance absente de cette liste doit être ajoutée ici avant d'être codée, et vérifiée acyclique.
