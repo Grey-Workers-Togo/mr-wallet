@@ -14,7 +14,7 @@ export class CurrencyService {
     return this.prisma.currency.findMany({ where: { isActive: true }, orderBy: { code: 'asc' } });
   }
 
-  private async getMinorUnits(code: string): Promise<number> {
+  async getMinorUnits(code: string): Promise<number> {
     const currency = await this.prisma.currency.findUnique({ where: { code } });
     if (!currency) {
       throw new NotFoundAppError('CURRENCY_NOT_FOUND', { code });

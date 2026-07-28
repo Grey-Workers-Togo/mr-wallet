@@ -42,6 +42,12 @@ interface DebtPaidOffPayload {
   debtName: string;
 }
 
+interface GoalReachedPayload {
+  userId: string;
+  goalId: string;
+  goalName: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -197,6 +203,22 @@ export class NotificationsService {
       });
     } catch (error) {
       this.logger.warn(`Failed to create paid-off notification for debt ${payload.debtId}: ${error}`);
+    }
+  }
+
+  @OnEvent('goal.reached')
+  async onGoalReached(payload: GoalReachedPayload): Promise<void> {
+    try {
+      await this.create({
+        userId: payload.userId,
+        type: 'GOAL_REACHED',
+        params: { goalName: payload.goalName },
+        entityType: 'SavingsGoal',
+        entityId: payload.goalId,
+        severity: 'INFO',
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to create goal-reached notification for goal ${payload.goalId}: ${error}`);
     }
   }
 

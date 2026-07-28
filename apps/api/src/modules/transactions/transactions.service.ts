@@ -409,6 +409,23 @@ export class TransactionsService {
     return this.prisma.transaction.findMany({ where: { userId, importBatchId } });
   }
 
+  /** docs/04 §I: monthly totals of non-recurring EXPENSE, one bucket per full past month — feeds `forecasting`. */
+  async monthlyNonRecurringExpenseTotals(userId: string, monthsBack: number): Promise<{ month: string; amountMinor: bigint; currency: string }[]> {
+    const now = new Date();
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthsBack, 1));
+    const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // `pg` returns NUMERIC/BIGINT aggregates as strings, never as JS bigint — cast explicitly.
+    const rows = await this.prisma.$queryRaw<{ month: Date; amountMinor: string; currency: string }[]>(Prisma.sql`
+      SELECT date_trunc('month', "occurredAt") AS month, "currency" AS currency, SUM("amountMinor")::text AS "amountMinor"
+      FROM "Transaction"
+      WHERE "userId" = ${userId} AND "deletedAt" IS NULL AND "transferGroupId" IS NULL AND "recurrenceId" IS NULL
+        AND "type" = 'EXPENSE' AND "occurredAt" >= ${from} AND "occurredAt" < ${to}
+      GROUP BY month, "currency"
+      ORDER BY month ASC
+    `);
+    return rows.map((r) => ({ month: r.month.toISOString().slice(0, 7), amountMinor: BigInt(r.amountMinor), currency: r.currency }));
+  }
+
   /** RG-T5: transfer legs (`transferGroupId` set) are excluded from spend/income totals. */
   async summary(userId: string, from?: Date, to?: Date) {
     const where: Prisma.TransactionWhereInput = {

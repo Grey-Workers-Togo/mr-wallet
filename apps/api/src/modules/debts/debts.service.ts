@@ -363,6 +363,20 @@ export class DebtsService {
     };
   }
 
+  /** docs/04 §I: scheduled installments due before `until`, for `forecasting`. */
+  async upcomingInstallments(userId: string, until: Date) {
+    const installments = await this.prisma.debtInstallment.findMany({
+      where: { userId, status: { in: ['SCHEDULED', 'LATE'] }, dueOn: { lte: until } },
+    });
+    const debts = await this.prisma.debt.findMany({ where: { userId, deletedAt: null } });
+    const currencyByDebt = new Map(debts.map((d) => [d.id, d.currency]));
+    return installments.map((installment) => ({
+      dueOn: installment.dueOn,
+      totalMinor: installment.totalMinor,
+      currency: currencyByDebt.get(installment.debtId) ?? 'XOF',
+    }));
+  }
+
   /** RG-D10: `OWED_TO_ME` is an asset, `OWED_BY_ME` a liability — grouped by currency. */
   async summary(userId: string) {
     const debts = await this.prisma.debt.findMany({ where: { userId, deletedAt: null, status: 'ACTIVE' } });

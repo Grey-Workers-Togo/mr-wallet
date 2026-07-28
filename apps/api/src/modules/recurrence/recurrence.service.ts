@@ -193,6 +193,30 @@ export class RecurrenceService {
     return results.sort((a, b) => a.occurrenceDate.getTime() - b.occurrenceDate.getTime());
   }
 
+  /** docs/04 §I: recurring income/expense occurrences with their amount, for `forecasting`. */
+  async forecastOccurrences(userId: string, until: Date) {
+    const rules = await this.prisma.recurrenceRule.findMany({ where: { userId, isActive: true, deletedAt: null } });
+    const results: { type: 'EXPENSE' | 'INCOME' | 'TRANSFER'; amountMinor: bigint; currency: string; occurrenceDate: Date }[] = [];
+    for (const rule of rules) {
+      const skipped = new Set(rule.skippedOccurrences.map((d) => d.toISOString()));
+      const occurrences = computeOccurrences(
+        {
+          startsOn: rule.startsOn,
+          endsOn: rule.endsOn,
+          frequency: rule.frequency,
+          interval: rule.interval,
+          dayOfMonth: rule.dayOfMonth,
+          maxOccurrences: rule.maxOccurrences,
+        },
+        until,
+      ).filter((date) => date.getTime() >= Date.now() && !skipped.has(date.toISOString()));
+      for (const occurrenceDate of occurrences) {
+        results.push({ type: rule.type, amountMinor: rule.amountMinor, currency: rule.currency, occurrenceDate });
+      }
+    }
+    return results;
+  }
+
   /** RG-N: rules whose next occurrence falls within their own `reminderDaysBefore` window — feeds `RECURRENCE_DUE` notifications. */
   async dueForReminders(now: Date = new Date()) {
     const rules = await this.prisma.recurrenceRule.findMany({ where: { isActive: true, deletedAt: null } });

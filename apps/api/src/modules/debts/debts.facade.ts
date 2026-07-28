@@ -13,4 +13,8 @@ export class DebtsFacade {
   summary(userId: string) {
     return this.debtsService.summary(userId);
   }
+
+  upcomingInstallments(userId: string, until: Date) {
+    return this.debtsService.upcomingInstallments(userId, until);
+  }
 }

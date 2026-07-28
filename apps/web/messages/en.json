@@ -226,6 +226,42 @@
       "SKIPPED": "Skipped"
     }
   },
+  "goals": {
+    "title": "Goals",
+    "create": "Add a goal",
+    "empty": "No goals yet.",
+    "nameLabel": "Name",
+    "targetLabel": "Target amount",
+    "targetDateLabel": "Target date",
+    "submit": "Create goal",
+    "delete": "Delete",
+    "contribute": "Add a contribution",
+    "progress": "Progress",
+    "requiredMonthly": "Required monthly savings",
+    "overdue": "Behind schedule",
+    "status": {
+      "ACTIVE": "In progress",
+      "COMPLETED": "Reached",
+      "ABANDONED": "Abandoned"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "dashboard": "Dashboard",
+    "netWorth": "Net worth",
+    "spendingByCategory": "Spending by category",
+    "monthlySummary": "Monthly summary",
+    "budgetVsActual": "Budget vs actual",
+    "topTransactions": "Top expenses"
+  },
+  "forecast": {
+    "title": "Forecast",
+    "cashflow": "Projected cashflow",
+    "netWorth": "Projected net worth",
+    "cashWarning": "Projected balance is negative",
+    "historyIncomplete": "Not enough history to estimate non-recurring expenses.",
+    "disclaimer": "These projections are estimates based on history, not guaranteed predictions."
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications yet.",
@@ -298,6 +334,11 @@
     "DEBT_PAYMENT_NOT_FOUND": "Payment not found.",
     "DEBT_PAYMENT_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
     "DEBT_PAYMENT_EXCEEDS_OUTSTANDING": "The amount exceeds the outstanding principal.",
-    "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "The amount exceeds what remains due on this installment."
+    "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "The amount exceeds what remains due on this installment.",
+    "GOAL_NOT_FOUND": "Goal not found.",
+    "GOAL_NO_LINKED_ACCOUNT": "This goal has no linked account to receive a transfer.",
+    "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
+    "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution not found.",
+    "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion."
   }
 }

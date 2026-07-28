@@ -103,7 +103,7 @@ debts        → money, accounts, transactions
 goals        → money, accounts, transactions
 import       → transactions, accounts
 export       → transactions, accounts, categories, tags, budgets, debts, goals
-reporting    → transactions, accounts, debts, currency
+reporting    → transactions, accounts, debts, currency, budgets
 forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
 ```
