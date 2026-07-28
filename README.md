@@ -2,7 +2,7 @@
 
 Application de gestion de finances personnelles : suivi des dépenses, budgets, dettes, objectifs d'épargne et prévisions.
 
-> **Statut : phase de conception.** Aucun code n'est encore écrit. Ce dépôt contient pour l'instant la documentation complète du projet, destinée à servir de cahier des charges pour l'implémentation.
+> **Statut : Lot 0 (fondations) en cours d'implémentation.** Monorepo, kernel `money`, schéma Prisma, socle NestJS (audit, erreurs, i18n) posés. Voir [docs/09-roadmap.md](docs/09-roadmap.md).
 
 ---
 
@@ -72,3 +72,22 @@ Les justifications de ces choix sont dans [docs/02-architecture.md](docs/02-arch
 Comptes multiples · Transactions & catégories · Transactions récurrentes · Budgets avec alertes · Dettes avec échéancier · Objectifs d'épargne · Import CSV/Excel avec dédoublonnage · Export CSV/Excel · Tableau de bord patrimoine net · Prévisions de trésorerie · Rapports & graphiques · Journal d'audit.
 
 Le détail du séquencement est dans [docs/09-roadmap.md](docs/09-roadmap.md).
+
+## Démarrage local
+
+```bash
+npm install
+docker compose up -d postgres
+cp apps/api/.env.example apps/api/.env   # ajuster JWT_SECRET / IP_HASH_SALT
+
+# Première migration (génère apps/api/prisma/migrations/) :
+npm run prisma:migrate -w apps/api -- --name init
+# Puis, une fois seulement, ajouter le trigger d'immuabilité de AuditLog :
+# npm run prisma:migrate -w apps/api -- --create-only --name add_audit_log_immutability
+# et coller le contenu de apps/api/prisma/sql/audit_log_immutable.sql dans le migration.sql généré.
+
+npm run dev:api   # NestJS sur :3000
+npm run dev:web   # Next.js sur :3000 (adapter les ports en local)
+npm run test       # money kernel + tests unitaires
+npm run lint && npm run typecheck
+```
