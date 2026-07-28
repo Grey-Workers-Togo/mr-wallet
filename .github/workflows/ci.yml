@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: budget_manager
+          POSTGRES_PASSWORD: budget_manager
+          POSTGRES_DB: budget_manager
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U budget_manager"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://budget_manager:budget_manager@localhost:5432/budget_manager?schema=public
+      JWT_SECRET: ci-test-secret
+      IP_HASH_SALT: ci-test-salt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Prisma migrate deploy
+        run: npm run prisma:migrate:deploy -w apps/api
+
+      - name: Test
+        run: npm run test
+
+      - name: i18n key parity (fr/en)
+        run: npm run i18n:check -w apps/web
