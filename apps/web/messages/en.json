@@ -51,6 +51,103 @@
       "OTHER": "Other"
     }
   },
+  "categories": {
+    "title": "Categories",
+    "create": "Add a category",
+    "empty": "No categories yet.",
+    "nameLabel": "Name",
+    "kindLabel": "Kind",
+    "parentLabel": "Parent category",
+    "noParent": "No parent (top-level)",
+    "submit": "Create category",
+    "delete": "Delete",
+    "system": "System",
+    "kind": {
+      "EXPENSE": "Expense",
+      "INCOME": "Income",
+      "TRANSFER": "Transfer"
+    }
+  },
+  "category": {
+    "type": {
+      "category.expense.food": "Food",
+      "category.expense.housing": "Housing",
+      "category.expense.transport": "Transport",
+      "category.expense.utilities": "Utilities",
+      "category.expense.health": "Health",
+      "category.expense.education": "Education",
+      "category.expense.leisure": "Leisure",
+      "category.expense.clothing": "Clothing",
+      "category.expense.communication": "Communication",
+      "category.expense.insurance": "Insurance",
+      "category.expense.debt_payment": "Debt payment",
+      "category.expense.gifts_donations": "Gifts & donations",
+      "category.expense.personal_care": "Personal care",
+      "category.expense.subscriptions": "Subscriptions",
+      "category.expense.taxes": "Taxes",
+      "category.expense.other_expense": "Other expenses",
+      "category.income.salary": "Salary",
+      "category.income.business": "Business income",
+      "category.income.investments": "Investments",
+      "category.income.gifts_received": "Gifts received",
+      "category.income.refunds": "Refunds",
+      "category.income.rental_income": "Rental income",
+      "category.income.side_hustle": "Side hustle",
+      "category.income.other_income": "Other income"
+    }
+  },
+  "tags": {
+    "title": "Tags",
+    "create": "Add a tag",
+    "empty": "No tags yet.",
+    "nameLabel": "Name",
+    "submit": "Create tag",
+    "delete": "Delete"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "create": "Add a transaction",
+    "empty": "No transactions yet.",
+    "typeLabel": "Type",
+    "accountLabel": "Account",
+    "amountLabel": "Amount",
+    "occurredAtLabel": "Date",
+    "descriptionLabel": "Description",
+    "categoryLabel": "Category",
+    "noCategory": "No category",
+    "submit": "Add transaction",
+    "delete": "Delete",
+    "edit": "Edit",
+    "transferTitle": "Transfer between accounts",
+    "fromAccountLabel": "From account",
+    "toAccountLabel": "To account",
+    "transferSubmit": "Transfer",
+    "type": {
+      "EXPENSE": "Expense",
+      "INCOME": "Income"
+    }
+  },
+  "import": {
+    "title": "Import a statement",
+    "fileLabel": "File (CSV, XLSX)",
+    "accountLabel": "Target account",
+    "dateFormatLabel": "Date format",
+    "submit": "Upload and analyze",
+    "toImport": "To import",
+    "duplicates": "Duplicates",
+    "errors": "Errors",
+    "commit": "Confirm import",
+    "cancel": "Cancel",
+    "batches": "Past imports",
+    "revert": "Undo",
+    "empty": "No imports yet."
+  },
+  "export": {
+    "title": "Export",
+    "transactionsCsv": "Export transactions (CSV)",
+    "transactionsXlsx": "Export transactions (XLSX)",
+    "full": "Full export (ZIP)"
+  },
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",
@@ -62,6 +159,33 @@
     "EMAIL_ALREADY_REGISTERED": "This email address is already in use.",
     "PASSWORD_TOO_WEAK": "Password must be at least 12 characters long.",
     "CURRENCY_UNKNOWN": "Unknown currency.",
-    "LOGIN_LOCKED": "Too many attempts, try again later."
+    "LOGIN_LOCKED": "Too many attempts, try again later.",
+    "CATEGORY_NOT_FOUND": "Category not found.",
+    "CATEGORY_NAME_TAKEN": "A category with this name already exists.",
+    "CATEGORY_MAX_DEPTH_EXCEEDED": "A sub-category cannot have children.",
+    "CATEGORY_KIND_MISMATCH": "The category kind does not match.",
+    "CATEGORY_SYSTEM_NOT_DELETABLE": "A system category cannot be deleted.",
+    "CATEGORY_REASSIGN_REQUIRED": "This category is in use — choose a category to reassign its transactions to.",
+    "TAG_NOT_FOUND": "Tag not found.",
+    "TAG_NAME_TAKEN": "A tag with this name already exists.",
+    "RULE_NOT_FOUND": "Categorization rule not found.",
+    "TRANSACTION_NOT_FOUND": "Transaction not found.",
+    "TRANSACTION_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
+    "TRANSACTION_DATE_BEFORE_OPENING_BALANCE": "The date cannot be earlier than the account's opening balance date.",
+    "TRANSACTION_DATE_TOO_FAR_IN_FUTURE": "The date is too far in the future.",
+    "TRANSACTION_IS_TRANSFER_LEG": "This transaction is part of a transfer and cannot be edited directly.",
+    "TRANSACTION_LINKED_TO_DEBT_PAYMENT": "This transaction is linked to a debt payment and cannot be deleted directly.",
+    "ACCOUNT_NOT_FOUND": "Account not found.",
+    "ACCOUNT_HAS_TRANSACTIONS": "This account still has transactions and cannot be deleted.",
+    "IMPORT_SOURCE_NOT_FOUND": "Import source not found.",
+    "IMPORT_BATCH_NOT_FOUND": "Import batch not found.",
+    "IMPORT_FILE_REQUIRED": "A file is required.",
+    "IMPORT_PAYLOAD_INVALID_JSON": "Invalid upload payload.",
+    "IMPORT_FILE_ALREADY_IMPORTED": "This file has already been imported.",
+    "IMPORT_FILE_EMPTY_OR_UNPARSEABLE": "The file is empty or could not be read.",
+    "IMPORT_PREVIEW_EXPIRED": "This import preview is no longer available — please upload the file again.",
+    "IMPORT_BATCH_NOT_REVERTIBLE": "This import cannot be undone.",
+    "IMPORT_BATCH_HAS_MODIFIED_TRANSACTIONS": "Some transactions from this import were edited since — undo refused.",
+    "CURRENCY_NOT_FOUND": "Unknown currency."
   }
 }

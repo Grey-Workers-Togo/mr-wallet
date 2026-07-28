@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
 import { UsersFacade } from '../users/users.facade';
+import { CategoriesFacade } from '../categories/categories.facade';
 import { hashPassword, isPasswordAcceptable, verifyPassword } from './domain/password';
 import { generateRefreshToken, hashRefreshToken, refreshTokenMatches } from './domain/refresh-token';
 import { signAccessToken } from '../../common/auth/jwt.util';
@@ -24,6 +25,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly users: UsersFacade,
+    private readonly categories: CategoriesFacade,
     private readonly config: ConfigService,
   ) {}
 
@@ -57,6 +59,7 @@ export class AuthService {
       baseCurrency: dto.baseCurrency,
       timezone: dto.timezone,
     });
+    await this.categories.seedSystemDefaults(user.id);
 
     return this.createSessionAndTokens(user.id, user.email, null, null);
   }

@@ -51,6 +51,103 @@
       "OTHER": "Autre"
     }
   },
+  "categories": {
+    "title": "Catégories",
+    "create": "Ajouter une catégorie",
+    "empty": "Aucune catégorie pour l'instant.",
+    "nameLabel": "Nom",
+    "kindLabel": "Type",
+    "parentLabel": "Catégorie parente",
+    "noParent": "Aucun parent (niveau principal)",
+    "submit": "Créer la catégorie",
+    "delete": "Supprimer",
+    "system": "Système",
+    "kind": {
+      "EXPENSE": "Dépense",
+      "INCOME": "Revenu",
+      "TRANSFER": "Transfert"
+    }
+  },
+  "category": {
+    "type": {
+      "category.expense.food": "Alimentation",
+      "category.expense.housing": "Logement",
+      "category.expense.transport": "Transport",
+      "category.expense.utilities": "Factures",
+      "category.expense.health": "Santé",
+      "category.expense.education": "Éducation",
+      "category.expense.leisure": "Loisirs",
+      "category.expense.clothing": "Habillement",
+      "category.expense.communication": "Communication",
+      "category.expense.insurance": "Assurance",
+      "category.expense.debt_payment": "Remboursement de dette",
+      "category.expense.gifts_donations": "Cadeaux et dons",
+      "category.expense.personal_care": "Soins personnels",
+      "category.expense.subscriptions": "Abonnements",
+      "category.expense.taxes": "Impôts et taxes",
+      "category.expense.other_expense": "Autres dépenses",
+      "category.income.salary": "Salaire",
+      "category.income.business": "Revenus d'entreprise",
+      "category.income.investments": "Investissements",
+      "category.income.gifts_received": "Cadeaux reçus",
+      "category.income.refunds": "Remboursements",
+      "category.income.rental_income": "Revenus locatifs",
+      "category.income.side_hustle": "Activité annexe",
+      "category.income.other_income": "Autres revenus"
+    }
+  },
+  "tags": {
+    "title": "Étiquettes",
+    "create": "Ajouter une étiquette",
+    "empty": "Aucune étiquette pour l'instant.",
+    "nameLabel": "Nom",
+    "submit": "Créer l'étiquette",
+    "delete": "Supprimer"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "create": "Ajouter une transaction",
+    "empty": "Aucune transaction pour l'instant.",
+    "typeLabel": "Type",
+    "accountLabel": "Compte",
+    "amountLabel": "Montant",
+    "occurredAtLabel": "Date",
+    "descriptionLabel": "Description",
+    "categoryLabel": "Catégorie",
+    "noCategory": "Aucune catégorie",
+    "submit": "Ajouter la transaction",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "transferTitle": "Transfert entre comptes",
+    "fromAccountLabel": "Compte source",
+    "toAccountLabel": "Compte destination",
+    "transferSubmit": "Transférer",
+    "type": {
+      "EXPENSE": "Dépense",
+      "INCOME": "Revenu"
+    }
+  },
+  "import": {
+    "title": "Importer un relevé",
+    "fileLabel": "Fichier (CSV, XLSX)",
+    "accountLabel": "Compte cible",
+    "dateFormatLabel": "Format de date",
+    "submit": "Analyser le fichier",
+    "toImport": "À importer",
+    "duplicates": "Doublons",
+    "errors": "Erreurs",
+    "commit": "Confirmer l'import",
+    "cancel": "Annuler",
+    "batches": "Imports précédents",
+    "revert": "Annuler l'import",
+    "empty": "Aucun import pour l'instant."
+  },
+  "export": {
+    "title": "Export",
+    "transactionsCsv": "Exporter les transactions (CSV)",
+    "transactionsXlsx": "Exporter les transactions (XLSX)",
+    "full": "Export intégral (ZIP)"
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",
@@ -62,6 +159,33 @@
     "EMAIL_ALREADY_REGISTERED": "Cette adresse e-mail est déjà utilisée.",
     "PASSWORD_TOO_WEAK": "Le mot de passe doit contenir au moins 12 caractères.",
     "CURRENCY_UNKNOWN": "Devise inconnue.",
-    "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard."
+    "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard.",
+    "CATEGORY_NOT_FOUND": "Catégorie introuvable.",
+    "CATEGORY_NAME_TAKEN": "Une catégorie avec ce nom existe déjà.",
+    "CATEGORY_MAX_DEPTH_EXCEEDED": "Une sous-catégorie ne peut pas avoir d'enfant.",
+    "CATEGORY_KIND_MISMATCH": "Le type de catégorie ne correspond pas.",
+    "CATEGORY_SYSTEM_NOT_DELETABLE": "Une catégorie système ne peut pas être supprimée.",
+    "CATEGORY_REASSIGN_REQUIRED": "Cette catégorie est utilisée — choisissez une catégorie de réaffectation.",
+    "TAG_NOT_FOUND": "Étiquette introuvable.",
+    "TAG_NAME_TAKEN": "Une étiquette avec ce nom existe déjà.",
+    "RULE_NOT_FOUND": "Règle de catégorisation introuvable.",
+    "TRANSACTION_NOT_FOUND": "Transaction introuvable.",
+    "TRANSACTION_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",
+    "TRANSACTION_DATE_BEFORE_OPENING_BALANCE": "La date ne peut pas être antérieure à la date de solde d'ouverture du compte.",
+    "TRANSACTION_DATE_TOO_FAR_IN_FUTURE": "La date est trop éloignée dans le futur.",
+    "TRANSACTION_IS_TRANSFER_LEG": "Cette transaction fait partie d'un transfert et ne peut pas être modifiée directement.",
+    "TRANSACTION_LINKED_TO_DEBT_PAYMENT": "Cette transaction est liée à un remboursement de dette et ne peut pas être supprimée directement.",
+    "ACCOUNT_NOT_FOUND": "Compte introuvable.",
+    "ACCOUNT_HAS_TRANSACTIONS": "Ce compte contient encore des transactions et ne peut pas être supprimé.",
+    "IMPORT_SOURCE_NOT_FOUND": "Source d'import introuvable.",
+    "IMPORT_BATCH_NOT_FOUND": "Lot d'import introuvable.",
+    "IMPORT_FILE_REQUIRED": "Un fichier est requis.",
+    "IMPORT_PAYLOAD_INVALID_JSON": "Paramètres d'import invalides.",
+    "IMPORT_FILE_ALREADY_IMPORTED": "Ce fichier a déjà été importé.",
+    "IMPORT_FILE_EMPTY_OR_UNPARSEABLE": "Le fichier est vide ou illisible.",
+    "IMPORT_PREVIEW_EXPIRED": "Cet aperçu d'import n'est plus disponible — réimportez le fichier.",
+    "IMPORT_BATCH_NOT_REVERTIBLE": "Cet import ne peut pas être annulé.",
+    "IMPORT_BATCH_HAS_MODIFIED_TRANSACTIONS": "Certaines transactions de ce lot ont été modifiées depuis — annulation refusée.",
+    "CURRENCY_NOT_FOUND": "Devise inconnue."
   }
 }
