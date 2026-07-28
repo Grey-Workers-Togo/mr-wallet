@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Budget Manager",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "home": {
+    "title": "Tableau de bord",
+    "subtitle": "Où va mon argent ce mois-ci ?"
+  },
+  "account": {
+    "type": {
+      "CASH": "Espèces",
+      "BANK": "Compte bancaire",
+      "MOBILE_MONEY": "Mobile money",
+      "CREDIT_CARD": "Carte de crédit",
+      "SAVINGS": "Épargne",
+      "WALLET": "Portefeuille",
+      "OTHER": "Autre"
+    }
+  },
+  "error": {
+    "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
+    "NOT_FOUND": "Ressource introuvable.",
+    "UNAUTHORIZED": "Authentification requise."
+  }
+}

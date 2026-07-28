@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Budget Manager",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "home": {
+    "title": "Dashboard",
+    "subtitle": "Where is my money going this month?"
+  },
+  "account": {
+    "type": {
+      "CASH": "Cash",
+      "BANK": "Bank account",
+      "MOBILE_MONEY": "Mobile money",
+      "CREDIT_CARD": "Credit card",
+      "SAVINGS": "Savings",
+      "WALLET": "Wallet",
+      "OTHER": "Other"
+    }
+  },
+  "error": {
+    "INTERNAL_ERROR": "An unexpected error occurred.",
+    "NOT_FOUND": "Resource not found.",
+    "UNAUTHORIZED": "Authentication required."
+  }
+}
