@@ -148,6 +148,76 @@
     "transactionsXlsx": "Exporter les transactions (XLSX)",
     "full": "Export intégral (ZIP)"
   },
+  "recurrences": {
+    "title": "Récurrences",
+    "create": "Ajouter une récurrence",
+    "empty": "Aucune récurrence pour l'instant.",
+    "nameLabel": "Nom",
+    "accountLabel": "Compte",
+    "amountLabel": "Montant",
+    "frequencyLabel": "Fréquence",
+    "startsOnLabel": "Date de début",
+    "autoCreateLabel": "Création automatique",
+    "submit": "Créer la récurrence",
+    "delete": "Supprimer",
+    "skip": "Ignorer cette occurrence",
+    "materialize": "Confirmer cette occurrence",
+    "upcoming": "Prochaines échéances",
+    "suggestions": "Suggestions détectées",
+    "frequency": {
+      "DAILY": "Quotidien",
+      "WEEKLY": "Hebdomadaire",
+      "BIWEEKLY": "Toutes les 2 semaines",
+      "MONTHLY": "Mensuel",
+      "QUARTERLY": "Trimestriel",
+      "SEMIANNUAL": "Semestriel",
+      "YEARLY": "Annuel"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "create": "Ajouter un budget",
+    "empty": "Aucun budget pour l'instant.",
+    "nameLabel": "Nom",
+    "categoryLabel": "Catégorie",
+    "globalCategory": "Budget global (toutes catégories)",
+    "amountLabel": "Montant",
+    "periodLabel": "Période",
+    "startsOnLabel": "Date de début",
+    "rolloverLabel": "Report du solde",
+    "submit": "Créer le budget",
+    "delete": "Supprimer",
+    "spent": "Dépensé",
+    "remaining": "Restant",
+    "period": {
+      "WEEKLY": "Hebdomadaire",
+      "MONTHLY": "Mensuel",
+      "QUARTERLY": "Trimestriel",
+      "YEARLY": "Annuel",
+      "CUSTOM": "Personnalisé"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification pour l'instant.",
+    "markAllRead": "Tout marquer comme lu",
+    "preferences": "Préférences",
+    "inAppLabel": "Notifications dans l'application",
+    "pushLabel": "Notifications push",
+    "type": {
+      "BUDGET_THRESHOLD": "Budget {budgetName} : {percentUsed}% consommé",
+      "BUDGET_EXCEEDED": "Budget {budgetName} dépassé",
+      "DEBT_DUE_SOON": "Échéance de dette proche",
+      "DEBT_OVERDUE": "Échéance de dette en retard",
+      "DEBT_PAID_OFF": "Dette soldée",
+      "GOAL_REACHED": "Objectif atteint",
+      "RECURRENCE_DUE": "Récurrence {recurrenceName} à venir",
+      "IMPORT_COMPLETED": "Import terminé",
+      "IMPORT_FAILED": "Échec de l'import",
+      "BALANCE_MISMATCH": "Écart de solde détecté",
+      "UNKNOWN": "Notification"
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",
@@ -186,6 +256,11 @@
     "IMPORT_PREVIEW_EXPIRED": "Cet aperçu d'import n'est plus disponible — réimportez le fichier.",
     "IMPORT_BATCH_NOT_REVERTIBLE": "Cet import ne peut pas être annulé.",
     "IMPORT_BATCH_HAS_MODIFIED_TRANSACTIONS": "Certaines transactions de ce lot ont été modifiées depuis — annulation refusée.",
-    "CURRENCY_NOT_FOUND": "Devise inconnue."
+    "CURRENCY_NOT_FOUND": "Devise inconnue.",
+    "RECURRENCE_NOT_FOUND": "Récurrence introuvable.",
+    "RECURRENCE_OCCURRENCE_ALREADY_MATERIALIZED": "Cette occurrence a déjà été confirmée.",
+    "BUDGET_NOT_FOUND": "Budget introuvable.",
+    "BUDGET_PERIOD_NOT_FOUND": "Période budgétaire introuvable.",
+    "BUDGET_CATEGORY_OVERLAP": "Un budget actif existe déjà sur cette catégorie pour une période qui chevauche."
   }
 }

@@ -148,6 +148,76 @@
     "transactionsXlsx": "Export transactions (XLSX)",
     "full": "Full export (ZIP)"
   },
+  "recurrences": {
+    "title": "Recurrences",
+    "create": "Add a recurrence",
+    "empty": "No recurrences yet.",
+    "nameLabel": "Name",
+    "accountLabel": "Account",
+    "amountLabel": "Amount",
+    "frequencyLabel": "Frequency",
+    "startsOnLabel": "Start date",
+    "autoCreateLabel": "Auto-create",
+    "submit": "Create recurrence",
+    "delete": "Delete",
+    "skip": "Skip this occurrence",
+    "materialize": "Confirm this occurrence",
+    "upcoming": "Upcoming",
+    "suggestions": "Detected suggestions",
+    "frequency": {
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "BIWEEKLY": "Every 2 weeks",
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "SEMIANNUAL": "Semi-annual",
+      "YEARLY": "Yearly"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "create": "Add a budget",
+    "empty": "No budgets yet.",
+    "nameLabel": "Name",
+    "categoryLabel": "Category",
+    "globalCategory": "Global budget (all categories)",
+    "amountLabel": "Amount",
+    "periodLabel": "Period",
+    "startsOnLabel": "Start date",
+    "rolloverLabel": "Roll over balance",
+    "submit": "Create budget",
+    "delete": "Delete",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "period": {
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "YEARLY": "Yearly",
+      "CUSTOM": "Custom"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all as read",
+    "preferences": "Preferences",
+    "inAppLabel": "In-app notifications",
+    "pushLabel": "Push notifications",
+    "type": {
+      "BUDGET_THRESHOLD": "Budget {budgetName}: {percentUsed}% used",
+      "BUDGET_EXCEEDED": "Budget {budgetName} exceeded",
+      "DEBT_DUE_SOON": "Debt payment due soon",
+      "DEBT_OVERDUE": "Debt payment overdue",
+      "DEBT_PAID_OFF": "Debt paid off",
+      "GOAL_REACHED": "Goal reached",
+      "RECURRENCE_DUE": "Recurrence {recurrenceName} coming up",
+      "IMPORT_COMPLETED": "Import completed",
+      "IMPORT_FAILED": "Import failed",
+      "BALANCE_MISMATCH": "Balance mismatch detected",
+      "UNKNOWN": "Notification"
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",
@@ -186,6 +256,11 @@
     "IMPORT_PREVIEW_EXPIRED": "This import preview is no longer available — please upload the file again.",
     "IMPORT_BATCH_NOT_REVERTIBLE": "This import cannot be undone.",
     "IMPORT_BATCH_HAS_MODIFIED_TRANSACTIONS": "Some transactions from this import were edited since — undo refused.",
-    "CURRENCY_NOT_FOUND": "Unknown currency."
+    "CURRENCY_NOT_FOUND": "Unknown currency.",
+    "RECURRENCE_NOT_FOUND": "Recurrence not found.",
+    "RECURRENCE_OCCURRENCE_ALREADY_MATERIALIZED": "This occurrence has already been confirmed.",
+    "BUDGET_NOT_FOUND": "Budget not found.",
+    "BUDGET_PERIOD_NOT_FOUND": "Budget period not found.",
+    "BUDGET_CATEGORY_OVERLAP": "An active budget already targets this category over an overlapping period."
   }
 }

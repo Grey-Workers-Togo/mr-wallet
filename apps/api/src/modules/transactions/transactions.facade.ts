@@ -16,6 +16,11 @@ export class TransactionsFacade {
     return this.transactionsService.create(userId, dto, { source: 'IMPORT', importBatchId, externalRef });
   }
 
+  /** RG-R4: recurrence materialization never writes to the DB directly — always through this facade. */
+  createFromRecurrence(userId: string, dto: CreateTransactionDto, recurrenceId: string) {
+    return this.transactionsService.create(userId, dto, { source: 'RECURRENCE', recurrenceId });
+  }
+
   listForDedupe(userId: string, accountIds: string[]) {
     return this.transactionsService.listForDedupe(userId, accountIds);
   }

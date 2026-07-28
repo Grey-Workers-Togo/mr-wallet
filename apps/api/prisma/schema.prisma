@@ -263,6 +263,7 @@ model RecurrenceRule {
   reminderDaysBefore Int?            @default(3)
   lastGeneratedAt    DateTime?       @db.Timestamptz(6)
   isActive           Boolean         @default(true)
+  skippedOccurrences DateTime[]      @db.Timestamptz(6)
 
   createdAt          DateTime        @default(now()) @db.Timestamptz(6)
   updatedAt          DateTime        @updatedAt @db.Timestamptz(6)

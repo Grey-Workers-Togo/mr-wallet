@@ -137,6 +137,12 @@ export class CategoriesService {
     });
   }
 
+  /** RG-B2: a budget on a parent category counts spending across its children too. */
+  async descendantIds(userId: string, categoryId: string): Promise<string[]> {
+    const children = await this.prisma.category.findMany({ where: { userId, parentId: categoryId }, select: { id: true } });
+    return [categoryId, ...children.map((c) => c.id)];
+  }
+
   async reorder(userId: string, dto: ReorderCategoriesDto) {
     await this.prisma.$transaction(
       dto.ids.map((id, index) =>

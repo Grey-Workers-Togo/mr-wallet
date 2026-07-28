@@ -21,4 +21,8 @@ export class CategoriesFacade {
   resolveName(category: { name: string | null; i18nKey: string | null }, locale: 'fr' | 'en') {
     return this.categoriesService.resolveName(category, locale);
   }
+
+  descendantIds(userId: string, categoryId: string) {
+    return this.categoriesService.descendantIds(userId, categoryId);
+  }
 }
