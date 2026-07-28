@@ -23,6 +23,9 @@ import { RecurrenceModule } from './modules/recurrence/recurrence.module';
 import { BudgetsModule } from './modules/budgets/budgets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DebtsModule } from './modules/debts/debts.module';
+import { GoalsModule } from './modules/goals/goals.module';
+import { ReportingModule } from './modules/reporting/reporting.module';
+import { ForecastingModule } from './modules/forecasting/forecasting.module';
 
 @Module({
   imports: [
@@ -44,6 +47,9 @@ import { DebtsModule } from './modules/debts/debts.module';
     BudgetsModule,
     NotificationsModule,
     DebtsModule,
+    GoalsModule,
+    ReportingModule,
+    ForecastingModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto } from './dto/transaction.dto';
+import { CreateTransactionDto, CreateTransferDto } from './dto/transaction.dto';
 
 /** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`. */
 @Injectable()
@@ -43,7 +43,16 @@ export class TransactionsFacade {
     return this.transactionsService.remove(userId, id);
   }
 
+  /** RG-G5: a goal contribution may generate a real transfer to the linked savings account. */
+  transfer(userId: string, dto: CreateTransferDto) {
+    return this.transactionsService.transfer(userId, dto);
+  }
+
   listAllForExport(userId: string, filters: { accountId?: string; from?: Date; to?: Date }) {
     return this.transactionsService.listAllForExport(userId, filters);
+  }
+
+  monthlyNonRecurringExpenseTotals(userId: string, monthsBack: number) {
+    return this.transactionsService.monthlyNonRecurringExpenseTotals(userId, monthsBack);
   }
 }
