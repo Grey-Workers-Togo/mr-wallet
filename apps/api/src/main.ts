@@ -1,12 +1,16 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { installBigIntJsonSerialization } from './common/bigint-json';
+
+installBigIntJsonSerialization();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.enableCors();
+  app.setGlobalPrefix('api/v1');
+  app.use(cookieParser());
+  app.enableCors({ origin: true, credentials: true });
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 }
