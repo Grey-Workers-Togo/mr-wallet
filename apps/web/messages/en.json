@@ -2,11 +2,43 @@
   "common": {
     "appName": "Budget Manager",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "loading": "Loading..."
   },
   "home": {
     "title": "Dashboard",
     "subtitle": "Where is my money going this month?"
+  },
+  "auth": {
+    "register": {
+      "title": "Create an account",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "baseCurrencyLabel": "Base currency",
+      "submit": "Sign up",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Log in"
+    },
+    "login": {
+      "title": "Log in",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "submit": "Log in",
+      "noAccount": "No account yet?",
+      "registerLink": "Sign up"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "create": "Add an account",
+    "empty": "No accounts yet.",
+    "nameLabel": "Name",
+    "typeLabel": "Type",
+    "currencyLabel": "Currency",
+    "openingBalanceLabel": "Opening balance",
+    "openingBalanceAtLabel": "Opening balance date",
+    "submit": "Create account"
   },
   "account": {
     "type": {
@@ -22,6 +54,14 @@
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",
-    "UNAUTHORIZED": "Authentication required."
+    "UNAUTHORIZED": "Authentication required.",
+    "BAD_REQUEST": "Invalid request.",
+    "CONFLICT": "Conflict.",
+    "VALIDATION_FAILED": "Some fields are invalid.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "EMAIL_ALREADY_REGISTERED": "This email address is already in use.",
+    "PASSWORD_TOO_WEAK": "Password must be at least 12 characters long.",
+    "CURRENCY_UNKNOWN": "Unknown currency.",
+    "LOGIN_LOCKED": "Too many attempts, try again later."
   }
 }

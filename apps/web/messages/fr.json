@@ -2,11 +2,43 @@
   "common": {
     "appName": "Budget Manager",
     "save": "Enregistrer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "submit": "Valider",
+    "loading": "Chargement..."
   },
   "home": {
     "title": "Tableau de bord",
     "subtitle": "Où va mon argent ce mois-ci ?"
+  },
+  "auth": {
+    "register": {
+      "title": "Créer un compte",
+      "emailLabel": "Adresse e-mail",
+      "passwordLabel": "Mot de passe",
+      "baseCurrencyLabel": "Devise de référence",
+      "submit": "S'inscrire",
+      "alreadyHaveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter"
+    },
+    "login": {
+      "title": "Connexion",
+      "emailLabel": "Adresse e-mail",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire"
+    }
+  },
+  "accounts": {
+    "title": "Comptes",
+    "create": "Ajouter un compte",
+    "empty": "Aucun compte pour l'instant.",
+    "nameLabel": "Nom",
+    "typeLabel": "Type",
+    "currencyLabel": "Devise",
+    "openingBalanceLabel": "Solde d'ouverture",
+    "openingBalanceAtLabel": "Date du solde d'ouverture",
+    "submit": "Créer le compte"
   },
   "account": {
     "type": {
@@ -22,6 +54,14 @@
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",
-    "UNAUTHORIZED": "Authentification requise."
+    "UNAUTHORIZED": "Authentification requise.",
+    "BAD_REQUEST": "Requête invalide.",
+    "CONFLICT": "Conflit.",
+    "VALIDATION_FAILED": "Certains champs sont invalides.",
+    "INVALID_CREDENTIALS": "E-mail ou mot de passe incorrect.",
+    "EMAIL_ALREADY_REGISTERED": "Cette adresse e-mail est déjà utilisée.",
+    "PASSWORD_TOO_WEAK": "Le mot de passe doit contenir au moins 12 caractères.",
+    "CURRENCY_UNKNOWN": "Devise inconnue.",
+    "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard."
   }
 }
