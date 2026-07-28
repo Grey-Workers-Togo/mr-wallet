@@ -13,4 +13,8 @@ export class RecurrenceFacade {
   dueForReminders(now?: Date) {
     return this.recurrenceService.dueForReminders(now);
   }
+
+  forecastOccurrences(userId: string, until: Date) {
+    return this.recurrenceService.forecastOccurrences(userId, until);
+  }
 }
