@@ -26,6 +26,7 @@ import { DebtsModule } from './modules/debts/debts.module';
 import { GoalsModule } from './modules/goals/goals.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { ForecastingModule } from './modules/forecasting/forecasting.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ForecastingModule } from './modules/forecasting/forecasting.module';
     GoalsModule,
     ReportingModule,
     ForecastingModule,
+    AuditLogModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

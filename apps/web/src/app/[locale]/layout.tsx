@@ -1,11 +1,26 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
+import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { PinLockGate } from '@/components/PinLockGate';
 import type { ReactNode } from 'react';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+export const metadata: Metadata = {
+  title: 'Budget Manager',
+  manifest: '/manifest.json',
+  icons: [{ rel: 'icon', url: '/icon.svg' }],
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0f766e',
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export default async function LocaleLayout({
   children,
@@ -22,7 +37,11 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <ServiceWorkerRegistration />
+          <PinLockGate />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

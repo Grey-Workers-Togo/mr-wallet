@@ -21,6 +21,8 @@ model User {
   timezone        String    @default("Africa/Porto-Novo")
   weekStartsOn    Int       @default(1)
   monthStartDay   Int       @default(1)
+  pinHash         String?
+  pinLockMinutes  Int       @default(5)
   emailVerifiedAt DateTime? @db.Timestamptz(6)
   lastLoginAt     DateTime? @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @db.Timestamptz(6)

@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -22,7 +23,7 @@ describe('notifications', () => {
     new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2()),
   );
   const recurrenceFacade = new RecurrenceFacade(new RecurrenceService(prisma, transactionsFacade));
-  const service = new NotificationsService(prisma, recurrenceFacade);
+  const service = new NotificationsService(prisma, recurrenceFacade, new ConfigService());
 
   let userId: string;
 
@@ -71,5 +72,29 @@ describe('notifications', () => {
     await service.create({ userId, type: 'BUDGET_EXCEEDED', params: {}, entityType: 'BudgetPeriod', entityId: 'period-2' });
     const list = await service.list(userId, false);
     expect(list.find((n) => n.type === 'BUDGET_EXCEEDED')).toBeUndefined();
+  });
+
+  it('subscribes a device, lists it, then removes it — scoped to the owner', async () => {
+    const other = await prisma.user.create({ data: { email: `notif-other-${Date.now()}@example.com`, passwordHash: 'x', baseCurrency: 'EUR' } });
+
+    const device = await service.subscribe(userId, {
+      endpoint: `https://push.example.com/${Date.now()}`,
+      p256dhKey: 'p256dh',
+      authKey: 'auth',
+    });
+
+    const ownDevices = await service.listDevices(userId);
+    expect(ownDevices.some((d) => d.id === device.id)).toBe(true);
+
+    const otherDevices = await service.listDevices(other.id);
+    expect(otherDevices).toHaveLength(0);
+
+    await expect(service.removeDevice(other.id, device.id)).rejects.toThrow();
+
+    await service.removeDevice(userId, device.id);
+    const afterRemoval = await service.listDevices(userId);
+    expect(afterRemoval.some((d) => d.id === device.id)).toBe(false);
+
+    await prisma.user.deleteMany({ where: { id: other.id } });
   });
 });

@@ -70,30 +70,30 @@
   },
   "category": {
     "type": {
-      "category.expense.food": "Alimentation",
-      "category.expense.housing": "Logement",
-      "category.expense.transport": "Transport",
-      "category.expense.utilities": "Factures",
-      "category.expense.health": "Santé",
-      "category.expense.education": "Éducation",
-      "category.expense.leisure": "Loisirs",
-      "category.expense.clothing": "Habillement",
-      "category.expense.communication": "Communication",
-      "category.expense.insurance": "Assurance",
-      "category.expense.debt_payment": "Remboursement de dette",
-      "category.expense.gifts_donations": "Cadeaux et dons",
-      "category.expense.personal_care": "Soins personnels",
-      "category.expense.subscriptions": "Abonnements",
-      "category.expense.taxes": "Impôts et taxes",
-      "category.expense.other_expense": "Autres dépenses",
-      "category.income.salary": "Salaire",
-      "category.income.business": "Revenus d'entreprise",
-      "category.income.investments": "Investissements",
-      "category.income.gifts_received": "Cadeaux reçus",
-      "category.income.refunds": "Remboursements",
-      "category.income.rental_income": "Revenus locatifs",
-      "category.income.side_hustle": "Activité annexe",
-      "category.income.other_income": "Autres revenus"
+      "category_expense_food": "Alimentation",
+      "category_expense_housing": "Logement",
+      "category_expense_transport": "Transport",
+      "category_expense_utilities": "Factures",
+      "category_expense_health": "Santé",
+      "category_expense_education": "Éducation",
+      "category_expense_leisure": "Loisirs",
+      "category_expense_clothing": "Habillement",
+      "category_expense_communication": "Communication",
+      "category_expense_insurance": "Assurance",
+      "category_expense_debt_payment": "Remboursement de dette",
+      "category_expense_gifts_donations": "Cadeaux et dons",
+      "category_expense_personal_care": "Soins personnels",
+      "category_expense_subscriptions": "Abonnements",
+      "category_expense_taxes": "Impôts et taxes",
+      "category_expense_other_expense": "Autres dépenses",
+      "category_income_salary": "Salaire",
+      "category_income_business": "Revenus d'entreprise",
+      "category_income_investments": "Investissements",
+      "category_income_gifts_received": "Cadeaux reçus",
+      "category_income_refunds": "Remboursements",
+      "category_income_rental_income": "Revenus locatifs",
+      "category_income_side_hustle": "Activité annexe",
+      "category_income_other_income": "Autres revenus"
     }
   },
   "tags": {
@@ -283,6 +283,37 @@
       "UNKNOWN": "Notification"
     }
   },
+  "pwa": {
+    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour."
+  },
+  "preferences": {
+    "title": "Préférences",
+    "displayNameLabel": "Nom affiché",
+    "baseCurrencyLabel": "Devise de référence",
+    "localeLabel": "Langue",
+    "timezoneLabel": "Fuseau horaire",
+    "weekStartsOnLabel": "Premier jour de la semaine",
+    "monthStartDayLabel": "Jour de début du mois",
+    "save": "Enregistrer",
+    "pinSection": "Verrouillage par code PIN",
+    "pinEnabled": "Code PIN activé",
+    "pinDisabled": "Aucun code PIN défini",
+    "pinLabel": "Code PIN (4 à 8 chiffres)",
+    "pinLockMinutesLabel": "Verrouiller après (minutes d'inactivité)",
+    "setPin": "Définir le code PIN",
+    "removePin": "Supprimer le code PIN",
+    "pinUnlock": "Déverrouiller",
+    "pinLockedWrong": "Code incorrect.",
+    "pushSection": "Appareils pour les notifications push",
+    "pushEmpty": "Aucun appareil enregistré.",
+    "pushEnable": "Activer les notifications sur cet appareil",
+    "pushRemove": "Retirer",
+    "pushTest": "Envoyer une notification de test",
+    "deleteAccountSection": "Supprimer mon compte",
+    "deleteAccount": "Supprimer définitivement mon compte",
+    "exportSection": "Export intégral",
+    "exportFull": "Télécharger toutes mes données"
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",
@@ -339,6 +370,9 @@
     "GOAL_NO_LINKED_ACCOUNT": "Cet objectif n'a pas de compte lié pour recevoir un virement.",
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",
     "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution introuvable.",
-    "EXCHANGE_RATE_UNAVAILABLE": "Aucun taux de change disponible pour cette conversion."
+    "EXCHANGE_RATE_UNAVAILABLE": "Aucun taux de change disponible pour cette conversion.",
+    "PIN_NOT_SET": "Aucun code PIN n'est défini pour ce compte.",
+    "DEVICE_TOKEN_NOT_FOUND": "Cet appareil n'est pas enregistré pour les notifications push.",
+    "OFFLINE_WRITE_DISABLED": "Vous êtes hors ligne — les modifications ne peuvent pas être enregistrées."
   }
 }

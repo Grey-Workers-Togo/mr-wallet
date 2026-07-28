@@ -19,3 +19,20 @@ export const updateBaseCurrencySchema = z
   .strict();
 
 export type UpdateBaseCurrencyDto = z.infer<typeof updateBaseCurrencySchema>;
+
+export const setPinSchema = z
+  .object({
+    pin: z.string().regex(/^\d{4,8}$/),
+    lockMinutes: z.number().int().min(1).max(60).optional(),
+  })
+  .strict();
+
+export type SetPinDto = z.infer<typeof setPinSchema>;
+
+export const verifyPinSchema = z
+  .object({
+    pin: z.string().regex(/^\d{4,8}$/),
+  })
+  .strict();
+
+export type VerifyPinDto = z.infer<typeof verifyPinSchema>;

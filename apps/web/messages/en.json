@@ -70,30 +70,30 @@
   },
   "category": {
     "type": {
-      "category.expense.food": "Food",
-      "category.expense.housing": "Housing",
-      "category.expense.transport": "Transport",
-      "category.expense.utilities": "Utilities",
-      "category.expense.health": "Health",
-      "category.expense.education": "Education",
-      "category.expense.leisure": "Leisure",
-      "category.expense.clothing": "Clothing",
-      "category.expense.communication": "Communication",
-      "category.expense.insurance": "Insurance",
-      "category.expense.debt_payment": "Debt payment",
-      "category.expense.gifts_donations": "Gifts & donations",
-      "category.expense.personal_care": "Personal care",
-      "category.expense.subscriptions": "Subscriptions",
-      "category.expense.taxes": "Taxes",
-      "category.expense.other_expense": "Other expenses",
-      "category.income.salary": "Salary",
-      "category.income.business": "Business income",
-      "category.income.investments": "Investments",
-      "category.income.gifts_received": "Gifts received",
-      "category.income.refunds": "Refunds",
-      "category.income.rental_income": "Rental income",
-      "category.income.side_hustle": "Side hustle",
-      "category.income.other_income": "Other income"
+      "category_expense_food": "Food",
+      "category_expense_housing": "Housing",
+      "category_expense_transport": "Transport",
+      "category_expense_utilities": "Utilities",
+      "category_expense_health": "Health",
+      "category_expense_education": "Education",
+      "category_expense_leisure": "Leisure",
+      "category_expense_clothing": "Clothing",
+      "category_expense_communication": "Communication",
+      "category_expense_insurance": "Insurance",
+      "category_expense_debt_payment": "Debt payment",
+      "category_expense_gifts_donations": "Gifts & donations",
+      "category_expense_personal_care": "Personal care",
+      "category_expense_subscriptions": "Subscriptions",
+      "category_expense_taxes": "Taxes",
+      "category_expense_other_expense": "Other expenses",
+      "category_income_salary": "Salary",
+      "category_income_business": "Business income",
+      "category_income_investments": "Investments",
+      "category_income_gifts_received": "Gifts received",
+      "category_income_refunds": "Refunds",
+      "category_income_rental_income": "Rental income",
+      "category_income_side_hustle": "Side hustle",
+      "category_income_other_income": "Other income"
     }
   },
   "tags": {
@@ -283,6 +283,37 @@
       "UNKNOWN": "Notification"
     }
   },
+  "pwa": {
+    "offlineBanner": "Offline — the data shown may not be up to date."
+  },
+  "preferences": {
+    "title": "Preferences",
+    "displayNameLabel": "Display name",
+    "baseCurrencyLabel": "Base currency",
+    "localeLabel": "Language",
+    "timezoneLabel": "Timezone",
+    "weekStartsOnLabel": "Week start day",
+    "monthStartDayLabel": "Month start day",
+    "save": "Save",
+    "pinSection": "PIN lock",
+    "pinEnabled": "PIN lock enabled",
+    "pinDisabled": "No PIN set",
+    "pinLabel": "PIN (4 to 8 digits)",
+    "pinLockMinutesLabel": "Lock after (minutes of inactivity)",
+    "setPin": "Set PIN",
+    "removePin": "Remove PIN",
+    "pinUnlock": "Unlock",
+    "pinLockedWrong": "Incorrect PIN.",
+    "pushSection": "Push notification devices",
+    "pushEmpty": "No device registered.",
+    "pushEnable": "Enable push notifications on this device",
+    "pushRemove": "Remove",
+    "pushTest": "Send a test notification",
+    "deleteAccountSection": "Delete my account",
+    "deleteAccount": "Permanently delete my account",
+    "exportSection": "Full export",
+    "exportFull": "Download all my data"
+  },
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",
@@ -339,6 +370,9 @@
     "GOAL_NO_LINKED_ACCOUNT": "This goal has no linked account to receive a transfer.",
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
     "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution not found.",
-    "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion."
+    "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion.",
+    "PIN_NOT_SET": "No PIN has been set for this account.",
+    "DEVICE_TOKEN_NOT_FOUND": "This device is not registered for push notifications.",
+    "OFFLINE_WRITE_DISABLED": "You're offline — changes can't be saved right now."
   }
 }
