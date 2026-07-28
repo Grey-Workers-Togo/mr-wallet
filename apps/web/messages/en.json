@@ -302,6 +302,8 @@
     "pinLockMinutesLabel": "Lock after (minutes of inactivity)",
     "setPin": "Set PIN",
     "removePin": "Remove PIN",
+    "pinUnlock": "Unlock",
+    "pinLockedWrong": "Incorrect PIN.",
     "pushSection": "Push notification devices",
     "pushEmpty": "No device registered.",
     "pushEnable": "Enable push notifications on this device",
@@ -370,6 +372,7 @@
     "GOAL_CONTRIBUTION_NOT_FOUND": "Contribution not found.",
     "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion.",
     "PIN_NOT_SET": "No PIN has been set for this account.",
-    "DEVICE_TOKEN_NOT_FOUND": "This device is not registered for push notifications."
+    "DEVICE_TOKEN_NOT_FOUND": "This device is not registered for push notifications.",
+    "OFFLINE_WRITE_DISABLED": "You're offline — changes can't be saved right now."
   }
 }

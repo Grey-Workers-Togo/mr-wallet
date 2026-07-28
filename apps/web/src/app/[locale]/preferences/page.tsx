@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { clearLocalPin, setLocalPin } from '@/lib/local-pin';
+import { purgeOfflineCache } from '@/lib/offline-cache';
 
 interface Profile {
   id: string;
@@ -83,6 +85,7 @@ export default function PreferencesPage() {
     e.preventDefault();
     await run(async () => {
       await apiClient.post('/me/pin', { pin, lockMinutes: pinLockMinutes });
+      await setLocalPin(pin);
       setPin('');
       await loadAll();
     });
@@ -91,6 +94,7 @@ export default function PreferencesPage() {
   async function onRemovePin() {
     await run(async () => {
       await apiClient.delete('/me/pin');
+      await clearLocalPin();
       await loadAll();
     });
   }
@@ -131,7 +135,11 @@ export default function PreferencesPage() {
   }
 
   async function onDeleteAccount() {
-    await run(() => apiClient.delete('/me'));
+    await run(async () => {
+      await apiClient.delete('/me');
+      await clearLocalPin();
+      await purgeOfflineCache();
+    });
   }
 
   return (

@@ -14,8 +14,18 @@ export class ApiError extends Error {
   }
 }
 
+const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+
+/** No offline write buffering (CLAUDE.md "Pas d'offline-first") — a write attempted while offline fails fast. */
+function assertOnlineForWrite(method: string): void {
+  if (typeof navigator !== 'undefined' && !navigator.onLine && WRITE_METHODS.has(method.toUpperCase())) {
+    throw new ApiError({ code: 'OFFLINE_WRITE_DISABLED', params: {} }, 0);
+  }
+}
+
 /** `credentials: 'include'` sends the HttpOnly refresh cookie; the access token rides in the header only. */
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  assertOnlineForWrite(init.method ?? 'GET');
   const token = getAccessToken();
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,

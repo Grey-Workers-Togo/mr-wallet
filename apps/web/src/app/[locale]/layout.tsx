@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { PinLockGate } from '@/components/PinLockGate';
 import type { ReactNode } from 'react';
 
 export function generateStaticParams() {
@@ -38,6 +39,7 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
+          <PinLockGate />
           {children}
         </NextIntlClientProvider>
       </body>
