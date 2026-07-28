@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';
+import { Public } from '../../common/auth/public.decorator';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
 import { CurrencyService } from './currency.service';
 import { ConvertDto, CreateRateDto, convertSchema, createRateSchema } from './dto/currency.dto';
@@ -9,6 +10,7 @@ import { ConvertDto, CreateRateDto, convertSchema, createRateSchema } from './dt
 export class CurrencyController {
   constructor(private readonly currencyService: CurrencyService) {}
 
+  @Public()
   @Get()
   list() {
     return this.currencyService.listCurrencies();
