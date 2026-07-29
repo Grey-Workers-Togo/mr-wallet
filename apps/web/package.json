@@ -9,7 +9,8 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
-    "i18n:check": "tsx scripts/check-i18n-parity.ts"
+    "i18n:check": "tsx scripts/check-i18n-parity.ts",
+    "icons:generate": "tsx scripts/generate-icons.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -42,6 +43,7 @@
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.5.4",
     "postcss": "^8.4.31",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
