@@ -13,10 +13,67 @@
     "confirm": "Delete"
   },
   "home": {
-    "title": "Dashboard",
-    "subtitle": "Where is my money going this month?",
     "login": "Log in",
-    "register": "Sign up"
+    "register": "Sign up",
+    "hero": {
+      "title": "Mr Wallet",
+      "tagline": "Take back control of your money.",
+      "description": "Expense tracking. Budgets. Forecasts. Everything you need to see where your money goes.",
+      "ctaPrimary": "Sign up for free",
+      "ctaSecondary": "Learn more"
+    },
+    "features": {
+      "title": "Built for you",
+      "items": [
+        {
+          "title": "Track everything",
+          "description": "Import your statements or enter transactions manually. Automatic categorization."
+        },
+        {
+          "title": "Master your budgets",
+          "description": "Set spending envelopes by category and get alerted before you go over."
+        },
+        {
+          "title": "Anticipate what's next",
+          "description": "See where you'll stand in 6 months based on your current trends."
+        }
+      ]
+    },
+    "howItWorks": {
+      "title": "Get started in 4 steps",
+      "steps": [
+        { "title": "Sign up", "description": "Email and password. 30 seconds." },
+        { "title": "Import or enter", "description": "CSV/Excel import or manual entry." },
+        { "title": "Set your budgets", "description": "Templates or fully custom." },
+        { "title": "Watch it grow", "description": "Dashboards and reports." }
+      ]
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "items": [
+        { "question": "How much does it cost?", "answer": "Free, no ads." },
+        { "question": "Is my data protected?", "answer": "Encryption and a full audit log." },
+        { "question": "Can I import from my bank?", "answer": "CSV/Excel today, direct connectors are planned." },
+        { "question": "Does it work on mobile?", "answer": "Yes, it's an installable PWA." },
+        { "question": "How do I get my data back?", "answer": "Full export at any time." },
+        { "question": "Is there a transaction limit?", "answer": "No." },
+        { "question": "What happens if I delete my account?", "answer": "Soft delete, then permanent deletion after 30 days." }
+      ]
+    },
+    "ctaFinal": {
+      "title": "Ready? Get started now.",
+      "primary": "Sign up for free",
+      "secondaryPrefix": "or",
+      "secondary": "log in"
+    },
+    "footer": {
+      "description": "Personal finance, kept simple.",
+      "linksTitle": "Links",
+      "docs": "Docs",
+      "github": "GitHub",
+      "contact": "Contact",
+      "rights": "All rights reserved."
+    }
   },
   "nav": {
     "mainNavigation": "Main navigation",
