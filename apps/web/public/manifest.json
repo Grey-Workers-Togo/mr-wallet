@@ -1,6 +1,6 @@
 {
-  "name": "Budget Manager",
-  "short_name": "Budget Manager",
+  "name": "Mr Wallet",
+  "short_name": "Mr Wallet",
   "description": "Suivi de budget, transactions, dettes et objectifs.",
   "start_url": "/",
   "scope": "/",
