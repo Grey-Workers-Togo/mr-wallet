@@ -98,6 +98,9 @@ export default function RecurrencesPage() {
     }
   }
 
+  const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
+  const frequencyItems = Object.fromEntries(FREQUENCIES.map((value) => [value, tFrequency(value)]));
+
   async function onMaterialize(recurrenceId: string, occurrenceDate: string) {
     setError(null);
     try {
@@ -167,7 +170,7 @@ export default function RecurrencesPage() {
             </div>
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+              <Select items={accountItems} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -186,7 +189,11 @@ export default function RecurrencesPage() {
             </div>
             <div>
               <Label htmlFor="frequency">{t('frequencyLabel')}</Label>
-              <Select value={frequency} onValueChange={(value) => setFrequency(value as (typeof FREQUENCIES)[number])}>
+              <Select
+                items={frequencyItems}
+                value={frequency}
+                onValueChange={(value) => setFrequency(value as (typeof FREQUENCIES)[number])}
+              >
                 <SelectTrigger id="frequency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

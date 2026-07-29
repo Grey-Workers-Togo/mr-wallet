@@ -55,13 +55,17 @@
   "accounts": {
     "title": "Accounts",
     "create": "Add an account",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
     "empty": "No accounts yet.",
     "nameLabel": "Name",
     "typeLabel": "Type",
     "currencyLabel": "Currency",
     "openingBalanceLabel": "Opening balance",
     "openingBalanceAtLabel": "Opening balance date",
-    "submit": "Create account"
+    "submit": "Create account",
+    "saveChanges": "Save changes"
   },
   "account": {
     "type": {
@@ -77,12 +81,15 @@
   "categories": {
     "title": "Categories",
     "create": "Add a category",
+    "add": "Add",
+    "edit": "Edit",
     "empty": "No categories yet.",
     "nameLabel": "Name",
     "kindLabel": "Kind",
     "parentLabel": "Parent category",
     "noParent": "No parent (top-level)",
     "submit": "Create category",
+    "saveChanges": "Save changes",
     "delete": "Delete",
     "system": "System",
     "kind": {
@@ -200,6 +207,8 @@
   "budgets": {
     "title": "Budgets",
     "create": "Add a budget",
+    "add": "Add",
+    "edit": "Edit",
     "empty": "No budgets yet.",
     "nameLabel": "Name",
     "categoryLabel": "Category",
@@ -209,6 +218,7 @@
     "startsOnLabel": "Start date",
     "rolloverLabel": "Roll over balance",
     "submit": "Create budget",
+    "saveChanges": "Save changes",
     "delete": "Delete",
     "spent": "Spent",
     "remaining": "Remaining",
@@ -223,6 +233,8 @@
   "debts": {
     "title": "Debts",
     "create": "Add a debt",
+    "add": "Add",
+    "edit": "Edit",
     "empty": "No debts yet.",
     "nameLabel": "Name",
     "directionLabel": "Direction",
@@ -231,6 +243,7 @@
     "termLabel": "Term (months)",
     "startedOnLabel": "Start date",
     "submit": "Create debt",
+    "saveChanges": "Save changes",
     "delete": "Delete",
     "outstanding": "Outstanding principal",
     "schedule": "Schedule",
@@ -252,11 +265,14 @@
   "goals": {
     "title": "Goals",
     "create": "Add a goal",
+    "add": "Add",
+    "edit": "Edit",
     "empty": "No goals yet.",
     "nameLabel": "Name",
     "targetLabel": "Target amount",
     "targetDateLabel": "Target date",
     "submit": "Create goal",
+    "saveChanges": "Save changes",
     "delete": "Delete",
     "contribute": "Add a contribution",
     "progress": "Progress",

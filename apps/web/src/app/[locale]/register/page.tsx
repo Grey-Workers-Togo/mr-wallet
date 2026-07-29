@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const tError = useTranslations('error');
   const router = useRouter();
   const currencies = useCurrencies();
+  const currencyItems = Object.fromEntries(currencies.map((c) => [c.code, c.code]));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [baseCurrency, setBaseCurrency] = useState('XOF');
@@ -82,7 +83,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <Label htmlFor="baseCurrency">{t('baseCurrencyLabel')}</Label>
-              <Select value={baseCurrency} onValueChange={(value) => setBaseCurrency(value ?? '')}>
+              <Select items={currencyItems} value={baseCurrency} onValueChange={(value) => setBaseCurrency(value ?? '')}>
                 <SelectTrigger id="baseCurrency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

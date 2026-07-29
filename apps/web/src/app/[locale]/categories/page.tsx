@@ -2,8 +2,16 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus, Pencil } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +36,11 @@ export default function CategoriesPage() {
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
 
+  const kindItems = Object.fromEntries(CATEGORY_KINDS.map((value) => [value, tKind(value)]));
+
   const [categories, setCategories] = useState<Category[] | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [kind, setKind] = useState<(typeof CATEGORY_KINDS)[number]>('EXPENSE');
   const [parentId, setParentId] = useState('');
@@ -49,12 +61,33 @@ export default function CategoriesPage() {
     return '';
   }
 
+  function openCreateDialog() {
+    setEditingId(null);
+    setName('');
+    setKind('EXPENSE');
+    setParentId('');
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(category: Category) {
+    setEditingId(category.id);
+    setName(category.name ?? '');
+    setKind(category.kind === 'TRANSFER' ? 'EXPENSE' : category.kind);
+    setParentId(category.parentId ?? '');
+    setDialogOpen(true);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await apiClient.post('/categories', { name, kind, parentId: parentId || undefined });
-      setName('');
+      if (editingId) {
+        // kind/parentId are immutable after creation
+        await apiClient.patch(`/categories/${editingId}`, { name });
+      } else {
+        await apiClient.post('/categories', { name, kind, parentId: parentId || undefined });
+      }
+      setDialogOpen(false);
       await loadCategories();
     } catch (err) {
       setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
@@ -73,10 +106,20 @@ export default function CategoriesPage() {
 
   const topLevel = categories?.filter((c) => !c.parentId) ?? [];
   const parentOptions = categories?.filter((c) => !c.parentId && c.kind === kind) ?? [];
+  const parentItems = Object.fromEntries([
+    ['__none__', t('noParent')],
+    ...parentOptions.map((option) => [option.id, resolveName(option)]),
+  ]);
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <Button type="button" onClick={openCreateDialog}>
+          <Plus className="size-4" />
+          {t('add')}
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -97,9 +140,15 @@ export default function CategoriesPage() {
                   {category.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                 </div>
                 {!category.isSystem && (
-                  <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(category.id)}>
-                    {t('delete')}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(category)}>
+                      <Pencil className="size-3.5" />
+                      {t('edit')}
+                    </Button>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(category.id)}>
+                      {t('delete')}
+                    </Button>
+                  </div>
                 )}
               </div>
               {categories.filter((c) => c.parentId === category.id).length > 0 && (
@@ -113,9 +162,15 @@ export default function CategoriesPage() {
                           {child.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                         </div>
                         {!child.isSystem && (
-                          <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(child.id)}>
-                            {t('delete')}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(child)}>
+                              <Pencil className="size-3.5" />
+                              {t('edit')}
+                            </Button>
+                            <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(child.id)}>
+                              {t('delete')}
+                            </Button>
+                          </div>
                         )}
                       </li>
                     ))}
@@ -126,19 +181,24 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4">
-          <CardTitle>{t('create')}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name">{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
               <Label htmlFor="kind">{t('kindLabel')}</Label>
-              <Select value={kind} onValueChange={(value) => setKind(value as (typeof CATEGORY_KINDS)[number])}>
+              <Select
+                items={kindItems}
+                value={kind}
+                onValueChange={(value) => setKind(value as (typeof CATEGORY_KINDS)[number])}
+                disabled={!!editingId}
+              >
                 <SelectTrigger id="kind" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -154,8 +214,10 @@ export default function CategoriesPage() {
             <div>
               <Label htmlFor="parentId">{t('parentLabel')}</Label>
               <Select
+                items={parentItems}
                 value={parentId || undefined}
                 onValueChange={(value) => setParentId(value === '__none__' || value === null ? '' : value)}
+                disabled={!!editingId}
               >
                 <SelectTrigger id="parentId" className="w-full">
                   <SelectValue placeholder={t('noParent')} />
@@ -170,12 +232,12 @@ export default function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
-              <Button type="submit">{t('submit')}</Button>
-            </div>
+            <DialogFooter>
+              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+            </DialogFooter>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

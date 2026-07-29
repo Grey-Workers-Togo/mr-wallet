@@ -2,8 +2,16 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus, Pencil } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { AmountInput } from '@/components/ui/amount-input';
@@ -17,6 +25,7 @@ interface Goal {
   targetMinor: string;
   currentMinor: string;
   currency: string;
+  targetDate: string | null;
   status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
 }
 
@@ -26,6 +35,8 @@ export default function GoalsPage() {
   const tError = useTranslations('error');
 
   const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [targetMinor, setTargetMinor] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -39,19 +50,41 @@ export default function GoalsPage() {
     loadAll().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
   }, []);
 
+  function openCreateDialog() {
+    setEditingId(null);
+    setName('');
+    setTargetMinor('');
+    setTargetDate('');
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(goal: Goal) {
+    setEditingId(goal.id);
+    setName(goal.name);
+    setTargetMinor(goal.targetMinor);
+    setTargetDate(goal.targetDate ? goal.targetDate.slice(0, 10) : '');
+    setDialogOpen(true);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await apiClient.post('/goals', {
-        name,
-        targetMinor,
-        currency: 'XOF',
-        targetDate: targetDate || undefined,
-      });
-      setName('');
-      setTargetMinor('');
-      setTargetDate('');
+      if (editingId) {
+        await apiClient.patch(`/goals/${editingId}`, {
+          name,
+          targetMinor,
+          targetDate: targetDate || undefined,
+        });
+      } else {
+        await apiClient.post('/goals', {
+          name,
+          targetMinor,
+          currency: 'XOF',
+          targetDate: targetDate || undefined,
+        });
+      }
+      setDialogOpen(false);
       await loadAll();
     } catch (err) {
       setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
@@ -70,7 +103,13 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <Button type="button" onClick={openCreateDialog}>
+          <Plus className="size-4" />
+          {t('add')}
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -91,7 +130,11 @@ export default function GoalsPage() {
               <p className="mt-3 text-neutral-900">
                 {goal.currentMinor} / {goal.targetMinor} {goal.currency}
               </p>
-              <div className="mt-3">
+              <div className="mt-3 flex gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(goal)}>
+                  <Pencil className="size-3.5" />
+                  {t('edit')}
+                </Button>
                 <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(goal.id)}>
                   {t('delete')}
                 </Button>
@@ -101,12 +144,12 @@ export default function GoalsPage() {
         </div>
       )}
 
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4">
-          <CardTitle>{t('create')}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name">{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -119,12 +162,12 @@ export default function GoalsPage() {
               <Label htmlFor="targetDate">{t('targetDateLabel')}</Label>
               <Input id="targetDate" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
             </div>
-            <div className="md:col-span-2">
-              <Button type="submit">{t('submit')}</Button>
-            </div>
+            <DialogFooter>
+              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+            </DialogFooter>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

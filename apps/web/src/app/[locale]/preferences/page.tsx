@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { clearLocalPin, setLocalPin } from '@/lib/local-pin';
 import { purgeOfflineCache } from '@/lib/offline-cache';
@@ -31,6 +32,9 @@ interface PushDevice {
   createdAt: string;
 }
 
+/** Maps the profile's saved locale (fr-FR/en-US) to next-intl's routing locale segment (fr/en). */
+const LOCALE_TO_ROUTE: Record<string, 'fr' | 'en'> = { 'fr-FR': 'fr', 'en-US': 'en' };
+
 function urlBase64ToUint8Array(base64: string): BufferSource {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   const base64Safe = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -41,6 +45,9 @@ function urlBase64ToUint8Array(base64: string): BufferSource {
 export default function PreferencesPage() {
   const t = useTranslations('preferences');
   const tError = useTranslations('error');
+  const activeRouteLocale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [devices, setDevices] = useState<PushDevice[] | null>(null);
@@ -86,6 +93,10 @@ export default function PreferencesPage() {
         monthStartDay: Number(form.get('monthStartDay')),
       });
       await loadAll();
+      const routeLocale = LOCALE_TO_ROUTE[locale];
+      if (routeLocale && routeLocale !== activeRouteLocale) {
+        router.replace(pathname, { locale: routeLocale });
+      }
     });
   }
 
@@ -176,7 +187,11 @@ export default function PreferencesPage() {
                 </div>
                 <div>
                   <Label htmlFor="locale">{t('localeLabel')}</Label>
-                  <Select value={locale} onValueChange={(value) => setLocale(value ?? '')}>
+                  <Select
+                    items={{ 'fr-FR': 'Français', 'en-US': 'English' }}
+                    value={locale}
+                    onValueChange={(value) => setLocale(value ?? '')}
+                  >
                     <SelectTrigger id="locale" className="w-full">
                       <SelectValue />
                     </SelectTrigger>

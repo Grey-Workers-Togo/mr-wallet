@@ -2,8 +2,16 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus, Pencil } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +26,12 @@ interface Debt {
   name: string;
   direction: (typeof DIRECTIONS)[number];
   outstandingPrincipalMinor: string;
+  principalMinor: string;
   currency: string;
   status: string;
+  annualRatePct: string | null;
+  termMonths: number | null;
+  startedOn: string;
 }
 
 export default function DebtsPage() {
@@ -27,7 +39,11 @@ export default function DebtsPage() {
   const tDirection = useTranslations('debts.direction');
   const tError = useTranslations('error');
 
+  const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
+
   const [debts, setDebts] = useState<Debt[] | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [direction, setDirection] = useState<(typeof DIRECTIONS)[number]>('OWED_BY_ME');
   const [principalMinor, setPrincipalMinor] = useState('');
@@ -44,25 +60,49 @@ export default function DebtsPage() {
     loadAll().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
   }, []);
 
+  function openCreateDialog() {
+    setEditingId(null);
+    setName('');
+    setDirection('OWED_BY_ME');
+    setPrincipalMinor('');
+    setAnnualRatePct('');
+    setTermMonths('');
+    setStartedOn('');
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(debt: Debt) {
+    setEditingId(debt.id);
+    setName(debt.name);
+    setDirection(debt.direction);
+    setPrincipalMinor(debt.principalMinor);
+    setAnnualRatePct(debt.annualRatePct ?? '');
+    setTermMonths(debt.termMonths ? String(debt.termMonths) : '');
+    setStartedOn(debt.startedOn.slice(0, 10));
+    setDialogOpen(true);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await apiClient.post('/debts', {
-        name,
-        direction,
-        principalMinor,
-        currency: 'XOF',
-        rateType: annualRatePct ? 'FIXED' : 'ZERO',
-        annualRatePct: annualRatePct ? Number(annualRatePct) : undefined,
-        termMonths: termMonths ? Number(termMonths) : undefined,
-        startedOn,
-        paymentFrequency: 'MONTHLY',
-      });
-      setName('');
-      setPrincipalMinor('');
-      setAnnualRatePct('');
-      setTermMonths('');
+      if (editingId) {
+        // direction/principalMinor/annualRatePct/termMonths/startedOn are immutable after creation
+        await apiClient.patch(`/debts/${editingId}`, { name });
+      } else {
+        await apiClient.post('/debts', {
+          name,
+          direction,
+          principalMinor,
+          currency: 'XOF',
+          rateType: annualRatePct ? 'FIXED' : 'ZERO',
+          annualRatePct: annualRatePct ? Number(annualRatePct) : undefined,
+          termMonths: termMonths ? Number(termMonths) : undefined,
+          startedOn,
+          paymentFrequency: 'MONTHLY',
+        });
+      }
+      setDialogOpen(false);
       await loadAll();
     } catch (err) {
       setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
@@ -81,7 +121,13 @@ export default function DebtsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <Button type="button" onClick={openCreateDialog}>
+          <Plus className="size-4" />
+          {t('add')}
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -97,9 +143,15 @@ export default function DebtsPage() {
             <Card key={debt.id} className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-lg font-medium text-neutral-900">{debt.name}</h3>
-                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(debt.id)}>
-                  {t('delete')}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(debt)}>
+                    <Pencil className="size-3.5" />
+                    {t('edit')}
+                  </Button>
+                  <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(debt.id)}>
+                    {t('delete')}
+                  </Button>
+                </div>
               </div>
               <p className="mt-1 text-sm text-neutral-600">{tDirection(debt.direction)}</p>
               <p className="mt-3 text-neutral-900">
@@ -110,19 +162,24 @@ export default function DebtsPage() {
         </div>
       )}
 
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4">
-          <CardTitle>{t('create')}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name">{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
               <Label htmlFor="direction">{t('directionLabel')}</Label>
-              <Select value={direction} onValueChange={(value) => setDirection(value as (typeof DIRECTIONS)[number])}>
+              <Select
+                items={directionItems}
+                value={direction}
+                onValueChange={(value) => setDirection(value as (typeof DIRECTIONS)[number])}
+                disabled={!!editingId}
+              >
                 <SelectTrigger id="direction" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -137,7 +194,13 @@ export default function DebtsPage() {
             </div>
             <div>
               <Label htmlFor="principalMinor">{t('principalLabel')}</Label>
-              <AmountInput id="principalMinor" value={principalMinor} onValueChange={setPrincipalMinor} required />
+              <AmountInput
+                id="principalMinor"
+                value={principalMinor}
+                onValueChange={setPrincipalMinor}
+                disabled={!!editingId}
+                required
+              />
             </div>
             <div>
               <Label htmlFor="annualRatePct">{t('rateLabel')}</Label>
@@ -148,6 +211,7 @@ export default function DebtsPage() {
                 step="0.01"
                 value={annualRatePct}
                 onChange={(e) => setAnnualRatePct(e.target.value)}
+                disabled={!!editingId}
               />
             </div>
             <div>
@@ -159,18 +223,26 @@ export default function DebtsPage() {
                 step={1}
                 value={termMonths}
                 onChange={(e) => setTermMonths(e.target.value)}
+                disabled={!!editingId}
               />
             </div>
             <div>
               <Label htmlFor="startedOn">{t('startedOnLabel')}</Label>
-              <Input id="startedOn" type="date" value={startedOn} onChange={(e) => setStartedOn(e.target.value)} required />
+              <Input
+                id="startedOn"
+                type="date"
+                value={startedOn}
+                onChange={(e) => setStartedOn(e.target.value)}
+                disabled={!!editingId}
+                required
+              />
             </div>
-            <div className="md:col-span-2">
-              <Button type="submit">{t('submit')}</Button>
-            </div>
+            <DialogFooter>
+              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+            </DialogFooter>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

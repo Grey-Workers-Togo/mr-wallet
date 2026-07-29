@@ -55,13 +55,17 @@
   "accounts": {
     "title": "Comptes",
     "create": "Ajouter un compte",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
     "empty": "Aucun compte pour l'instant.",
     "nameLabel": "Nom",
     "typeLabel": "Type",
     "currencyLabel": "Devise",
     "openingBalanceLabel": "Solde d'ouverture",
     "openingBalanceAtLabel": "Date du solde d'ouverture",
-    "submit": "Créer le compte"
+    "submit": "Créer le compte",
+    "saveChanges": "Enregistrer"
   },
   "account": {
     "type": {
@@ -77,12 +81,15 @@
   "categories": {
     "title": "Catégories",
     "create": "Ajouter une catégorie",
+    "add": "Ajouter",
+    "edit": "Modifier",
     "empty": "Aucune catégorie pour l'instant.",
     "nameLabel": "Nom",
     "kindLabel": "Type",
     "parentLabel": "Catégorie parente",
     "noParent": "Aucun parent (niveau principal)",
     "submit": "Créer la catégorie",
+    "saveChanges": "Enregistrer",
     "delete": "Supprimer",
     "system": "Système",
     "kind": {
@@ -200,6 +207,8 @@
   "budgets": {
     "title": "Budgets",
     "create": "Ajouter un budget",
+    "add": "Ajouter",
+    "edit": "Modifier",
     "empty": "Aucun budget pour l'instant.",
     "nameLabel": "Nom",
     "categoryLabel": "Catégorie",
@@ -209,6 +218,7 @@
     "startsOnLabel": "Date de début",
     "rolloverLabel": "Report du solde",
     "submit": "Créer le budget",
+    "saveChanges": "Enregistrer",
     "delete": "Supprimer",
     "spent": "Dépensé",
     "remaining": "Restant",
@@ -223,6 +233,8 @@
   "debts": {
     "title": "Dettes",
     "create": "Ajouter une dette",
+    "add": "Ajouter",
+    "edit": "Modifier",
     "empty": "Aucune dette pour l'instant.",
     "nameLabel": "Nom",
     "directionLabel": "Sens",
@@ -231,6 +243,7 @@
     "termLabel": "Durée (mois)",
     "startedOnLabel": "Date de départ",
     "submit": "Créer la dette",
+    "saveChanges": "Enregistrer",
     "delete": "Supprimer",
     "outstanding": "Capital restant dû",
     "schedule": "Échéancier",
@@ -252,11 +265,14 @@
   "goals": {
     "title": "Objectifs",
     "create": "Ajouter un objectif",
+    "add": "Ajouter",
+    "edit": "Modifier",
     "empty": "Aucun objectif pour l'instant.",
     "nameLabel": "Nom",
     "targetLabel": "Montant cible",
     "targetDateLabel": "Date cible",
     "submit": "Créer l'objectif",
+    "saveChanges": "Enregistrer",
     "delete": "Supprimer",
     "contribute": "Ajouter une contribution",
     "progress": "Progression",

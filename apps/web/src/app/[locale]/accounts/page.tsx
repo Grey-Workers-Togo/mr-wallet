@@ -2,8 +2,16 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus, Pencil } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,18 +32,25 @@ interface Account {
   currentBalanceMinor: string;
 }
 
+const DEFAULT_OPENING_BALANCE_AT = () => new Date().toISOString().slice(0, 10);
+
 export default function AccountsPage() {
   const t = useTranslations('accounts');
   const tType = useTranslations('account.type');
   const tError = useTranslations('error');
 
   const currencies = useCurrencies();
+  const typeItems = Object.fromEntries(ACCOUNT_TYPES.map((value) => [value, tType(value)]));
+  const currencyItems = Object.fromEntries(currencies.map((c) => [c.code, c.code]));
+
   const [accounts, setAccounts] = useState<Account[] | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState<(typeof ACCOUNT_TYPES)[number]>('BANK');
   const [currency, setCurrency] = useState('XOF');
   const [openingBalance, setOpeningBalance] = useState('0');
-  const [openingBalanceAt, setOpeningBalanceAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [openingBalanceAt, setOpeningBalanceAt] = useState(DEFAULT_OPENING_BALANCE_AT);
   const [error, setError] = useState<string | null>(null);
 
   async function loadAccounts() {
@@ -47,19 +62,54 @@ export default function AccountsPage() {
     loadAccounts().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
   }, []);
 
+  function openCreateDialog() {
+    setEditingId(null);
+    setName('');
+    setType('BANK');
+    setCurrency('XOF');
+    setOpeningBalance('0');
+    setOpeningBalanceAt(DEFAULT_OPENING_BALANCE_AT());
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(account: Account) {
+    setEditingId(account.id);
+    setName(account.name);
+    setType(account.type);
+    setCurrency(account.currency);
+    setOpeningBalance(account.openingBalanceMinor);
+    setOpeningBalanceAt(DEFAULT_OPENING_BALANCE_AT());
+    setDialogOpen(true);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await apiClient.post('/accounts', {
-        name,
-        type,
-        currency,
-        openingBalanceMinor: openingBalance,
-        openingBalanceAt,
-        includeInNetWorth: true,
-      });
-      setName('');
+      if (editingId) {
+        // type/currency/opening balance are immutable after creation (docs/03-modele-donnees.md)
+        await apiClient.patch(`/accounts/${editingId}`, { name });
+      } else {
+        await apiClient.post('/accounts', {
+          name,
+          type,
+          currency,
+          openingBalanceMinor: openingBalance,
+          openingBalanceAt,
+          includeInNetWorth: true,
+        });
+      }
+      setDialogOpen(false);
+      await loadAccounts();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+    }
+  }
+
+  async function onDelete(id: string) {
+    setError(null);
+    try {
+      await apiClient.delete(`/accounts/${id}`);
       await loadAccounts();
     } catch (err) {
       setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
@@ -68,7 +118,13 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <Button type="button" onClick={openCreateDialog}>
+          <Plus className="size-4" />
+          {t('add')}
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -89,17 +145,26 @@ export default function AccountsPage() {
               <p className="mt-3 text-2xl font-semibold text-neutral-900">
                 {account.currentBalanceMinor} <span className="text-base font-normal text-neutral-600">{account.currency}</span>
               </p>
+              <div className="mt-4 flex gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(account)}>
+                  <Pencil className="size-3.5" />
+                  {t('edit')}
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(account.id)}>
+                  {t('delete')}
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
       )}
 
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4">
-          <CardTitle>{t('create')}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name">{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -107,8 +172,10 @@ export default function AccountsPage() {
             <div>
               <Label htmlFor="type">{t('typeLabel')}</Label>
               <Select
+                items={typeItems}
                 value={type}
                 onValueChange={(value) => setType(value as (typeof ACCOUNT_TYPES)[number])}
+                disabled={!!editingId}
               >
                 <SelectTrigger id="type" className="w-full">
                   <SelectValue />
@@ -124,7 +191,12 @@ export default function AccountsPage() {
             </div>
             <div>
               <Label htmlFor="currency">{t('currencyLabel')}</Label>
-              <Select value={currency} onValueChange={(value) => setCurrency(value ?? '')}>
+              <Select
+                items={currencyItems}
+                value={currency}
+                onValueChange={(value) => setCurrency(value ?? '')}
+                disabled={!!editingId}
+              >
                 <SelectTrigger id="currency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -143,6 +215,7 @@ export default function AccountsPage() {
                 id="openingBalance"
                 value={openingBalance}
                 onValueChange={setOpeningBalance}
+                disabled={!!editingId}
                 required
               />
             </div>
@@ -153,15 +226,16 @@ export default function AccountsPage() {
                 type="date"
                 value={openingBalanceAt}
                 onChange={(e) => setOpeningBalanceAt(e.target.value)}
+                disabled={!!editingId}
                 required
               />
             </div>
-            <div className="md:col-span-2">
-              <Button type="submit">{t('submit')}</Button>
-            </div>
+            <DialogFooter>
+              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+            </DialogFooter>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

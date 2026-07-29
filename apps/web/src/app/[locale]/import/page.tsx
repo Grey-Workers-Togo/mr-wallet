@@ -42,6 +42,13 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [committing, setCommitting] = useState(false);
 
+  const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
+  const dateFormatItems: Record<string, string> = {
+    'dd/MM/yyyy': 'dd/MM/yyyy',
+    'MM/dd/yyyy': 'MM/dd/yyyy',
+    'yyyy-MM-dd': 'yyyy-MM-dd',
+  };
+
   useEffect(() => {
     apiClient
       .get<Account[]>('/accounts')
@@ -117,7 +124,7 @@ export default function ImportPage() {
           <form onSubmit={onUpload} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+              <Select items={accountItems} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -132,7 +139,11 @@ export default function ImportPage() {
             </div>
             <div>
               <Label htmlFor="dateFormat">{t('dateFormatLabel')}</Label>
-              <Select value={dateFormat} onValueChange={(value) => setDateFormat(value as typeof dateFormat)}>
+              <Select
+                items={dateFormatItems}
+                value={dateFormat}
+                onValueChange={(value) => setDateFormat(value as typeof dateFormat)}
+              >
                 <SelectTrigger id="dateFormat" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

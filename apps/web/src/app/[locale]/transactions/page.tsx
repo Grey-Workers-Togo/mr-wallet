@@ -139,6 +139,12 @@ export default function TransactionsPage() {
   }
 
   const availableCategories = categories.filter((c) => c.kind === type);
+  const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
+  const typeItems = Object.fromEntries(TX_TYPES.map((value) => [value, tType(value)]));
+  const categoryItems = Object.fromEntries([
+    ['__none__', t('noCategory')],
+    ...availableCategories.map((c) => [c.id, resolveCategoryName(c)]),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -183,7 +189,7 @@ export default function TransactionsPage() {
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+              <Select items={accountItems} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -198,7 +204,7 @@ export default function TransactionsPage() {
             </div>
             <div>
               <Label htmlFor="type">{t('typeLabel')}</Label>
-              <Select value={type} onValueChange={(value) => setType(value as (typeof TX_TYPES)[number])}>
+              <Select items={typeItems} value={type} onValueChange={(value) => setType(value as (typeof TX_TYPES)[number])}>
                 <SelectTrigger id="type" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -226,6 +232,7 @@ export default function TransactionsPage() {
             <div>
               <Label htmlFor="categoryId">{t('categoryLabel')}</Label>
               <Select
+                items={categoryItems}
                 value={categoryId || undefined}
                 onValueChange={(value) => setCategoryId(value === '__none__' || value === null ? '' : value)}
               >
@@ -257,7 +264,7 @@ export default function TransactionsPage() {
           <form onSubmit={onTransfer} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="fromAccountId">{t('fromAccountLabel')}</Label>
-              <Select value={fromAccountId} onValueChange={(value) => setFromAccountId(value ?? '')}>
+              <Select items={accountItems} value={fromAccountId} onValueChange={(value) => setFromAccountId(value ?? '')}>
                 <SelectTrigger id="fromAccountId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -272,7 +279,7 @@ export default function TransactionsPage() {
             </div>
             <div>
               <Label htmlFor="toAccountId">{t('toAccountLabel')}</Label>
-              <Select value={toAccountId} onValueChange={(value) => setToAccountId(value ?? '')}>
+              <Select items={accountItems} value={toAccountId} onValueChange={(value) => setToAccountId(value ?? '')}>
                 <SelectTrigger id="toAccountId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
