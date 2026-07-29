@@ -1,0 +1,82 @@
+# Production-shaped stack: postgres + api + caddy (+ optional web), all built from source.
+# Requires a `.env` file at repo root (see .env.prod.example) with real secrets -
+# never reuse the dev defaults from docker-compose.yml in this file.
+#
+# Typical deploy (front end hosted separately on Vercel):
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build postgres api caddy
+#
+# Self-hosting the front end too:
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      IP_HASH_SALT: ${IP_HASH_SALT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      PORT: 3000
+    # No published port - only reachable through the caddy reverse proxy below.
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Optional: only needed if self-hosting the front end instead of deploying
+  # apps/web to Vercel. Not started by the plain `up -d` command below (it's
+  # still built if you `docker compose up web`, but everyday deploys only
+  # need `docker compose up -d --build postgres api caddy`).
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3001:3000"
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

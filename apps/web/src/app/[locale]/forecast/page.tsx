@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ForecastMonth {
   month: string;
@@ -31,24 +33,40 @@ export default function ForecastPage() {
   }, []);
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      <p>{t('disclaimer')}</p>
-      {error && <p role="alert">{tError(error as never)}</p>}
-      {forecast === null && !error && <p>...</p>}
-      {forecast && (
-        <>
-          {forecast.historyIncomplete && <p>{t('historyIncomplete')}</p>}
-          <ul>
-            {forecast.months.map((m) => (
-              <li key={m.month}>
-                {m.month}: {m.balanceMinor} {forecast.currency}
-                {m.cashWarning && <strong> — {t('cashWarning')}</strong>}
-              </li>
-            ))}
-          </ul>
-        </>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <p className="text-neutral-600">{t('disclaimer')}</p>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
       )}
-    </main>
+      {forecast === null && !error && <p className="text-neutral-600">...</p>}
+      {forecast && (
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle>{t('title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 space-y-3">
+            {forecast.historyIncomplete && (
+              <Alert>
+                <AlertDescription>{t('historyIncomplete')}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              {forecast.months.map((m) => (
+                <div key={m.month} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
+                  <span className="text-neutral-900">{m.month}</span>
+                  <span className="text-neutral-900">
+                    {m.balanceMinor} {forecast.currency}
+                    {m.cashWarning && <strong className="ml-2 text-warning">— {t('cashWarning')}</strong>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

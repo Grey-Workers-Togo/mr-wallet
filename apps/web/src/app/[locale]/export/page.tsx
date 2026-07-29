@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { getAccessToken } from '@/lib/auth-store';
+import { Button } from '@/components/ui/button';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
@@ -46,25 +47,34 @@ export default function ExportPage() {
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      <button
-        type="button"
-        disabled={loading === 'csv'}
-        onClick={() => run('csv', () => downloadPost('/export/transactions', { format: 'CSV' }, 'transactions.csv'))}
-      >
-        {t('transactionsCsv')}
-      </button>
-      <button
-        type="button"
-        disabled={loading === 'xlsx'}
-        onClick={() => run('xlsx', () => downloadPost('/export/transactions', { format: 'XLSX' }, 'transactions.xlsx'))}
-      >
-        {t('transactionsXlsx')}
-      </button>
-      <button type="button" disabled={loading === 'full'} onClick={() => run('full', () => downloadPost('/export/full', {}, 'export.zip'))}>
-        {t('full')}
-      </button>
-    </main>
+    <div className="space-y-8">
+      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading === 'csv'}
+          onClick={() => run('csv', () => downloadPost('/export/transactions', { format: 'CSV' }, 'transactions.csv'))}
+        >
+          {t('transactionsCsv')}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading === 'xlsx'}
+          onClick={() => run('xlsx', () => downloadPost('/export/transactions', { format: 'XLSX' }, 'transactions.xlsx'))}
+        >
+          {t('transactionsXlsx')}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading === 'full'}
+          onClick={() => run('full', () => downloadPost('/export/full', {}, 'export.zip'))}
+        >
+          {t('full')}
+        </Button>
+      </div>
+    </div>
   );
 }

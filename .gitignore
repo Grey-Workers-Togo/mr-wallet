@@ -5,6 +5,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.prod.example
 coverage/
 *.log
 .DS_Store

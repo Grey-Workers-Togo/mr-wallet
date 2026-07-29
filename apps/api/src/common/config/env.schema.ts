@@ -16,6 +16,8 @@ export const envSchema = z.object({
   IP_HASH_SALT: z.string().min(1),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   PORT: z.coerce.number().int().positive().default(3000),
+  /** Comma-separated allowed origins for CORS. Empty in dev only (falls back to reflecting the request origin). */
+  CORS_ORIGIN: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
