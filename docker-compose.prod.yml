@@ -1,17 +1,24 @@
-# Production-shaped stack: postgres + api + caddy (+ optional web), all built from source.
+# Production-shaped stack: api + caddy (+ optional postgres, + optional web), all built from source.
 # Requires a `.env` file at repo root (see .env.prod.example) with real secrets -
 # never reuse the dev defaults from docker-compose.yml in this file.
 #
-# Typical deploy (front end hosted separately on Vercel):
-#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build postgres api caddy
+# Typical deploy (DB on Neon, front end hosted separately on Vercel):
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build api caddy
 #
-# Self-hosting the front end too:
-#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+# Self-hosting Postgres instead of Neon (set DATABASE_URL to point at the
+# `postgres` service, e.g. postgresql://user:pass@postgres:5432/db):
+#   docker compose -f docker-compose.prod.yml --env-file .env --profile local-db up -d --build
+#
+# Self-hosting the front end too: add the `web` service to either command above.
 
 services:
+  # Only needed if you're NOT using Neon (or another managed Postgres). Not started
+  # by default - add `--profile local-db` to the `docker compose` command to include it,
+  # and point DATABASE_URL at postgres:5432 in .env when you do.
   postgres:
     image: postgres:16
     restart: unless-stopped
+    profiles: ["local-db"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -29,11 +36,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       IP_HASH_SALT: ${IP_HASH_SALT}
       CORS_ORIGIN: ${CORS_ORIGIN}
