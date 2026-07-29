@@ -74,8 +74,7 @@ Remplis :
 
 | Variable | Valeur |
 |---|---|
-| `POSTGRES_USER` / `POSTGRES_DB` | `budget_manager` (ou autre) |
-| `POSTGRES_PASSWORD` | mot de passe fort, généré |
+| `DATABASE_URL` | URL de connexion Neon (variante **unpooled**, pas celle avec PgBouncer) |
 | `JWT_SECRET` | valeur générée étape 3 |
 | `IP_HASH_SALT` | valeur générée étape 3 |
 | `CORS_ORIGIN` | URL Vercel du front, ex. `https://ton-app.vercel.app` |
@@ -83,22 +82,28 @@ Remplis :
 | `NEXT_PUBLIC_API_URL` | `https://api.tondomaine.com/api/v1` (sert seulement si tu buildes `web` toi-même — sinon c'est la même valeur à mettre dans Vercel, voir étape 8) |
 | `VAPID_*` | valeurs générées étape 3, ou laisser vide |
 
-Si tu utilises **Neon** au lieu du Postgres du compose : remplace `DATABASE_URL` directement dans le service `api` de `docker-compose.prod.yml` par l'URL de connexion Neon, et ne lance pas le service `postgres`.
+Si tu préfères héberger Postgres toi-même plutôt que Neon : décommente `POSTGRES_USER/PASSWORD/DB` dans `.env`, mets `DATABASE_URL=postgresql://user:password@postgres:5432/db?schema=public` (host `postgres` = nom du service compose), et lance avec `--profile local-db` (voir étape 6).
 
 ---
 
 ## 6. Lancer la stack
 
-Front hébergé sur Vercel (cas standard) :
+Front hébergé sur Vercel, DB sur Neon (cas standard) :
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build postgres api caddy
+docker compose -f docker-compose.prod.yml --env-file .env up -d --build api caddy
 ```
 
-Tout auto-hébergé (web inclus) :
+Avec Postgres auto-hébergé (au lieu de Neon) :
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env --profile local-db up -d --build
+```
+
+Front auto-hébergé aussi (ajoute `web` à la commande utilisée) :
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env up -d --build api caddy web
 ```
 
 Caddy récupère automatiquement le certificat Let's Encrypt pour `API_DOMAIN` au démarrage (le DNS doit déjà pointer sur le VPS, voir étape 2). L'API n'est plus exposée directement sur le port 3000 — uniquement via Caddy en HTTPS.
