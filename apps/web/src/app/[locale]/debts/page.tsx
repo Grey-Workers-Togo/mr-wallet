@@ -12,6 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +48,7 @@ export default function DebtsPage() {
   const t = useTranslations('debts');
   const tDirection = useTranslations('debts.direction');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
 
@@ -51,6 +62,7 @@ export default function DebtsPage() {
   const [termMonths, setTermMonths] = useState('');
   const [startedOn, setStartedOn] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   async function loadAll() {
     setDebts(await apiClient.get<Debt[]>('/debts'));
@@ -148,7 +160,12 @@ export default function DebtsPage() {
                     <Pencil className="size-3.5" />
                     {t('edit')}
                   </Button>
-                  <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(debt.id)}>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setConfirmDelete({ id: debt.id, label: debt.name })}
+                  >
                     {t('delete')}
                   </Button>
                 </div>
@@ -243,6 +260,30 @@ export default function DebtsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

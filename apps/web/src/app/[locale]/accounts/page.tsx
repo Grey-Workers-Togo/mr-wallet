@@ -12,6 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +48,7 @@ export default function AccountsPage() {
   const t = useTranslations('accounts');
   const tType = useTranslations('account.type');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const currencies = useCurrencies();
   const typeItems = Object.fromEntries(ACCOUNT_TYPES.map((value) => [value, tType(value)]));
@@ -52,6 +63,7 @@ export default function AccountsPage() {
   const [openingBalance, setOpeningBalance] = useState('0');
   const [openingBalanceAt, setOpeningBalanceAt] = useState(DEFAULT_OPENING_BALANCE_AT);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   async function loadAccounts() {
     const list = await apiClient.get<Account[]>('/accounts');
@@ -150,7 +162,12 @@ export default function AccountsPage() {
                   <Pencil className="size-3.5" />
                   {t('edit')}
                 </Button>
-                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(account.id)}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setConfirmDelete({ id: account.id, label: account.name })}
+                >
                   {t('delete')}
                 </Button>
               </div>
@@ -236,6 +253,30 @@ export default function AccountsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

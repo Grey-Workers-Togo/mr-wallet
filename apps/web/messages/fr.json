@@ -6,6 +6,12 @@
     "submit": "Valider",
     "loading": "Chargement..."
   },
+  "confirm": {
+    "deleteTitle": "Supprimer cet élément ?",
+    "deleteDescription": "Ceci supprimera définitivement « {name} ». Cette action est irréversible.",
+    "cancel": "Annuler",
+    "confirm": "Supprimer"
+  },
   "home": {
     "title": "Tableau de bord",
     "subtitle": "Où va mon argent ce mois-ci ?",

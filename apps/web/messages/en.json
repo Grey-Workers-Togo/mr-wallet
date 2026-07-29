@@ -6,6 +6,12 @@
     "submit": "Submit",
     "loading": "Loading..."
   },
+  "confirm": {
+    "deleteTitle": "Delete this item?",
+    "deleteDescription": "This will permanently delete \"{name}\". This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
   "home": {
     "title": "Dashboard",
     "subtitle": "Where is my money going this month?",

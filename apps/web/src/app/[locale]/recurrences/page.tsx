@@ -11,6 +11,16 @@ import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY'] as const;
 
@@ -38,6 +48,7 @@ export default function RecurrencesPage() {
   const t = useTranslations('recurrences');
   const tFrequency = useTranslations('recurrences.frequency');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [rules, setRules] = useState<RecurrenceRule[] | null>(null);
@@ -49,6 +60,7 @@ export default function RecurrencesPage() {
   const [startsOn, setStartsOn] = useState('');
   const [autoCreate, setAutoCreate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   async function loadAll() {
     const [accountList, ruleList, upcomingList] = await Promise.all([
@@ -129,7 +141,12 @@ export default function RecurrencesPage() {
             <Card key={rule.id} className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-lg font-medium text-neutral-900">{rule.name}</h3>
-                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(rule.id)}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setConfirmDelete({ id: rule.id, label: rule.name })}
+                >
                   {t('delete')}
                 </Button>
               </div>
@@ -220,6 +237,30 @@ export default function RecurrencesPage() {
           </form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

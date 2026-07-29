@@ -12,6 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,6 +45,7 @@ export default function CategoriesPage() {
   const tKind = useTranslations('categories.kind');
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const kindItems = Object.fromEntries(CATEGORY_KINDS.map((value) => [value, tKind(value)]));
 
@@ -45,6 +56,7 @@ export default function CategoriesPage() {
   const [kind, setKind] = useState<(typeof CATEGORY_KINDS)[number]>('EXPENSE');
   const [parentId, setParentId] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   async function loadCategories() {
     const list = await apiClient.get<Category[]>('/categories');
@@ -145,7 +157,12 @@ export default function CategoriesPage() {
                       <Pencil className="size-3.5" />
                       {t('edit')}
                     </Button>
-                    <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(category.id)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setConfirmDelete({ id: category.id, label: resolveName(category) })}
+                    >
                       {t('delete')}
                     </Button>
                   </div>
@@ -167,7 +184,12 @@ export default function CategoriesPage() {
                               <Pencil className="size-3.5" />
                               {t('edit')}
                             </Button>
-                            <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(child.id)}>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setConfirmDelete({ id: child.id, label: resolveName(child) })}
+                            >
                               {t('delete')}
                             </Button>
                           </div>
@@ -238,6 +260,30 @@ export default function CategoriesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

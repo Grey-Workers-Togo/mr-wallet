@@ -12,6 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Profile {
   id: string;
@@ -45,6 +55,7 @@ function urlBase64ToUint8Array(base64: string): BufferSource {
 export default function PreferencesPage() {
   const t = useTranslations('preferences');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
   const activeRouteLocale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -55,6 +66,8 @@ export default function PreferencesPage() {
   const [pinLockMinutes, setPinLockMinutes] = useState(5);
   const [locale, setLocale] = useState('fr-FR');
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'removePin' | 'deleteAccount' | null>(null);
 
   async function loadAll() {
     const [me, deviceList] = await Promise.all([
@@ -262,7 +275,7 @@ export default function PreferencesPage() {
                 </div>
               </form>
               {profile.pinEnabled && (
-                <Button type="button" variant="destructive" size="sm" onClick={onRemovePin}>
+                <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmAction('removePin')}>
                   {t('removePin')}
                 </Button>
               )}
@@ -280,7 +293,12 @@ export default function PreferencesPage() {
                   {devices.map((d) => (
                     <div key={d.id} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
                       <span className="text-neutral-900">{d.deviceLabel ?? d.id}</span>
-                      <Button type="button" variant="destructive" size="sm" onClick={() => onRemoveDevice(d.id)}>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setConfirmDelete({ id: d.id, label: d.deviceLabel ?? d.id })}
+                      >
                         {t('pushRemove')}
                       </Button>
                     </div>
@@ -303,13 +321,66 @@ export default function PreferencesPage() {
               <CardTitle>{t('deleteAccountSection')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Button type="button" variant="destructive" onClick={onDeleteAccount}>
+              <Button type="button" variant="destructive" onClick={() => setConfirmAction('deleteAccount')}>
                 {t('deleteAccount')}
               </Button>
             </CardContent>
           </Card>
         </>
       )}
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onRemoveDevice(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === 'deleteAccount'
+                ? tConfirm('deleteDescription', { name: t('deleteAccount') })
+                : tConfirm('deleteDescription', { name: t('removePin') })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (confirmAction === 'removePin') {
+                  await onRemovePin();
+                } else if (confirmAction === 'deleteAccount') {
+                  await onDeleteAccount();
+                }
+                setConfirmAction(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

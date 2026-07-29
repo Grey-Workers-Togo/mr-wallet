@@ -8,6 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Tag {
   id: string;
@@ -18,10 +28,12 @@ interface Tag {
 export default function TagsPage() {
   const t = useTranslations('tags');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const [tags, setTags] = useState<Tag[] | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   async function loadTags() {
     const list = await apiClient.get<Tag[]>('/tags');
@@ -71,7 +83,12 @@ export default function TagsPage() {
           {tags.map((tag) => (
             <Card key={tag.id} className="p-4 flex items-center justify-between gap-2">
               <span className="text-neutral-900">{tag.name}</span>
-              <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(tag.id)}>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setConfirmDelete({ id: tag.id, label: tag.name })}
+              >
                 {t('delete')}
               </Button>
             </Card>
@@ -95,6 +112,30 @@ export default function TagsPage() {
           </form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

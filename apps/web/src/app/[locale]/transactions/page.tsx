@@ -10,6 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const TX_TYPES = ['EXPENSE', 'INCOME'] as const;
 
@@ -44,11 +54,13 @@ export default function TransactionsPage() {
   const tType = useTranslations('transactions.type');
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
+  const tConfirm = useTranslations('confirm');
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
   const [accountId, setAccountId] = useState('');
   const [type, setType] = useState<(typeof TX_TYPES)[number]>('EXPENSE');
@@ -172,7 +184,12 @@ export default function TransactionsPage() {
                 <p className="font-semibold text-neutral-900">
                   {tx.amountMinor} {tx.currency}
                 </p>
-                <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(tx.id)}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setConfirmDelete({ id: tx.id, label: tx.description })}
+                >
                   {t('delete')}
                 </Button>
               </div>
@@ -306,6 +323,30 @@ export default function TransactionsPage() {
           </form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDelete?.label ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                await onDelete(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
