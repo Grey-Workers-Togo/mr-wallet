@@ -7,12 +7,16 @@ import {
   ArrowLeftRight,
   PiggyBank,
   Tags,
+  Tag,
   Landmark,
   Target,
   Repeat,
   BarChart3,
   TrendingUp,
   Settings,
+  Upload,
+  Download,
+  Bell,
   Menu,
   X,
   LogOut,
@@ -28,11 +32,15 @@ const NAV_ITEMS = [
   { href: '/transactions', icon: ArrowLeftRight, key: 'transactions' },
   { href: '/budgets', icon: PiggyBank, key: 'budgets' },
   { href: '/categories', icon: Tags, key: 'categories' },
+  { href: '/tags', icon: Tag, key: 'tags' },
   { href: '/debts', icon: Landmark, key: 'debts' },
   { href: '/goals', icon: Target, key: 'goals' },
   { href: '/recurrences', icon: Repeat, key: 'recurrences' },
+  { href: '/import', icon: Upload, key: 'import' },
+  { href: '/export', icon: Download, key: 'export' },
   { href: '/reports', icon: BarChart3, key: 'reports' },
   { href: '/forecast', icon: TrendingUp, key: 'forecast' },
+  { href: '/notifications', icon: Bell, key: 'notifications' },
   { href: '/preferences', icon: Settings, key: 'preferences' },
 ] as const;
 
@@ -102,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <header className="flex h-16 items-center justify-between border-b border-border bg-white px-4 md:hidden">
-        <span className="text-lg font-bold text-primary-dark">Mr Wallet</span>
+        <Logo />
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
