@@ -32,6 +32,10 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    font-size: 18px;
+  }
+
   body {
     background-color: var(--color-bg-secondary);
     color: var(--color-neutral-900);
