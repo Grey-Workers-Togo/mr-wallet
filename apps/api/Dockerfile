@@ -25,10 +25,9 @@ WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY --from=build /repo/apps/api/prisma apps/api/prisma
 RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --include-workspace-root --omit=dev
 COPY --from=build /repo/apps/api/dist apps/api/dist
-COPY --from=build /repo/apps/api/prisma apps/api/prisma
-RUN npm run prisma:generate -w apps/api
 
 EXPOSE 3000
 WORKDIR /repo/apps/api
