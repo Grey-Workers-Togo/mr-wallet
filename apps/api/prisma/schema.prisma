@@ -1,0 +1,785 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & preferences
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  displayName     String?
+  baseCurrency    String    @db.Char(3)
+  locale          String    @default("fr-FR")
+  timezone        String    @default("Africa/Porto-Novo")
+  weekStartsOn    Int       @default(1)
+  monthStartDay   Int       @default(1)
+  pinHash         String?
+  pinLockMinutes  Int       @default(5)
+  emailVerifiedAt DateTime? @db.Timestamptz(6)
+  lastLoginAt     DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime? @db.Timestamptz(6)
+
+  @@index([email])
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String
+  userAgent        String?
+  ipHash           String?
+  expiresAt        DateTime  @db.Timestamptz(6)
+  revokedAt        DateTime? @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  lastUsedAt       DateTime? @db.Timestamptz(6)
+
+  @@index([userId, expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Currencies
+// ---------------------------------------------------------------------------
+
+model Currency {
+  code       String  @id @db.Char(3)
+  name       String
+  symbol     String
+  minorUnits Int
+  isActive   Boolean @default(true)
+}
+
+enum RateSource {
+  MANUAL
+  PROVIDER
+  PEGGED
+}
+
+model ExchangeRate {
+  id           String     @id @default(uuid())
+  userId       String?
+  fromCurrency String     @db.Char(3)
+  toCurrency   String     @db.Char(3)
+  rate         Decimal    @db.Decimal(24, 12)
+  validFrom    DateTime   @db.Timestamptz(6)
+  source       RateSource @default(MANUAL)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+
+  @@index([fromCurrency, toCurrency, validFrom])
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+enum AccountType {
+  CASH
+  BANK
+  MOBILE_MONEY
+  CREDIT_CARD
+  SAVINGS
+  WALLET
+  OTHER
+}
+
+model Account {
+  id                  String      @id @default(uuid())
+  userId              String
+  name                String
+  type                AccountType
+  currency            String      @db.Char(3)
+  openingBalanceMinor BigInt      @default(0)
+  openingBalanceAt    DateTime    @db.Timestamptz(6)
+  currentBalanceMinor BigInt      @default(0)
+  balanceCheckedAt    DateTime?   @db.Timestamptz(6)
+  creditLimitMinor    BigInt?
+  institution         String?
+  color               String?
+  icon                String?
+  isArchived          Boolean     @default(false)
+  includeInNetWorth   Boolean     @default(true)
+  sortOrder           Int         @default(0)
+  createdAt           DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime    @updatedAt @db.Timestamptz(6)
+  deletedAt           DateTime?   @db.Timestamptz(6)
+
+  @@index([userId, deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Categories & tags
+// ---------------------------------------------------------------------------
+
+enum CategoryKind {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+model Category {
+  id        String       @id @default(uuid())
+  userId    String
+  parentId  String?
+  i18nKey   String?
+  name      String?
+  kind      CategoryKind
+  color     String?
+  icon      String?
+  isSystem  Boolean      @default(false)
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime?    @db.Timestamptz(6)
+
+  @@index([userId, deletedAt])
+  @@index([userId, parentId])
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  color     String?
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  @@unique([userId, name])
+}
+
+model TransactionTag {
+  transactionId String
+  tagId         String
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([transactionId, tagId])
+}
+
+// ---------------------------------------------------------------------------
+// Transactions
+// ---------------------------------------------------------------------------
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum TxStatus {
+  PENDING
+  CLEARED
+  RECONCILED
+  VOID
+}
+
+enum TxSource {
+  MANUAL
+  IMPORT
+  RECURRENCE
+  DEBT_PAYMENT
+  GOAL_CONTRIBUTION
+  ADJUSTMENT
+}
+
+model Transaction {
+  id                 String          @id @default(uuid())
+  userId             String
+  accountId          String
+  type               TransactionType
+  amountMinor        BigInt
+  currency           String          @db.Char(3)
+  occurredAt         DateTime        @db.Timestamptz(6)
+  description        String
+  normalizedLabel    String
+  categoryId         String?
+  payee              String?
+  notes              String?
+  status             TxStatus        @default(CLEARED)
+
+  transferGroupId    String?
+  counterAccountId   String?
+
+  source             TxSource        @default(MANUAL)
+  importBatchId      String?
+  externalRef        String?
+  fingerprint        String
+
+  recurrenceId       String?
+  debtPaymentId      String?
+  goalContributionId String?
+
+  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
+  deletedAt          DateTime?       @db.Timestamptz(6)
+
+  @@index([userId, occurredAt])
+  @@index([userId, accountId, occurredAt])
+  @@index([userId, categoryId, occurredAt])
+  @@index([userId, fingerprint])
+  @@index([transferGroupId])
+}
+
+// ---------------------------------------------------------------------------
+// Recurrence
+// ---------------------------------------------------------------------------
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  YEARLY
+}
+
+model RecurrenceRule {
+  id                 String          @id @default(uuid())
+  userId             String
+  name               String
+  type               TransactionType
+  accountId          String
+  categoryId         String?
+  amountMinor        BigInt
+  currency           String          @db.Char(3)
+  amountIsEstimate   Boolean         @default(false)
+
+  frequency          Frequency
+  interval           Int             @default(1)
+  dayOfMonth         Int?
+  dayOfWeek          Int?
+  startsOn           DateTime        @db.Timestamptz(6)
+  endsOn             DateTime?       @db.Timestamptz(6)
+  maxOccurrences     Int?
+
+  autoCreate         Boolean         @default(false)
+  reminderDaysBefore Int?            @default(3)
+  lastGeneratedAt    DateTime?       @db.Timestamptz(6)
+  isActive           Boolean         @default(true)
+  skippedOccurrences DateTime[]      @db.Timestamptz(6)
+
+  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
+  deletedAt          DateTime?       @db.Timestamptz(6)
+
+  @@index([userId, isActive, deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Budgets
+// ---------------------------------------------------------------------------
+
+enum BudgetPeriodType {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+model Budget {
+  id              String           @id @default(uuid())
+  userId          String
+  name            String
+  categoryId      String?
+  amountMinor     BigInt
+  currency        String           @db.Char(3)
+  period          BudgetPeriodType
+  startsOn        DateTime         @db.Timestamptz(6)
+  endsOn          DateTime?        @db.Timestamptz(6)
+  rollover        Boolean          @default(false)
+  alertThresholds Int[]            @default([80, 100])
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime?        @db.Timestamptz(6)
+
+  @@index([userId, isActive, deletedAt])
+}
+
+model BudgetPeriod {
+  id              String    @id @default(uuid())
+  userId          String
+  budgetId        String
+  periodStart     DateTime  @db.Timestamptz(6)
+  periodEnd       DateTime  @db.Timestamptz(6)
+  allocatedMinor  BigInt
+  rolloverInMinor BigInt    @default(0)
+  spentMinor      BigInt    @default(0)
+  lastAlertPct    Int?
+  closedAt        DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([budgetId, periodStart])
+  @@index([userId, periodStart])
+}
+
+// ---------------------------------------------------------------------------
+// Debts
+// ---------------------------------------------------------------------------
+
+enum DebtDirection {
+  OWED_BY_ME
+  OWED_TO_ME
+}
+
+enum DebtKind {
+  LOAN
+  CREDIT_CARD
+  MORTGAGE
+  INFORMAL
+  INSTALLMENT
+  OTHER
+}
+
+enum RateType {
+  FIXED
+  VARIABLE
+  ZERO
+}
+
+enum Compounding {
+  NONE
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID_OFF
+  DEFAULTED
+  CANCELLED
+}
+
+model Debt {
+  id                        String        @id @default(uuid())
+  userId                    String
+  name                      String
+  direction                 DebtDirection
+  counterparty              String?
+  kind                      DebtKind      @default(LOAN)
+  linkedAccountId           String?
+
+  principalMinor            BigInt
+  outstandingPrincipalMinor BigInt
+  currency                  String        @db.Char(3)
+
+  annualRatePct             Decimal?      @db.Decimal(7, 4)
+  rateType                  RateType      @default(FIXED)
+  compounding               Compounding   @default(MONTHLY)
+
+  startedOn                 DateTime      @db.Timestamptz(6)
+  termMonths                Int?
+  paymentFrequency          Frequency     @default(MONTHLY)
+  paymentDayOfMonth         Int?
+  installmentMinor          BigInt?
+
+  status                    DebtStatus    @default(ACTIVE)
+  closedAt                  DateTime?     @db.Timestamptz(6)
+  notes                     String?
+
+  createdAt                 DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt                 DateTime      @updatedAt @db.Timestamptz(6)
+  deletedAt                 DateTime?     @db.Timestamptz(6)
+
+  @@index([userId, status, deletedAt])
+}
+
+enum InstallmentStatus {
+  SCHEDULED
+  PAID
+  PARTIAL
+  LATE
+  SKIPPED
+}
+
+model DebtInstallment {
+  id                String            @id @default(uuid())
+  userId            String
+  debtId            String
+  sequence          Int
+  dueOn             DateTime          @db.Timestamptz(6)
+  totalMinor        BigInt
+  principalMinor    BigInt
+  interestMinor     BigInt
+  feesMinor         BigInt            @default(0)
+  balanceAfterMinor BigInt
+  status            InstallmentStatus @default(SCHEDULED)
+  paidMinor         BigInt            @default(0)
+  paidAt            DateTime?         @db.Timestamptz(6)
+  createdAt         DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(6)
+
+  @@unique([debtId, sequence])
+  @@index([userId, dueOn, status])
+}
+
+model DebtPayment {
+  id             String    @id @default(uuid())
+  userId         String
+  debtId         String
+  installmentId  String?
+  paidAt         DateTime  @db.Timestamptz(6)
+  amountMinor    BigInt
+  principalMinor BigInt
+  interestMinor  BigInt
+  feesMinor      BigInt    @default(0)
+  isExtraPayment Boolean   @default(false)
+  transactionId  String?
+  notes          String?
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt      DateTime? @db.Timestamptz(6)
+
+  @@index([userId, debtId, paidAt])
+}
+
+// ---------------------------------------------------------------------------
+// Savings goals
+// ---------------------------------------------------------------------------
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model SavingsGoal {
+  id              String     @id @default(uuid())
+  userId          String
+  name            String
+  targetMinor     BigInt
+  currentMinor    BigInt     @default(0)
+  currency        String     @db.Char(3)
+  targetDate      DateTime?  @db.Timestamptz(6)
+  linkedAccountId String?
+  priority        Int        @default(0)
+  status          GoalStatus @default(ACTIVE)
+  color           String?
+  icon            String?
+  completedAt     DateTime?  @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime?  @db.Timestamptz(6)
+
+  @@index([userId, status, deletedAt])
+}
+
+model GoalContribution {
+  id            String    @id @default(uuid())
+  userId        String
+  goalId        String
+  amountMinor   BigInt
+  contributedAt DateTime  @db.Timestamptz(6)
+  transactionId String?
+  notes         String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt     DateTime? @db.Timestamptz(6)
+
+  @@index([userId, goalId, contributedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Import
+// ---------------------------------------------------------------------------
+
+enum FileFormat {
+  CSV
+  XLSX
+  XLS
+  OFX
+}
+
+enum AmountStrategy {
+  SIGNED_SINGLE_COLUMN
+  DEBIT_CREDIT_COLUMNS
+  TYPE_COLUMN
+}
+
+model ImportSource {
+  id                String         @id @default(uuid())
+  userId            String
+  name              String
+  fileFormat        FileFormat
+  accountId         String?
+  columnMapping     Json
+  dateFormat        String
+  decimalSeparator  String         @default(",")
+  thousandSeparator String         @default(" ")
+  encoding          String         @default("utf-8")
+  delimiter         String         @default(";")
+  hasHeaderRow      Boolean        @default(true)
+  skipRows          Int            @default(0)
+  amountStrategy    AmountStrategy
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?      @db.Timestamptz(6)
+
+  @@index([userId, deletedAt])
+}
+
+enum ImportStatus {
+  PENDING
+  PARSING
+  AWAITING_REVIEW
+  IMPORTING
+  COMPLETED
+  FAILED
+  REVERTED
+}
+
+model ImportBatch {
+  id            String       @id @default(uuid())
+  userId        String
+  sourceId      String?
+  accountId     String
+  fileName      String
+  fileHash      String
+  fileSizeBytes Int
+  status        ImportStatus @default(PENDING)
+  totalRows     Int          @default(0)
+  importedRows  Int          @default(0)
+  duplicateRows Int          @default(0)
+  errorRows     Int          @default(0)
+  errors        Json?
+  startedAt     DateTime?    @db.Timestamptz(6)
+  completedAt   DateTime?    @db.Timestamptz(6)
+  revertedAt    DateTime?    @db.Timestamptz(6)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(6)
+
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Categorization rules
+// ---------------------------------------------------------------------------
+
+enum MatchField {
+  DESCRIPTION
+  PAYEE
+  EXTERNAL_REF
+}
+
+enum MatchType {
+  CONTAINS
+  EQUALS
+  STARTS_WITH
+  ENDS_WITH
+  REGEX
+}
+
+model CategorizationRule {
+  id             String     @id @default(uuid())
+  userId         String
+  priority       Int        @default(0)
+  matchField     MatchField @default(DESCRIPTION)
+  matchType      MatchType  @default(CONTAINS)
+  matchValue     String
+  minAmountMinor BigInt?
+  maxAmountMinor BigInt?
+  accountId      String?
+  categoryId     String
+  addTagIds      String[]   @default([])
+  setPayee       String?
+  isActive       Boolean    @default(true)
+  timesApplied   Int        @default(0)
+  createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+  deletedAt      DateTime?  @db.Timestamptz(6)
+
+  @@index([userId, isActive, priority])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+enum ActorType {
+  USER
+  SYSTEM
+  IMPORT
+  SCHEDULER
+}
+
+model AuditLog {
+  id         BigInt    @id @default(autoincrement())
+  userId     String?
+  actorType  ActorType @default(USER)
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  metadata   Json?
+  ipHash     String?
+  userAgent  String?
+  requestId  String?
+  occurredAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, occurredAt])
+  @@index([entityType, entityId])
+  @@index([action, occurredAt])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+enum NotificationType {
+  BUDGET_THRESHOLD
+  BUDGET_EXCEEDED
+  DEBT_DUE_SOON
+  DEBT_OVERDUE
+  DEBT_PAID_OFF
+  GOAL_REACHED
+  RECURRENCE_DUE
+  IMPORT_COMPLETED
+  IMPORT_FAILED
+  BALANCE_MISMATCH
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  userId     String
+  type       NotificationType
+  params     Json
+  entityType String?
+  entityId   String?
+  severity   Severity         @default(INFO)
+  readAt     DateTime?        @db.Timestamptz(6)
+  createdAt  DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, readAt, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Balance reconciliation
+// ---------------------------------------------------------------------------
+
+model BalanceCheck {
+  id            String   @id @default(uuid())
+  userId        String
+  accountId     String
+  storedMinor   BigInt
+  computedMinor BigInt
+  deltaMinor    BigInt
+  isMatch       Boolean
+  checkedAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, accountId, checkedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Technical support tables (no soft delete)
+// ---------------------------------------------------------------------------
+
+model NotificationPreference {
+  id           String           @id @default(uuid())
+  userId       String
+  type         NotificationType
+  inAppEnabled Boolean          @default(true)
+  pushEnabled  Boolean          @default(false)
+  emailEnabled Boolean          @default(false)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, type])
+}
+
+enum DevicePlatform {
+  WEB_PUSH
+  IOS
+  ANDROID
+}
+
+model DeviceToken {
+  id           String         @id @default(uuid())
+  userId       String
+  platform     DevicePlatform
+  endpoint     String         @unique
+  p256dhKey    String?
+  authKey      String?
+  nativeToken  String?
+  deviceLabel  String?
+  isActive     Boolean        @default(true)
+  lastSeenAt   DateTime?      @db.Timestamptz(6)
+  failureCount Int            @default(0)
+  createdAt    DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt @db.Timestamptz(6)
+  revokedAt    DateTime?      @db.Timestamptz(6)
+
+  @@index([userId, isActive])
+}
+
+model IdempotencyKey {
+  key            String   @id
+  userId         String
+  endpoint       String
+  requestHash    String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  expiresAt      DateTime @db.Timestamptz(6)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, expiresAt])
+}
+
+enum ExportKind {
+  TRANSACTIONS
+  FULL
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model ExportJob {
+  id           String     @id @default(uuid())
+  userId       String
+  kind         ExportKind
+  format       FileFormat
+  filters      Json?
+  status       JobStatus  @default(PENDING)
+  rowCount     Int?
+  filePath     String?
+  errorMessage String?
+  startedAt    DateTime?  @db.Timestamptz(6)
+  completedAt  DateTime?  @db.Timestamptz(6)
+  expiresAt    DateTime   @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, createdAt])
+}

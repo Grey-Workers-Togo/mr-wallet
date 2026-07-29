@@ -98,21 +98,21 @@ categories   → (aucune)
 accounts     → money, currency
 transactions → money, accounts, categories
 recurrence   → transactions
-budgets      → transactions, categories, money
-debts        → money, accounts
+budgets      → transactions, categories, money, users
+debts        → money, accounts, transactions
 goals        → money, accounts, transactions
-import       → transactions, accounts, categories
-export       → transactions, accounts, budgets, debts, goals
-reporting    → transactions, accounts, debts, currency
+import       → transactions, accounts
+export       → transactions, accounts, categories, tags, budgets, debts, goals
+reporting    → transactions, accounts, debts, currency, budgets
 forecasting  → recurrence, debts, transactions, reporting
-notifications→ budgets, debts, goals
+notifications→ budgets, debts, goals, recurrence
 ```
 
 Toute dépendance absente de cette liste doit être ajoutée ici avant d'être codée, et vérifiée acyclique.
 
 **Règle 3** — Quand une dépendance créerait un cycle, on passe par un **événement**.
 
-Exemple concret : `debts` a besoin qu'une transaction de dépense soit créée quand on enregistre un remboursement, mais `transactions` ne doit pas connaître `debts`. Solution : `debts` émet `DebtPaymentRecorded`, un listener dans `transactions` crée la transaction correspondante.
+Exemple concret : `debts` a besoin qu'une transaction de dépense soit créée quand on enregistre un remboursement. Comme `transactions` ne dépend jamais de `debts`, il n'y a pas de cycle : `debts` appelle directement `TransactionsFacade.createFromDebtPayment` (même pattern que `recurrence` → `transactions`), ce qui donne l'`id` de la transaction créée nécessaire pour le lien bidirectionnel `DebtPayment.transactionId` / `Transaction.debtPaymentId`. `debts` émet en plus `DebtPaidOff` (événement, pas d'écriture) pour que `notifications` puisse alerter sans que `debts` ait besoin de connaître `notifications`.
 
 ## 5. Événements de domaine
 
@@ -123,11 +123,12 @@ Bus interne synchrone (`@nestjs/event-emitter`) en V1. Aucun broker externe : le
 | `TransactionCreated` | transactions | budgets, goals, notifications | Recalcul consommation, progression objectif, évaluation alertes |
 | `TransactionUpdated` | transactions | budgets, goals, notifications | Idem, avec ancienne et nouvelle valeur |
 | `TransactionDeleted` | transactions | budgets, goals | Décrément |
-| `DebtPaymentRecorded` | debts | transactions, notifications | Création de la transaction de paiement, alerte si dette soldée |
 | `BudgetThresholdCrossed` | budgets | notifications | Alerte 80 % / 100 % / dépassement |
 | `GoalReached` | goals | notifications | Notification |
 | `ImportBatchCompleted` | import | notifications, audit | Résumé du lot |
 | `RecurrenceDue` | recurrence | notifications | Rappel d'échéance à venir |
+| `DebtPaidOff` | debts | notifications | Dette soldée (RG-D8) |
+| `DebtInstallmentOverdue` / `DebtInstallmentDueSoon` | debts | notifications | Échéance en retard / à venir (RG-D7) |
 
 **Contrainte de transactionnalité** : les listeners qui écrivent en base s'exécutent dans la même transaction PostgreSQL que l'émetteur. Si un listener échoue, l'opération entière est annulée. Ne pas utiliser d'émission asynchrone « fire and forget » pour un effet qui modifie des données financières.
 
