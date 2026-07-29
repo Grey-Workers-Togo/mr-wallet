@@ -21,6 +21,7 @@ import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { apiClient } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/shared/Logo';
 
 const NAV_ITEMS = [
   { href: '/accounts', icon: Wallet, key: 'accounts' },
@@ -84,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-white"
       >
         <div className="flex h-16 items-center gap-2 px-6">
-          <span className="text-lg font-bold text-primary-dark">Mr Wallet</span>
+          <Logo />
         </div>
         {navList}
         <div className="p-3">
