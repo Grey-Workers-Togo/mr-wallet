@@ -13,10 +13,67 @@
     "confirm": "Supprimer"
   },
   "home": {
-    "title": "Tableau de bord",
-    "subtitle": "Où va mon argent ce mois-ci ?",
     "login": "Se connecter",
-    "register": "S'inscrire"
+    "register": "S'inscrire",
+    "hero": {
+      "title": "Mr Wallet",
+      "tagline": "Reprends le contrôle de tes finances.",
+      "description": "Suivi des dépenses. Budgets. Prévisions. Tout ce qu'il te faut pour voir où va ton argent.",
+      "ctaPrimary": "S'inscrire gratuitement",
+      "ctaSecondary": "En savoir plus"
+    },
+    "features": {
+      "title": "Conçu pour toi",
+      "items": [
+        {
+          "title": "Suis tes dépenses",
+          "description": "Importe tes relevés ou saisis manuellement. Catégorisation automatique."
+        },
+        {
+          "title": "Maîtrise tes budgets",
+          "description": "Définis des enveloppes par catégorie, reçois des alertes avant de dépasser."
+        },
+        {
+          "title": "Anticipe l'avenir",
+          "description": "Vois où tu seras dans 6 mois avec tes tendances actuelles."
+        }
+      ]
+    },
+    "howItWorks": {
+      "title": "Commencer en 4 étapes",
+      "steps": [
+        { "title": "S'inscrire", "description": "Email et mot de passe. 30 secondes." },
+        { "title": "Importer ou saisir", "description": "Import CSV/Excel ou saisie manuelle." },
+        { "title": "Définir tes budgets", "description": "Templates ou personnalisé." },
+        { "title": "Regarder croître", "description": "Dashboards et rapports." }
+      ]
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "items": [
+        { "question": "Combien ça coûte ?", "answer": "Gratuit, zéro publicité." },
+        { "question": "Mes données sont-elles protégées ?", "answer": "Chiffrement et audit log complet." },
+        { "question": "Puis-je importer les relevés de ma banque ?", "answer": "CSV/Excel dès aujourd'hui, des connecteurs directs sont prévus." },
+        { "question": "Ça fonctionne sur mobile ?", "answer": "Oui, c'est une PWA installable." },
+        { "question": "Comment je récupère mes données ?", "answer": "Export complet à tout moment." },
+        { "question": "Y a-t-il une limite de transactions ?", "answer": "Non." },
+        { "question": "Que se passe-t-il si je supprime mon compte ?", "answer": "Suppression logique, puis définitive après 30 jours." }
+      ]
+    },
+    "ctaFinal": {
+      "title": "Prêt ? Commence maintenant.",
+      "primary": "S'inscrire gratuitement",
+      "secondaryPrefix": "ou",
+      "secondary": "se connecter"
+    },
+    "footer": {
+      "description": "Les finances personnelles, en simple.",
+      "linksTitle": "Liens",
+      "docs": "Docs",
+      "github": "GitHub",
+      "contact": "Contact",
+      "rights": "Tous droits réservés."
+    }
   },
   "nav": {
     "mainNavigation": "Navigation principale",
