@@ -3,7 +3,19 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "**/Dockerfile"
+      - "docker-compose*.yml"
+      - "Caddyfile"
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "**/Dockerfile"
+      - "docker-compose*.yml"
+      - "Caddyfile"
 
 jobs:
   ci:
