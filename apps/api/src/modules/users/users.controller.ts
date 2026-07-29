@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
@@ -51,6 +52,7 @@ export class UsersController {
     return this.usersService.setPin(user.id, dto);
   }
 
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post('pin/verify')
   verifyPin(@CurrentUser() user: RequestUser, @Body(new ZodValidationPipe(verifyPinSchema)) dto: VerifyPinDto) {
     return this.usersService.verifyPin(user.id, dto);

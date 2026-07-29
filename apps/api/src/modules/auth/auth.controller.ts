@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { Public } from '../../common/auth/public.decorator';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
@@ -57,6 +58,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
   @Audit({ action: 'auth.register', entityType: 'User' })
   async register(
@@ -69,6 +71,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   @Audit({ action: 'auth.login', entityType: 'User' })
   async login(
@@ -123,6 +126,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('password/forgot')
   @HttpCode(HttpStatus.NO_CONTENT)
   async forgotPassword(@Body(new ZodValidationPipe(forgotPasswordSchema)) dto: ForgotPasswordDto) {
@@ -130,6 +134,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('password/reset')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Audit({ action: 'auth.password_reset', entityType: 'User' })
