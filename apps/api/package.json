@@ -8,6 +8,7 @@
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "postinstall": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
