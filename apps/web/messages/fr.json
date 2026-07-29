@@ -4,7 +4,8 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "submit": "Valider",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "switchLanguage": "Changer de langue"
   },
   "confirm": {
     "deleteTitle": "Supprimer cet élément ?",
