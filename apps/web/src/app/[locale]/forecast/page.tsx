@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ForecastMonth {
   month: string;
@@ -36,7 +36,11 @@ export default function ForecastPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
       <p className="text-neutral-600">{t('disclaimer')}</p>
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
       {forecast === null && !error && <p className="text-neutral-600">...</p>}
       {forecast && (
         <Card className="p-6">
@@ -45,7 +49,9 @@ export default function ForecastPage() {
           </CardHeader>
           <CardContent className="p-0 space-y-3">
             {forecast.historyIncomplete && (
-              <Alert variant="warning">{t('historyIncomplete')}</Alert>
+              <Alert>
+                <AlertDescription>{t('historyIncomplete')}</AlertDescription>
+              </Alert>
             )}
             <div className="space-y-2">
               {forecast.months.map((m) => (

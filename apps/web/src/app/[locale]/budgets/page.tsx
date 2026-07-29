@@ -6,10 +6,10 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const PERIODS = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'] as const;
@@ -103,7 +103,11 @@ export default function BudgetsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {current === null && <p className="text-neutral-600">...</p>}
       {current?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -138,13 +142,21 @@ export default function BudgetsPage() {
             </div>
             <div>
               <Label htmlFor="categoryId">{t('categoryLabel')}</Label>
-              <Select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">{t('globalCategory')}</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {resolveCategoryName(category)}
-                  </option>
-                ))}
+              <Select
+                value={categoryId || undefined}
+                onValueChange={(value) => setCategoryId(value === '__none__' || value === null ? '' : value)}
+              >
+                <SelectTrigger id="categoryId" className="w-full">
+                  <SelectValue placeholder={t('globalCategory')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t('globalCategory')}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {resolveCategoryName(category)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -153,12 +165,17 @@ export default function BudgetsPage() {
             </div>
             <div>
               <Label htmlFor="period">{t('periodLabel')}</Label>
-              <Select id="period" value={period} onChange={(e) => setPeriod(e.target.value as (typeof PERIODS)[number])}>
-                {PERIODS.map((value) => (
-                  <option key={value} value={value}>
-                    {tPeriod(value)}
-                  </option>
-                ))}
+              <Select value={period} onValueChange={(value) => setPeriod(value as (typeof PERIODS)[number])}>
+                <SelectTrigger id="period" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERIODS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tPeriod(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -166,7 +183,7 @@ export default function BudgetsPage() {
               <Input id="startsOn" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
             </div>
             <div className="flex items-center gap-2 pt-6">
-              <Checkbox id="rollover" checked={rollover} onChange={(e) => setRollover(e.target.checked)} />
+              <Checkbox id="rollover" checked={rollover} onCheckedChange={setRollover} />
               <Label htmlFor="rollover" className="mb-0">{t('rolloverLabel')}</Label>
             </div>
             <div className="md:col-span-2">

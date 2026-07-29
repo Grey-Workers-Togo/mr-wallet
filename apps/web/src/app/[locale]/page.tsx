@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const t = useTranslations('home');
@@ -12,12 +13,12 @@ export default function HomePage() {
         <p className="text-base text-neutral-600">{t('subtitle')}</p>
       </div>
       <div className="flex gap-3">
-        <Button asChild>
-          <Link href="/login">{t('login')}</Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href="/register">{t('register')}</Link>
-        </Button>
+        <Link href="/login" className={cn(buttonVariants())}>
+          {t('login')}
+        </Link>
+        <Link href="/register" className={cn(buttonVariants({ variant: 'secondary' }))}>
+          {t('register')}
+        </Link>
       </div>
     </main>
   );

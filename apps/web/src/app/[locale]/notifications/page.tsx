@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 interface Notification {
@@ -79,7 +79,11 @@ export default function NotificationsPage() {
         </Button>
       </div>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {notifications === null && <p className="text-neutral-600">...</p>}
       {notifications?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}

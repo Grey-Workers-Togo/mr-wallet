@@ -8,9 +8,9 @@ import { setAccessToken } from '@/lib/auth-store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH } from '@/lib/validation';
 
@@ -82,20 +82,24 @@ export default function RegisterPage() {
             </div>
             <div>
               <Label htmlFor="baseCurrency">{t('baseCurrencyLabel')}</Label>
-              <Select
-                id="baseCurrency"
-                value={baseCurrency}
-                onChange={(e) => setBaseCurrency(e.target.value)}
-                required
-              >
-                {currencies.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code}
-                  </option>
-                ))}
+              <Select value={baseCurrency} onValueChange={(value) => setBaseCurrency(value ?? '')}>
+                <SelectTrigger id="baseCurrency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
-            {error && <Alert variant="error">{tError(error as never)}</Alert>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{tError(error as never)}</AlertDescription>
+              </Alert>
+            )}
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? t('submitting') : t('submit')}
             </Button>

@@ -6,10 +6,10 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
 
@@ -70,7 +70,11 @@ export default function AccountsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {accounts === null && <p className="text-neutral-600">...</p>}
       {accounts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -80,7 +84,7 @@ export default function AccountsPage() {
             <Card key={account.id} className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-lg font-medium text-neutral-900">{account.name}</h3>
-                <Badge variant="primary">{tType(account.type)}</Badge>
+                <Badge>{tType(account.type)}</Badge>
               </div>
               <p className="mt-3 text-2xl font-semibold text-neutral-900">
                 {account.currentBalanceMinor} <span className="text-base font-normal text-neutral-600">{account.currency}</span>
@@ -103,25 +107,34 @@ export default function AccountsPage() {
             <div>
               <Label htmlFor="type">{t('typeLabel')}</Label>
               <Select
-                id="type"
                 value={type}
-                onChange={(e) => setType(e.target.value as (typeof ACCOUNT_TYPES)[number])}
+                onValueChange={(value) => setType(value as (typeof ACCOUNT_TYPES)[number])}
               >
-                {ACCOUNT_TYPES.map((value) => (
-                  <option key={value} value={value}>
-                    {tType(value)}
-                  </option>
-                ))}
+                <SelectTrigger id="type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCOUNT_TYPES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tType(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="currency">{t('currencyLabel')}</Label>
-              <Select id="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} required>
-                {currencies.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code}
-                  </option>
-                ))}
+              <Select value={currency} onValueChange={(value) => setCurrency(value ?? '')}>
+                <SelectTrigger id="currency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>

@@ -8,9 +8,9 @@ import { purgeOfflineCache } from '@/lib/offline-cache';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Profile {
   id: string;
@@ -46,6 +46,7 @@ export default function PreferencesPage() {
   const [devices, setDevices] = useState<PushDevice[] | null>(null);
   const [pin, setPin] = useState('');
   const [pinLockMinutes, setPinLockMinutes] = useState(5);
+  const [locale, setLocale] = useState('fr-FR');
   const [error, setError] = useState<string | null>(null);
 
   async function loadAll() {
@@ -55,6 +56,7 @@ export default function PreferencesPage() {
     ]);
     setProfile(me);
     setPinLockMinutes(me.pinLockMinutes);
+    setLocale(me.locale);
     setDevices(deviceList);
   }
 
@@ -78,7 +80,7 @@ export default function PreferencesPage() {
     await run(async () => {
       await apiClient.patch('/me', {
         displayName: (form.get('displayName') as string) || undefined,
-        locale: form.get('locale') as string,
+        locale,
         timezone: form.get('timezone') as string,
         weekStartsOn: Number(form.get('weekStartsOn')),
         monthStartDay: Number(form.get('monthStartDay')),
@@ -152,7 +154,11 @@ export default function PreferencesPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {!profile && <p className="text-neutral-600">...</p>}
 
@@ -170,9 +176,14 @@ export default function PreferencesPage() {
                 </div>
                 <div>
                   <Label htmlFor="locale">{t('localeLabel')}</Label>
-                  <Select id="locale" name="locale" defaultValue={profile.locale}>
-                    <option value="fr-FR">Français</option>
-                    <option value="en-US">English</option>
+                  <Select value={locale} onValueChange={(value) => setLocale(value ?? '')}>
+                    <SelectTrigger id="locale" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr-FR">Français</SelectItem>
+                      <SelectItem value="en-US">English</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div>

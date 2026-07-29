@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Dashboard {
   netWorth: { currency: string; netWorthMinor: string; assetsMinor: string; liabilitiesMinor: string };
@@ -29,7 +29,11 @@ export default function ReportsPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
       {dashboard === null && !error && <p className="text-neutral-600">...</p>}
       {dashboard && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

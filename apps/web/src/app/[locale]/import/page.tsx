@@ -7,9 +7,9 @@ import { getAccessToken } from '@/lib/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Account {
   id: string;
@@ -106,27 +106,41 @@ export default function ImportPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       <Card className="p-6">
         <CardContent className="p-0">
           <form onSubmit={onUpload} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select id="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
+              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+                <SelectTrigger id="accountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="dateFormat">{t('dateFormatLabel')}</Label>
-              <Select id="dateFormat" value={dateFormat} onChange={(e) => setDateFormat(e.target.value as typeof dateFormat)}>
-                <option value="dd/MM/yyyy">dd/MM/yyyy</option>
-                <option value="MM/dd/yyyy">MM/dd/yyyy</option>
-                <option value="yyyy-MM-dd">yyyy-MM-dd</option>
+              <Select value={dateFormat} onValueChange={(value) => setDateFormat(value as typeof dateFormat)}>
+                <SelectTrigger id="dateFormat" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dd/MM/yyyy">dd/MM/yyyy</SelectItem>
+                  <SelectItem value="MM/dd/yyyy">MM/dd/yyyy</SelectItem>
+                  <SelectItem value="yyyy-MM-dd">yyyy-MM-dd</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="md:col-span-2">

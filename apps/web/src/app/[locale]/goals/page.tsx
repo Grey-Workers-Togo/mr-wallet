@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 interface Goal {
@@ -72,7 +72,11 @@ export default function GoalsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {goals === null && <p className="text-neutral-600">...</p>}
       {goals?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -82,7 +86,7 @@ export default function GoalsPage() {
             <Card key={goal.id} className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-lg font-medium text-neutral-900">{goal.name}</h3>
-                <Badge variant="primary">{tStatus(goal.status)}</Badge>
+                <Badge>{tStatus(goal.status)}</Badge>
               </div>
               <p className="mt-3 text-neutral-900">
                 {goal.currentMinor} / {goal.targetMinor} {goal.currency}

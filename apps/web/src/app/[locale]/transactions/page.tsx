@@ -6,10 +6,10 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const TX_TYPES = ['EXPENSE', 'INCOME'] as const;
 
@@ -144,7 +144,11 @@ export default function TransactionsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {transactions === null && <p className="text-neutral-600">...</p>}
       {transactions?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -179,22 +183,32 @@ export default function TransactionsPage() {
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select id="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
+              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+                <SelectTrigger id="accountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="type">{t('typeLabel')}</Label>
-              <Select id="type" value={type} onChange={(e) => setType(e.target.value as (typeof TX_TYPES)[number])}>
-                {TX_TYPES.map((value) => (
-                  <option key={value} value={value}>
-                    {tType(value)}
-                  </option>
-                ))}
+              <Select value={type} onValueChange={(value) => setType(value as (typeof TX_TYPES)[number])}>
+                <SelectTrigger id="type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TX_TYPES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tType(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -211,13 +225,21 @@ export default function TransactionsPage() {
             </div>
             <div>
               <Label htmlFor="categoryId">{t('categoryLabel')}</Label>
-              <Select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">{t('noCategory')}</option>
-                {availableCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {resolveCategoryName(category)}
-                  </option>
-                ))}
+              <Select
+                value={categoryId || undefined}
+                onValueChange={(value) => setCategoryId(value === '__none__' || value === null ? '' : value)}
+              >
+                <SelectTrigger id="categoryId" className="w-full">
+                  <SelectValue placeholder={t('noCategory')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t('noCategory')}</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {resolveCategoryName(category)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="md:col-span-2">
@@ -235,22 +257,32 @@ export default function TransactionsPage() {
           <form onSubmit={onTransfer} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="fromAccountId">{t('fromAccountLabel')}</Label>
-              <Select id="fromAccountId" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
+              <Select value={fromAccountId} onValueChange={(value) => setFromAccountId(value ?? '')}>
+                <SelectTrigger id="fromAccountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="toAccountId">{t('toAccountLabel')}</Label>
-              <Select id="toAccountId" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
+              <Select value={toAccountId} onValueChange={(value) => setToAccountId(value ?? '')}>
+                <SelectTrigger id="toAccountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>

@@ -20,7 +20,7 @@ import {
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { apiClient } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/accounts', icon: Wallet, key: 'accounts' },

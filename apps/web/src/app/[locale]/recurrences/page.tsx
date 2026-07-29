@@ -6,10 +6,10 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY'] as const;
@@ -112,7 +112,11 @@ export default function RecurrencesPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {rules === null && <p className="text-neutral-600">...</p>}
       {rules?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -163,12 +167,17 @@ export default function RecurrencesPage() {
             </div>
             <div>
               <Label htmlFor="accountId">{t('accountLabel')}</Label>
-              <Select id="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
+              <Select value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
+                <SelectTrigger id="accountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -177,12 +186,17 @@ export default function RecurrencesPage() {
             </div>
             <div>
               <Label htmlFor="frequency">{t('frequencyLabel')}</Label>
-              <Select id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value as (typeof FREQUENCIES)[number])}>
-                {FREQUENCIES.map((value) => (
-                  <option key={value} value={value}>
-                    {tFrequency(value)}
-                  </option>
-                ))}
+              <Select value={frequency} onValueChange={(value) => setFrequency(value as (typeof FREQUENCIES)[number])}>
+                <SelectTrigger id="frequency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FREQUENCIES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tFrequency(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -190,7 +204,7 @@ export default function RecurrencesPage() {
               <Input id="startsOn" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
             </div>
             <div className="flex items-center gap-2 pt-6">
-              <Checkbox id="autoCreate" checked={autoCreate} onChange={(e) => setAutoCreate(e.target.checked)} />
+              <Checkbox id="autoCreate" checked={autoCreate} onCheckedChange={setAutoCreate} />
               <Label htmlFor="autoCreate" className="mb-0">{t('autoCreateLabel')}</Label>
             </div>
             <div className="md:col-span-2">

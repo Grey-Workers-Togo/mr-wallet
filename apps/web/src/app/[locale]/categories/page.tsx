@@ -6,9 +6,9 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 const CATEGORY_KINDS = ['EXPENSE', 'INCOME'] as const;
@@ -78,7 +78,11 @@ export default function CategoriesPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {categories === null && <p className="text-neutral-600">...</p>}
       {categories?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -89,8 +93,8 @@ export default function CategoriesPage() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-medium text-neutral-900">{resolveName(category)}</h3>
-                  <Badge variant="primary">{tKind(category.kind as never)}</Badge>
-                  {category.isSystem && <Badge variant="neutral">{t('system')}</Badge>}
+                  <Badge>{tKind(category.kind as never)}</Badge>
+                  {category.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                 </div>
                 {!category.isSystem && (
                   <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(category.id)}>
@@ -106,7 +110,7 @@ export default function CategoriesPage() {
                       <li key={child.id} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span className="text-neutral-900">{resolveName(child)}</span>
-                          {child.isSystem && <Badge variant="neutral">{t('system')}</Badge>}
+                          {child.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                         </div>
                         {!child.isSystem && (
                           <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(child.id)}>
@@ -134,23 +138,36 @@ export default function CategoriesPage() {
             </div>
             <div>
               <Label htmlFor="kind">{t('kindLabel')}</Label>
-              <Select id="kind" value={kind} onChange={(e) => setKind(e.target.value as (typeof CATEGORY_KINDS)[number])}>
-                {CATEGORY_KINDS.map((value) => (
-                  <option key={value} value={value}>
-                    {tKind(value)}
-                  </option>
-                ))}
+              <Select value={kind} onValueChange={(value) => setKind(value as (typeof CATEGORY_KINDS)[number])}>
+                <SelectTrigger id="kind" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_KINDS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tKind(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="parentId">{t('parentLabel')}</Label>
-              <Select id="parentId" value={parentId} onChange={(e) => setParentId(e.target.value)}>
-                <option value="">{t('noParent')}</option>
-                {parentOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {resolveName(option)}
-                  </option>
-                ))}
+              <Select
+                value={parentId || undefined}
+                onValueChange={(value) => setParentId(value === '__none__' || value === null ? '' : value)}
+              >
+                <SelectTrigger id="parentId" className="w-full">
+                  <SelectValue placeholder={t('noParent')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t('noParent')}</SelectItem>
+                  {parentOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {resolveName(option)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="md:col-span-2">

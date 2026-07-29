@@ -6,10 +6,10 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
 
@@ -83,7 +83,11 @@ export default function DebtsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
 
-      {error && <Alert variant="error">{tError(error as never)}</Alert>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{tError(error as never)}</AlertDescription>
+        </Alert>
+      )}
 
       {debts === null && <p className="text-neutral-600">...</p>}
       {debts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
@@ -118,12 +122,17 @@ export default function DebtsPage() {
             </div>
             <div>
               <Label htmlFor="direction">{t('directionLabel')}</Label>
-              <Select id="direction" value={direction} onChange={(e) => setDirection(e.target.value as (typeof DIRECTIONS)[number])}>
-                {DIRECTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {tDirection(value)}
-                  </option>
-                ))}
+              <Select value={direction} onValueChange={(value) => setDirection(value as (typeof DIRECTIONS)[number])}>
+                <SelectTrigger id="direction" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIRECTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tDirection(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>

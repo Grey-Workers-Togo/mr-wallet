@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EMAIL_PATTERN } from '@/lib/validation';
 
 interface LoginResponse {
@@ -71,7 +71,11 @@ export default function LoginPage() {
                 required
               />
             </div>
-            {error && <Alert variant="error">{tError(error as never)}</Alert>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{tError(error as never)}</AlertDescription>
+              </Alert>
+            )}
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? t('submitting') : t('submit')}
             </Button>
