@@ -1,6 +1,7 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Inter } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
@@ -8,6 +9,8 @@ import { PinLockGate } from '@/components/PinLockGate';
 import { ConditionalShell } from '@/components/layouts/ConditionalShell';
 import type { ReactNode } from 'react';
 import '@/styles/globals.css';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mister-wallet.com';
 
@@ -80,7 +83,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={inter.variable}>
       <body>
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />

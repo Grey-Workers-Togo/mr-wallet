@@ -24,7 +24,7 @@
   --color-bg-secondary: #f9fafb;
 
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', Roboto, sans-serif;
 }
 
 @layer base {
