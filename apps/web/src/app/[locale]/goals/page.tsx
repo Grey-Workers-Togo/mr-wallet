@@ -30,6 +30,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 interface Goal {
   id: string;
@@ -65,6 +67,7 @@ export default function GoalsPage() {
   const tStatus = useTranslations('goals.status');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const currencies = useCurrencies();
   const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
@@ -77,11 +80,14 @@ export default function GoalsPage() {
   const [targetDate, setTargetDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
   const [contributionDate, setContributionDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [contributionError, setContributionError] = useState<string | null>(null);
+  const [isSubmittingContribution, setIsSubmittingContribution] = useState(false);
 
   async function loadAll() {
     setGoals(await apiClient.get<Goal[]>('/goals'));
@@ -110,6 +116,7 @@ export default function GoalsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (editingId) {
         await apiClient.patch(`/goals/${editingId}`, {
@@ -127,18 +134,29 @@ export default function GoalsPage() {
       }
       setDialogOpen(false);
       await loadAll();
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/goals/${id}`);
       await loadAll();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -153,6 +171,7 @@ export default function GoalsPage() {
     e.preventDefault();
     if (!contributeGoal) return;
     setContributionError(null);
+    setIsSubmittingContribution(true);
     try {
       await apiClient.post(`/goals/${contributeGoal.id}/contributions`, {
         amountMinor: contributionAmount,
@@ -160,8 +179,13 @@ export default function GoalsPage() {
       });
       setContributeGoal(null);
       await loadAll();
+      toast({ title: tCommon('updateSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setContributionError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setContributionError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmittingContribution(false);
     }
   }
 
@@ -237,7 +261,7 @@ export default function GoalsPage() {
         </motion.div>
       )}
 
-      {goals === null && <p className="text-neutral-600">...</p>}
+      {goals === null && <PageLoader />}
 
       {goals?.length === 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
@@ -338,11 +362,11 @@ export default function GoalsPage() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="targetMinor">{t('targetLabel')}</Label>
+              <Label htmlFor="targetMinor" required>{t('targetLabel')}</Label>
               <AmountInput id="targetMinor" value={targetMinor} onValueChange={setTargetMinor} required />
             </div>
             <div>
@@ -350,7 +374,9 @@ export default function GoalsPage() {
               <Input id="targetDate" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
             </div>
             <DialogFooter>
-              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? t('saveChanges') : t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -368,11 +394,11 @@ export default function GoalsPage() {
           )}
           <form onSubmit={onSubmitContribution} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="contributionAmount">{t('contributeAmountLabel')}</Label>
+              <Label htmlFor="contributionAmount" required>{t('contributeAmountLabel')}</Label>
               <AmountInput id="contributionAmount" value={contributionAmount} onValueChange={setContributionAmount} required />
             </div>
             <div>
-              <Label htmlFor="contributionDate">{t('contributeDateLabel')}</Label>
+              <Label htmlFor="contributionDate" required>{t('contributeDateLabel')}</Label>
               <Input
                 id="contributionDate"
                 type="date"
@@ -382,7 +408,9 @@ export default function GoalsPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit">{t('contributeSubmit')}</Button>
+              <Button type="submit" loading={isSubmittingContribution}>
+                {t('contributeSubmit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -400,6 +428,7 @@ export default function GoalsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);

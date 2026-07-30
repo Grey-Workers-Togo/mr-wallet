@@ -31,6 +31,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
 
@@ -85,6 +87,7 @@ export default function DebtsPage() {
   const tDirection = useTranslations('debts.direction');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
   const currencies = useCurrencies();
@@ -103,6 +106,8 @@ export default function DebtsPage() {
   const [linkedAccountId, setLinkedAccountId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [paymentDialogDebt, setPaymentDialogDebt] = useState<Debt | null>(null);
   const [paymentInstallments, setPaymentInstallments] = useState<DebtInstallment[]>([]);
@@ -111,6 +116,7 @@ export default function DebtsPage() {
   const [installmentId, setInstallmentId] = useState('');
   const [isExtraPayment, setIsExtraPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   async function loadAll() {
     const [debtsList, accountsList] = await Promise.all([
@@ -152,6 +158,7 @@ export default function DebtsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (editingId) {
         // direction/principalMinor/annualRatePct/termMonths/startedOn are immutable after creation
@@ -175,18 +182,29 @@ export default function DebtsPage() {
       }
       setDialogOpen(false);
       await loadAll();
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/debts/${id}`);
       await loadAll();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -209,6 +227,7 @@ export default function DebtsPage() {
     e.preventDefault();
     if (!paymentDialogDebt) return;
     setPaymentError(null);
+    setIsSubmittingPayment(true);
     try {
       await apiClient.post(`/debts/${paymentDialogDebt.id}/payments`, {
         paidAt,
@@ -218,8 +237,13 @@ export default function DebtsPage() {
       });
       setPaymentDialogDebt(null);
       await loadAll();
+      toast({ title: tCommon('updateSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setPaymentError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setPaymentError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmittingPayment(false);
     }
   }
 
@@ -291,7 +315,7 @@ export default function DebtsPage() {
         </motion.div>
       )}
 
-      {debts === null && <p className="text-neutral-600">...</p>}
+      {debts === null && <PageLoader />}
       {debts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {debts && debts.length > 0 && (
         <motion.div
@@ -355,11 +379,11 @@ export default function DebtsPage() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="direction">{t('directionLabel')}</Label>
+              <Label htmlFor="direction" required>{t('directionLabel')}</Label>
               <Select
                 items={directionItems}
                 value={direction}
@@ -379,7 +403,7 @@ export default function DebtsPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="principalMinor">{t('principalLabel')}</Label>
+              <Label htmlFor="principalMinor" required>{t('principalLabel')}</Label>
               <AmountInput
                 id="principalMinor"
                 value={principalMinor}
@@ -413,7 +437,7 @@ export default function DebtsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="startedOn">{t('startedOnLabel')}</Label>
+              <Label htmlFor="startedOn" required>{t('startedOnLabel')}</Label>
               <Input
                 id="startedOn"
                 type="date"
@@ -447,7 +471,9 @@ export default function DebtsPage() {
               </Select>
             </div>
             <DialogFooter>
-              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? t('saveChanges') : t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -465,11 +491,11 @@ export default function DebtsPage() {
           )}
           <form onSubmit={onSubmitPayment} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="paidAt">{t('paidAtLabel')}</Label>
+              <Label htmlFor="paidAt" required>{t('paidAtLabel')}</Label>
               <Input id="paidAt" type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="paymentAmountMinor">{t('amountLabel')}</Label>
+              <Label htmlFor="paymentAmountMinor" required>{t('amountLabel')}</Label>
               <AmountInput
                 id="paymentAmountMinor"
                 value={paymentAmountMinor}
@@ -513,7 +539,9 @@ export default function DebtsPage() {
               </div>
             )}
             <DialogFooter>
-              <Button type="submit">{t('recordPaymentSubmit')}</Button>
+              <Button type="submit" loading={isSubmittingPayment}>
+                {t('recordPaymentSubmit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -531,6 +559,7 @@ export default function DebtsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);

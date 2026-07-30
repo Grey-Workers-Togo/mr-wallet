@@ -31,6 +31,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const PERIODS = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'] as const;
 
@@ -82,6 +84,7 @@ export default function BudgetsPage() {
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const currencies = useCurrencies();
   const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
@@ -98,6 +101,8 @@ export default function BudgetsPage() {
   const [rollover, setRollover] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   function resolveCategoryName(category: Category): string {
     if (category.name) return category.name;
@@ -149,6 +154,7 @@ export default function BudgetsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (editingId) {
         // categoryId/currency/period/startsOn are immutable after creation
@@ -166,18 +172,29 @@ export default function BudgetsPage() {
       }
       setDialogOpen(false);
       await loadAll();
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/budgets/${id}`);
       await loadAll();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -259,7 +276,7 @@ export default function BudgetsPage() {
         </motion.div>
       )}
 
-      {current === null && <p className="text-neutral-600">...</p>}
+      {current === null && <PageLoader />}
 
       {current && (
         <motion.div
@@ -360,7 +377,7 @@ export default function BudgetsPage() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
@@ -385,11 +402,11 @@ export default function BudgetsPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="amountMinor">{t('amountLabel')}</Label>
+              <Label htmlFor="amountMinor" required>{t('amountLabel')}</Label>
               <AmountInput id="amountMinor" value={amountMinor} onValueChange={setAmountMinor} required />
             </div>
             <div>
-              <Label htmlFor="period">{t('periodLabel')}</Label>
+              <Label htmlFor="period" required>{t('periodLabel')}</Label>
               <Select
                 items={periodItems}
                 value={period}
@@ -409,7 +426,7 @@ export default function BudgetsPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="startsOn">{t('startsOnLabel')}</Label>
+              <Label htmlFor="startsOn" required>{t('startsOnLabel')}</Label>
               <Input
                 id="startsOn"
                 type="date"
@@ -424,7 +441,9 @@ export default function BudgetsPage() {
               <Label htmlFor="rollover" className="mb-0">{t('rolloverLabel')}</Label>
             </div>
             <DialogFooter>
-              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? t('saveChanges') : t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -442,6 +461,7 @@ export default function BudgetsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);
