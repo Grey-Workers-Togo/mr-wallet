@@ -53,6 +53,8 @@ export class TransactionsService {
       userId,
       ...(query.accountId && { accountId: query.accountId }),
       ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(query.type === 'TRANSFER' && { transferGroupId: { not: null } }),
+      ...(query.type && query.type !== 'TRANSFER' && { type: query.type, transferGroupId: null }),
       ...((query.from || query.to) && {
         occurredAt: { ...(query.from && { gte: query.from }), ...(query.to && { lte: query.to }) },
       }),
@@ -61,6 +63,13 @@ export class TransactionsService {
           ...(query.minAmountMinor && { gte: BigInt(query.minAmountMinor) }),
           ...(query.maxAmountMinor && { lte: BigInt(query.maxAmountMinor) }),
         },
+      }),
+      ...(query.q && {
+        OR: [
+          { description: { contains: query.q, mode: 'insensitive' } },
+          { notes: { contains: query.q, mode: 'insensitive' } },
+          { payee: { contains: query.q, mode: 'insensitive' } },
+        ],
       }),
     };
 
@@ -428,18 +437,25 @@ export class TransactionsService {
 
   /** RG-T5: transfer legs (`transferGroupId` set) are excluded from spend/income totals. */
   async summary(userId: string, from?: Date, to?: Date) {
-    const where: Prisma.TransactionWhereInput = {
+    const dateFilter = (from || to) && { occurredAt: { ...(from && { gte: from }), ...(to && { lte: to }) } };
+    const where: Prisma.TransactionWhereInput = { userId, transferGroupId: null, ...dateFilter };
+    const transferWhere: Prisma.TransactionWhereInput = {
       userId,
-      transferGroupId: null,
-      ...((from || to) && { occurredAt: { ...(from && { gte: from }), ...(to && { lte: to }) } }),
+      transferGroupId: { not: null },
+      type: 'EXPENSE',
+      ...dateFilter,
     };
-    const [expense, income] = await Promise.all([
+    const [expense, income, transfer, transferLegCount] = await Promise.all([
       this.prisma.transaction.aggregate({ where: { ...where, type: 'EXPENSE' }, _sum: { amountMinor: true } }),
       this.prisma.transaction.aggregate({ where: { ...where, type: 'INCOME' }, _sum: { amountMinor: true } }),
+      this.prisma.transaction.aggregate({ where: transferWhere, _sum: { amountMinor: true } }),
+      this.prisma.transaction.count({ where: { userId, transferGroupId: { not: null }, ...dateFilter } }),
     ]);
     return {
       totalExpenseMinor: (expense._sum.amountMinor ?? 0n).toString(),
       totalIncomeMinor: (income._sum.amountMinor ?? 0n).toString(),
+      totalTransferMinor: (transfer._sum.amountMinor ?? 0n).toString(),
+      transferTransactionCount: transferLegCount,
     };
   }
 }

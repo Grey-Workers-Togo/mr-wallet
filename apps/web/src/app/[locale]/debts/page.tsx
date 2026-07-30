@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, FormEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Plus, Pencil, Banknote } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
@@ -29,8 +30,28 @@ import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useCurrencies } from '@/hooks/useCurrencies';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+function formatMinor(amountMinor: string | bigint, currency: string, minorUnits: number) {
+  const value = Number(amountMinor) / 10 ** minorUnits;
+  const formatted = new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: minorUnits > 0 ? minorUnits : 0,
+    maximumFractionDigits: minorUnits > 0 ? minorUnits : 0,
+  }).format(value);
+  return `${formatted} ${currency}`;
+}
 
 interface DebtInstallment {
   id: string;
@@ -66,6 +87,8 @@ export default function DebtsPage() {
   const tConfirm = useTranslations('confirm');
 
   const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
+  const currencies = useCurrencies();
+  const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
 
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -200,28 +223,93 @@ export default function DebtsPage() {
     }
   }
 
+  const displayCurrency = debts?.[0]?.currency ?? 'XOF';
+  const displayMinorUnits = minorUnitsByCode[displayCurrency] ?? 0;
+  const owedToMeMinor = (debts ?? [])
+    .filter((d) => d.direction === 'OWED_TO_ME')
+    .reduce((sum, d) => sum + BigInt(d.outstandingPrincipalMinor), 0n);
+  const owedByMeMinor = (debts ?? [])
+    .filter((d) => d.direction === 'OWED_BY_ME')
+    .reduce((sum, d) => sum + BigInt(d.outstandingPrincipalMinor), 0n);
+  const netMinor = owedToMeMinor - owedByMeMinor;
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="flex items-center justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+        </div>
         <Button type="button" onClick={openCreateDialog}>
           <Plus className="size-4" />
           {t('add')}
         </Button>
-      </div>
+      </motion.div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{tError(error as never)}</AlertDescription>
-        </Alert>
+      <AnimatePresence>
+        {error && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <Alert variant="destructive">
+              <AlertDescription>{tError(error as never)}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {debts && debts.length > 0 && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="text-sm text-neutral-600">{t('owedToMe')}</div>
+              <p className="mt-2 text-2xl font-semibold text-emerald-600">
+                +{formatMinor(owedToMeMinor, displayCurrency, displayMinorUnits)}
+              </p>
+            </Card>
+          </motion.div>
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="text-sm text-neutral-600">{t('owedByMe')}</div>
+              <p className="mt-2 text-2xl font-semibold text-red-600">
+                -{formatMinor(owedByMeMinor, displayCurrency, displayMinorUnits)}
+              </p>
+            </Card>
+          </motion.div>
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="text-sm text-neutral-600">{t('netBalance')}</div>
+              <p className={`mt-2 text-2xl font-semibold ${netMinor < 0n ? 'text-red-600' : 'text-emerald-600'}`}>
+                {netMinor < 0n ? '-' : '+'}
+                {formatMinor(netMinor < 0n ? -netMinor : netMinor, displayCurrency, displayMinorUnits)}
+              </p>
+            </Card>
+          </motion.div>
+        </motion.div>
       )}
 
       {debts === null && <p className="text-neutral-600">...</p>}
       {debts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {debts && debts.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
+          <AnimatePresence initial={false}>
           {debts.map((debt) => (
-            <Card key={debt.id} className="p-5">
+            <motion.div
+              key={debt.id}
+              layout
+              variants={fadeUp}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.25 }}
+            >
+            <Card className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-lg font-medium text-neutral-900">{debt.name}</h3>
                 <div className="flex gap-2">
@@ -254,8 +342,10 @@ export default function DebtsPage() {
                 {t('recordPayment')}
               </Button>
             </Card>
+            </motion.div>
           ))}
-        </div>
+          </AnimatePresence>
+        </motion.div>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

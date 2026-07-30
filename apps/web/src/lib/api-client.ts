@@ -55,15 +55,27 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   return response.json() as Promise<T>;
 }
 
-async function tryRefresh(): Promise<boolean> {
-  try {
-    const result = await request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }, false);
-    setAccessToken(result.accessToken);
-    return true;
-  } catch {
-    setAccessToken(null);
-    return false;
+// Concurrent 401s (several requests firing in parallel after the access token expires) must
+// share one refresh call — the refresh token is single-use, so a second concurrent call would
+// reuse an already-consumed token and the backend revokes the whole session (RG "REFRESH_TOKEN_REUSED").
+let refreshInFlight: Promise<boolean> | null = null;
+
+function tryRefresh(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const result = await request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }, false);
+        setAccessToken(result.accessToken);
+        return true;
+      } catch {
+        setAccessToken(null);
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
   }
+  return refreshInFlight;
 }
 
 export const apiClient = {
