@@ -310,6 +310,8 @@
     "rateLabel": "Annual rate (%)",
     "termLabel": "Term (months)",
     "startedOnLabel": "Start date",
+    "linkedAccountLabel": "Linked account",
+    "noLinkedAccountOption": "No linked account",
     "submit": "Create debt",
     "saveChanges": "Save changes",
     "delete": "Delete",
