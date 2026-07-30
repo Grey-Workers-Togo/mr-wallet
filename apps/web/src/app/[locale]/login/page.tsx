@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EMAIL_PATTERN } from '@/lib/validation';
+import { toast } from '@/hooks/useToast';
 
 interface LoginResponse {
   accessToken: string;
@@ -35,8 +36,9 @@ export default function LoginPage() {
       setAccessToken(result.accessToken);
       router.push('/accounts');
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
-    } finally {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tError(code as never), variant: 'destructive' });
       setSubmitting(false);
     }
   }
@@ -51,7 +53,7 @@ export default function LoginPage() {
         <CardContent className="p-0">
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">{t('emailLabel')}</Label>
+              <Label htmlFor="email" required>{t('emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -62,7 +64,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="password">{t('passwordLabel')}</Label>
+              <Label htmlFor="password" required>{t('passwordLabel')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -76,7 +78,7 @@ export default function LoginPage() {
                 <AlertDescription>{tError(error as never)}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full" loading={submitting}>
               {submitting ? t('submitting') : t('submit')}
             </Button>
           </form>

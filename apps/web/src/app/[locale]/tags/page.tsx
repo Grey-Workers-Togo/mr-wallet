@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 interface Tag {
   id: string;
@@ -29,11 +31,14 @@ export default function TagsPage() {
   const t = useTranslations('tags');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const [tags, setTags] = useState<Tag[] | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function loadTags() {
     const list = await apiClient.get<Tag[]>('/tags');
@@ -47,22 +52,34 @@ export default function TagsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       await apiClient.post('/tags', { name });
       setName('');
       await loadTags();
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/tags/${id}`);
       await loadTags();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -76,7 +93,7 @@ export default function TagsPage() {
         </Alert>
       )}
 
-      {tags === null && <p className="text-neutral-600">...</p>}
+      {tags === null && <PageLoader />}
       {tags?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {tags && tags.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -103,11 +120,13 @@ export default function TagsPage() {
         <CardContent className="p-0">
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <Button type="submit">{t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {t('submit')}
+              </Button>
             </div>
           </form>
         </CardContent>
@@ -125,6 +144,7 @@ export default function TagsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);

@@ -28,6 +28,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const CATEGORY_KINDS = ['EXPENSE', 'INCOME'] as const;
 
@@ -46,6 +48,7 @@ export default function CategoriesPage() {
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const kindItems = Object.fromEntries(CATEGORY_KINDS.map((value) => [value, tKind(value)]));
 
@@ -57,6 +60,8 @@ export default function CategoriesPage() {
   const [parentId, setParentId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function loadCategories() {
     const list = await apiClient.get<Category[]>('/categories');
@@ -92,6 +97,7 @@ export default function CategoriesPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (editingId) {
         // kind/parentId are immutable after creation
@@ -101,18 +107,29 @@ export default function CategoriesPage() {
       }
       setDialogOpen(false);
       await loadCategories();
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/categories/${id}`);
       await loadCategories();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -139,7 +156,7 @@ export default function CategoriesPage() {
         </Alert>
       )}
 
-      {categories === null && <p className="text-neutral-600">...</p>}
+      {categories === null && <PageLoader />}
       {categories?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {categories && categories.length > 0 && (
         <div className="space-y-4">
@@ -210,11 +227,11 @@ export default function CategoriesPage() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="kind">{t('kindLabel')}</Label>
+              <Label htmlFor="kind" required>{t('kindLabel')}</Label>
               <Select
                 items={kindItems}
                 value={kind}
@@ -255,7 +272,9 @@ export default function CategoriesPage() {
               </Select>
             </div>
             <DialogFooter>
-              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? t('saveChanges') : t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -273,6 +292,7 @@ export default function CategoriesPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);
