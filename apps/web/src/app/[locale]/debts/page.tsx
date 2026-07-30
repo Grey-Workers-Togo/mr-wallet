@@ -2,7 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Banknote } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import {
@@ -28,8 +28,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
+
+interface DebtInstallment {
+  id: string;
+  sequence: number;
+  dueOn: string;
+  totalMinor: string;
+  status: 'SCHEDULED' | 'PAID' | 'PARTIAL' | 'LATE' | 'SKIPPED';
+}
 
 interface Debt {
   id: string;
@@ -63,6 +72,14 @@ export default function DebtsPage() {
   const [startedOn, setStartedOn] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+
+  const [paymentDialogDebt, setPaymentDialogDebt] = useState<Debt | null>(null);
+  const [paymentInstallments, setPaymentInstallments] = useState<DebtInstallment[]>([]);
+  const [paidAt, setPaidAt] = useState('');
+  const [paymentAmountMinor, setPaymentAmountMinor] = useState('');
+  const [installmentId, setInstallmentId] = useState('');
+  const [isExtraPayment, setIsExtraPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   async function loadAll() {
     setDebts(await apiClient.get<Debt[]>('/debts'));
@@ -131,6 +148,39 @@ export default function DebtsPage() {
     }
   }
 
+  async function openPaymentDialog(debt: Debt) {
+    setPaymentError(null);
+    setPaidAt(new Date().toISOString().slice(0, 10));
+    setPaymentAmountMinor('');
+    setInstallmentId('');
+    setIsExtraPayment(false);
+    setPaymentDialogDebt(debt);
+    try {
+      const installments = await apiClient.get<DebtInstallment[]>(`/debts/${debt.id}/schedule`);
+      setPaymentInstallments(installments.filter((i) => i.status !== 'PAID'));
+    } catch (err) {
+      setPaymentError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+    }
+  }
+
+  async function onSubmitPayment(e: FormEvent) {
+    e.preventDefault();
+    if (!paymentDialogDebt) return;
+    setPaymentError(null);
+    try {
+      await apiClient.post(`/debts/${paymentDialogDebt.id}/payments`, {
+        paidAt,
+        amountMinor: paymentAmountMinor,
+        installmentId: isExtraPayment ? undefined : installmentId || undefined,
+        isExtraPayment,
+      });
+      setPaymentDialogDebt(null);
+      await loadAll();
+    } catch (err) {
+      setPaymentError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
@@ -174,6 +224,16 @@ export default function DebtsPage() {
               <p className="mt-3 text-neutral-900">
                 {t('outstanding')}: {debt.outstandingPrincipalMinor} {debt.currency}
               </p>
+              <Button
+                type="button"
+                size="sm"
+                className="mt-4 w-full"
+                onClick={() => openPaymentDialog(debt)}
+                disabled={debt.status !== 'ACTIVE'}
+              >
+                <Banknote className="size-3.5" />
+                {t('recordPayment')}
+              </Button>
             </Card>
           ))}
         </div>
@@ -256,6 +316,72 @@ export default function DebtsPage() {
             </div>
             <DialogFooter>
               <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!paymentDialogDebt} onOpenChange={(open) => !open && setPaymentDialogDebt(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('recordPayment')}</DialogTitle>
+          </DialogHeader>
+          {paymentError && (
+            <Alert variant="destructive">
+              <AlertDescription>{tError(paymentError as never)}</AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={onSubmitPayment} className="grid grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="paidAt">{t('paidAtLabel')}</Label>
+              <Input id="paidAt" type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="paymentAmountMinor">{t('amountLabel')}</Label>
+              <AmountInput
+                id="paymentAmountMinor"
+                value={paymentAmountMinor}
+                onValueChange={setPaymentAmountMinor}
+                required
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isExtraPayment"
+                checked={isExtraPayment}
+                onCheckedChange={(checked) => setIsExtraPayment(checked === true)}
+              />
+              <Label htmlFor="isExtraPayment">{t('extraPaymentLabel')}</Label>
+            </div>
+            {!isExtraPayment && (
+              <div>
+                <Label htmlFor="installmentId">{t('installmentLabel')}</Label>
+                <Select
+                  items={Object.fromEntries(
+                    paymentInstallments.map((i) => [
+                      i.id,
+                      `#${i.sequence} · ${i.dueOn.slice(0, 10)} · ${i.totalMinor} ${paymentDialogDebt?.currency ?? ''}`,
+                    ]),
+                  )}
+                  value={installmentId}
+                  onValueChange={(value) => setInstallmentId(value ?? '')}
+                >
+                  <SelectTrigger id="installmentId" className="w-full">
+                    <SelectValue placeholder={t('noInstallmentsOption')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentInstallments.map((installment) => (
+                      <SelectItem key={installment.id} value={installment.id}>
+                        #{installment.sequence} · {installment.dueOn.slice(0, 10)} · {installment.totalMinor}{' '}
+                        {paymentDialogDebt?.currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="submit">{t('recordPaymentSubmit')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

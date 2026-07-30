@@ -4,7 +4,8 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "submit": "Valider",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "switchLanguage": "Changer de langue"
   },
   "confirm": {
     "deleteTitle": "Supprimer cet élément ?",
@@ -317,6 +318,12 @@
     "payments": "Paiements",
     "recordPayment": "Enregistrer un paiement",
     "simulatePayoff": "Simuler un remboursement anticipé",
+    "paidAtLabel": "Date du paiement",
+    "amountLabel": "Montant",
+    "installmentLabel": "Échéance",
+    "extraPaymentLabel": "Paiement anticipé (non lié à une échéance)",
+    "noInstallmentsOption": "Aucune échéance à venir",
+    "recordPaymentSubmit": "Enregistrer le paiement",
     "direction": {
       "OWED_BY_ME": "Je dois",
       "OWED_TO_ME": "On me doit"

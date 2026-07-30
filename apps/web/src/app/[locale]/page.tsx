@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { buttonVariants } from '@/components/ui/button';
 import { Accordion } from '@/components/ui/accordion';
 import { Logo } from '@/components/shared/Logo';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { FeatureCard } from '@/components/landing/FeatureCard';
 import { TimelineStep } from '@/components/landing/TimelineStep';
 import { FAQItem } from '@/components/landing/FAQItem';
@@ -26,6 +27,9 @@ export default function HomePage() {
     <main className="flex flex-col">
       {/* Hero */}
       <section className="relative grid gap-10 overflow-hidden bg-gradient-to-br from-bg-secondary via-primary/5 to-primary/10 px-4 py-16 md:grid-cols-2 md:items-center md:px-12 md:py-24">
+        <div className="absolute top-4 right-4 z-20 md:top-6 md:right-6">
+          <LanguageSwitcher />
+        </div>
         <motion.div
           aria-hidden
           animate={reduce ? undefined : { x: [0, 30, 0], y: [0, -20, 0] }}

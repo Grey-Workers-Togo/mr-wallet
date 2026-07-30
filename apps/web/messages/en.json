@@ -4,7 +4,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "submit": "Submit",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "switchLanguage": "Switch language"
   },
   "confirm": {
     "deleteTitle": "Delete this item?",
@@ -317,6 +318,12 @@
     "payments": "Payments",
     "recordPayment": "Record a payment",
     "simulatePayoff": "Simulate an early payoff",
+    "paidAtLabel": "Payment date",
+    "amountLabel": "Amount",
+    "installmentLabel": "Installment",
+    "extraPaymentLabel": "Extra payment (not tied to a scheduled installment)",
+    "noInstallmentsOption": "No upcoming installment",
+    "recordPaymentSubmit": "Record payment",
     "direction": {
       "OWED_BY_ME": "I owe",
       "OWED_TO_ME": "Owed to me"
