@@ -5,7 +5,11 @@
     "cancel": "Annuler",
     "submit": "Valider",
     "loading": "Chargement...",
-    "switchLanguage": "Changer de langue"
+    "switchLanguage": "Changer de langue",
+    "createSuccessTitle": "Créé avec succès",
+    "updateSuccessTitle": "Modifié avec succès",
+    "deleteSuccessTitle": "Supprimé avec succès",
+    "actionErrorTitle": "Échec de l'action"
   },
   "confirm": {
     "deleteTitle": "Supprimer cet élément ?",
@@ -18,26 +22,73 @@
     "register": "S'inscrire",
     "hero": {
       "title": "Mr Wallet",
-      "tagline": "Reprends le contrôle de tes finances.",
-      "description": "Suivi des dépenses. Budgets. Prévisions. Tout ce qu'il te faut pour voir où va ton argent.",
-      "ctaPrimary": "S'inscrire gratuitement",
-      "ctaSecondary": "En savoir plus"
+      "badge": "Gestion financière personnelle",
+      "tagline": "Pilote ton cash, tes budgets et tes projets.",
+      "description": "Mr Wallet rassemble tes comptes, tes dépenses, tes dettes, tes objectifs et tes récurrences dans une expérience simple et actionnable.",
+      "ctaPrimary": "Créer mon espace",
+      "ctaSecondary": "Voir les modules",
+      "trust": {
+        "multiCurrencyTitle": "Multi-devises",
+        "multiCurrencyDescription": "FCFA, EUR, USD",
+        "ledgerTitle": "Ledger",
+        "ledgerDescription": "Soldes fiables",
+        "mobileTitle": "Mobile",
+        "mobileDescription": "Usage quotidien"
+      },
+      "mock": {
+        "dailyBudget": "Reste à vivre",
+        "perDay": "/ jour",
+        "stable": "stable",
+        "totalBalance": "Solde total",
+        "savings": "Épargne",
+        "row1Label": "Mobile money",
+        "row1Sub": "Frais inclus",
+        "row2Label": "Objectif épargne",
+        "row2Sub": "Alimenté ce mois",
+        "row3Label": "Courses marché",
+        "row3Sub": "Budget alimentaire"
+      }
     },
     "features": {
-      "title": "Conçu pour toi",
+      "title": "Le contenu métier est centré sur les décisions du mois",
+      "subtitle": "Chaque module répond à une question simple : combien j'ai, où part l'argent, combien je peux encore dépenser et ce qui doit être remboursé.",
       "items": [
         {
-          "title": "Suis tes dépenses",
-          "description": "Importe tes relevés ou saisis manuellement. Catégorisation automatique."
+          "title": "Vue claire du mois",
+          "description": "Solde disponible, revenus, dépenses, épargne et patrimoine net en une seule lecture."
         },
         {
-          "title": "Maîtrise tes budgets",
-          "description": "Définis des enveloppes par catégorie, reçois des alertes avant de dépasser."
+          "title": "Cash, banque, mobile money",
+          "description": "Enregistre tes opérations du quotidien avec comptes source et destination."
         },
         {
-          "title": "Anticipe l'avenir",
-          "description": "Vois où tu seras dans 6 mois avec tes tendances actuelles."
+          "title": "Budgets qui parlent vrai",
+          "description": "Fixe des limites par catégorie et vois combien il te reste à dépenser sans stress."
+        },
+        {
+          "title": "Objectifs d'épargne",
+          "description": "Prépare un achat important ou une réserve d'urgence avec une progression visible."
+        },
+        {
+          "title": "Récurrences automatiques",
+          "description": "Planifie tes revenus, dépenses et transferts qui reviennent chaque mois."
+        },
+        {
+          "title": "Dettes & créances",
+          "description": "Garde une trace claire de ce qu'on te doit et de ce que tu dois rembourser."
         }
+      ]
+    },
+    "designedFor": {
+      "title": "Conçu pour l'Afrique de l'Ouest",
+      "description": "L'application part du terrain : argent liquide, mobile money, revenus variables, entraide familiale, dettes informelles et objectifs d'épargne très concrets.",
+      "cta": "Explorer le dashboard",
+      "whyTitle": "Pourquoi Mr Wallet ?",
+      "reasons": [
+        "FCFA par défaut, avec EUR et USD quand tes finances sortent du local",
+        "Pensé pour les revenus irréguliers, les frais mobile money et les virements entre comptes",
+        "Un ledger interne pour garder des soldes cohérents, même quand l'historique grandit",
+        "Deux langues dès le départ, français et anglais"
       ]
     },
     "howItWorks": {

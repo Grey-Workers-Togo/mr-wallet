@@ -5,7 +5,11 @@
     "cancel": "Cancel",
     "submit": "Submit",
     "loading": "Loading...",
-    "switchLanguage": "Switch language"
+    "switchLanguage": "Switch language",
+    "createSuccessTitle": "Created successfully",
+    "updateSuccessTitle": "Updated successfully",
+    "deleteSuccessTitle": "Deleted successfully",
+    "actionErrorTitle": "Action failed"
   },
   "confirm": {
     "deleteTitle": "Delete this item?",
@@ -18,26 +22,73 @@
     "register": "Sign up",
     "hero": {
       "title": "Mr Wallet",
-      "tagline": "Take back control of your money.",
-      "description": "Expense tracking. Budgets. Forecasts. Everything you need to see where your money goes.",
-      "ctaPrimary": "Sign up for free",
-      "ctaSecondary": "Learn more"
+      "badge": "Personal finance management",
+      "tagline": "Pilot your cash, budgets and projects.",
+      "description": "Mr Wallet brings your accounts, expenses, debts, goals and recurrences into one simple, actionable experience.",
+      "ctaPrimary": "Create my space",
+      "ctaSecondary": "See the modules",
+      "trust": {
+        "multiCurrencyTitle": "Multi-currency",
+        "multiCurrencyDescription": "FCFA, EUR, USD",
+        "ledgerTitle": "Ledger",
+        "ledgerDescription": "Reliable balances",
+        "mobileTitle": "Mobile",
+        "mobileDescription": "Daily use"
+      },
+      "mock": {
+        "dailyBudget": "Left to spend",
+        "perDay": "/ day",
+        "stable": "stable",
+        "totalBalance": "Total balance",
+        "savings": "Savings",
+        "row1Label": "Mobile money",
+        "row1Sub": "Fees included",
+        "row2Label": "Savings goal",
+        "row2Sub": "Funded this month",
+        "row3Label": "Market groceries",
+        "row3Sub": "Food budget"
+      }
     },
     "features": {
-      "title": "Built for you",
+      "title": "Business content centered on this month's decisions",
+      "subtitle": "Each module answers a simple question: how much do I have, where does the money go, how much can I still spend, and what needs to be repaid.",
       "items": [
         {
-          "title": "Track everything",
-          "description": "Import your statements or enter transactions manually. Automatic categorization."
+          "title": "Clear view of the month",
+          "description": "Available balance, income, expenses, savings and net worth in a single read."
         },
         {
-          "title": "Master your budgets",
-          "description": "Set spending envelopes by category and get alerted before you go over."
+          "title": "Cash, bank, mobile money",
+          "description": "Log your day-to-day operations with source and destination accounts."
         },
         {
-          "title": "Anticipate what's next",
-          "description": "See where you'll stand in 6 months based on your current trends."
+          "title": "Budgets that tell the truth",
+          "description": "Set limits by category and see how much you have left to spend, stress-free."
+        },
+        {
+          "title": "Savings goals",
+          "description": "Prepare a big purchase or an emergency fund with visible progress."
+        },
+        {
+          "title": "Automatic recurrences",
+          "description": "Plan the income, expenses and transfers that repeat every month."
+        },
+        {
+          "title": "Debts & loans",
+          "description": "Keep a clear record of what you're owed and what you owe back."
         }
+      ]
+    },
+    "designedFor": {
+      "title": "Designed for West Africa",
+      "description": "The app starts from the ground: cash, mobile money, variable income, family support, informal debts and very concrete savings goals.",
+      "cta": "Explore the dashboard",
+      "whyTitle": "Why Mr Wallet?",
+      "reasons": [
+        "FCFA by default, with EUR and USD when your finances go abroad",
+        "Built for irregular income, mobile money fees and transfers between accounts",
+        "An internal ledger keeps balances consistent, even as history grows",
+        "Two languages from day one, French and English"
       ]
     },
     "howItWorks": {
