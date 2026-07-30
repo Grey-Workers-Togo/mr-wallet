@@ -310,6 +310,8 @@
     "rateLabel": "Taux annuel (%)",
     "termLabel": "Durée (mois)",
     "startedOnLabel": "Date de départ",
+    "linkedAccountLabel": "Compte lié",
+    "noLinkedAccountOption": "Aucun compte lié",
     "submit": "Créer la dette",
     "saveChanges": "Enregistrer",
     "delete": "Supprimer",

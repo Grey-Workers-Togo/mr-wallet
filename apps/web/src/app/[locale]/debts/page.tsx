@@ -51,6 +51,12 @@ interface Debt {
   annualRatePct: string | null;
   termMonths: number | null;
   startedOn: string;
+  linkedAccountId: string | null;
+}
+
+interface Account {
+  id: string;
+  name: string;
 }
 
 export default function DebtsPage() {
@@ -62,6 +68,7 @@ export default function DebtsPage() {
   const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
 
   const [debts, setDebts] = useState<Debt[] | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -70,6 +77,7 @@ export default function DebtsPage() {
   const [annualRatePct, setAnnualRatePct] = useState('');
   const [termMonths, setTermMonths] = useState('');
   const [startedOn, setStartedOn] = useState('');
+  const [linkedAccountId, setLinkedAccountId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
@@ -82,7 +90,12 @@ export default function DebtsPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   async function loadAll() {
-    setDebts(await apiClient.get<Debt[]>('/debts'));
+    const [debtsList, accountsList] = await Promise.all([
+      apiClient.get<Debt[]>('/debts'),
+      apiClient.get<Account[]>('/accounts'),
+    ]);
+    setDebts(debtsList);
+    setAccounts(accountsList);
   }
 
   useEffect(() => {
@@ -97,6 +110,7 @@ export default function DebtsPage() {
     setAnnualRatePct('');
     setTermMonths('');
     setStartedOn('');
+    setLinkedAccountId('');
     setDialogOpen(true);
   }
 
@@ -105,6 +119,7 @@ export default function DebtsPage() {
     setName(debt.name);
     setDirection(debt.direction);
     setPrincipalMinor(debt.principalMinor);
+    setLinkedAccountId(debt.linkedAccountId ?? '');
     setAnnualRatePct(debt.annualRatePct ?? '');
     setTermMonths(debt.termMonths ? String(debt.termMonths) : '');
     setStartedOn(debt.startedOn.slice(0, 10));
@@ -117,7 +132,10 @@ export default function DebtsPage() {
     try {
       if (editingId) {
         // direction/principalMinor/annualRatePct/termMonths/startedOn are immutable after creation
-        await apiClient.patch(`/debts/${editingId}`, { name });
+        await apiClient.patch(`/debts/${editingId}`, {
+          name,
+          linkedAccountId: linkedAccountId || null,
+        });
       } else {
         await apiClient.post('/debts', {
           name,
@@ -129,6 +147,7 @@ export default function DebtsPage() {
           termMonths: termMonths ? Number(termMonths) : undefined,
           startedOn,
           paymentFrequency: 'MONTHLY',
+          linkedAccountId: linkedAccountId || undefined,
         });
       }
       setDialogOpen(false);
@@ -313,6 +332,29 @@ export default function DebtsPage() {
                 disabled={!!editingId}
                 required
               />
+            </div>
+            <div>
+              <Label htmlFor="linkedAccountId">{t('linkedAccountLabel')}</Label>
+              <Select
+                items={{
+                  '': t('noLinkedAccountOption'),
+                  ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+                }}
+                value={linkedAccountId}
+                onValueChange={(value) => setLinkedAccountId(value ?? '')}
+              >
+                <SelectTrigger id="linkedAccountId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t('noLinkedAccountOption')}</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
