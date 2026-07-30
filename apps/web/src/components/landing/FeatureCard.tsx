@@ -26,15 +26,15 @@ export function FeatureCard({
       whileHover={reduce ? undefined : { y: -4 }}
       className="group"
     >
-      <Card className="h-full items-center gap-3 p-6 text-center transition-shadow group-hover:shadow-lg">
+      <Card className="h-full items-start gap-3 p-6 text-left transition-shadow group-hover:shadow-lg">
         <motion.div
           whileHover={reduce ? undefined : { scale: 1.1, rotate: 6 }}
           transition={{ duration: 0.3 }}
-          className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+          className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
         >
-          <Icon aria-hidden className="size-6" />
+          <Icon aria-hidden className="size-5" />
         </motion.div>
-        <CardHeader className="w-full px-0 text-center">
+        <CardHeader className="w-full px-0 text-left">
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent className="w-full px-0">

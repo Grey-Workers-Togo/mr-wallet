@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 interface ForecastMonth {
   month: string;
@@ -41,7 +42,7 @@ export default function ForecastPage() {
           <AlertDescription>{tError(error as never)}</AlertDescription>
         </Alert>
       )}
-      {forecast === null && !error && <p className="text-neutral-600">...</p>}
+      {forecast === null && !error && <PageLoader />}
       {forecast && (
         <Card className="p-6">
           <CardHeader className="p-0 pb-4">

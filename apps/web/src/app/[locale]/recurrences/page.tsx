@@ -32,6 +32,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY'] as const;
 const TYPES = ['EXPENSE', 'INCOME'] as const;
@@ -92,6 +94,7 @@ export default function RecurrencesPage() {
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const currencies = useCurrencies();
   const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
@@ -102,6 +105,9 @@ export default function RecurrencesPage() {
   const [upcoming, setUpcoming] = useState<Upcoming[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [materializingId, setMaterializingId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [type, setType] = useState<(typeof TYPES)[number]>('EXPENSE');
@@ -151,6 +157,7 @@ export default function RecurrencesPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       await apiClient.post('/recurrences', {
         name: description,
@@ -167,28 +174,45 @@ export default function RecurrencesPage() {
       });
       setDialogOpen(false);
       await loadAll();
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/recurrences/${id}`);
       await loadAll();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
   async function onMaterialize(recurrenceId: string, occurrenceDate: string) {
     setError(null);
+    setMaterializingId(recurrenceId);
     try {
       await apiClient.post(`/recurrences/${recurrenceId}/materialize`, { occurrenceDate });
       await loadAll();
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setMaterializingId(null);
     }
   }
 
@@ -238,7 +262,7 @@ export default function RecurrencesPage() {
         )}
       </AnimatePresence>
 
-      {rules === null && <p className="text-neutral-600">...</p>}
+      {rules === null && <PageLoader />}
 
       {rules?.length === 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -335,7 +359,13 @@ export default function RecurrencesPage() {
                 <p className="text-neutral-900">
                   {item.name} — {item.occurrenceDate.slice(0, 10)}
                 </p>
-                <Button type="button" variant="secondary" size="sm" onClick={() => onMaterialize(item.recurrenceId, item.occurrenceDate)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={materializingId === item.recurrenceId}
+                  onClick={() => onMaterialize(item.recurrenceId, item.occurrenceDate)}
+                >
                   <Check className="size-3.5" />
                   {t('materialize')}
                 </Button>
@@ -354,7 +384,7 @@ export default function RecurrencesPage() {
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="type">{t('typeLabel')}</Label>
+                <Label htmlFor="type" required>{t('typeLabel')}</Label>
                 <Select items={typeItems} value={type} onValueChange={(value) => setType(value as (typeof TYPES)[number])}>
                   <SelectTrigger id="type" className="w-full">
                     <SelectValue />
@@ -369,12 +399,12 @@ export default function RecurrencesPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="amountMinor">{t('amountCurrencyLabel', { currency })}</Label>
+                <Label htmlFor="amountMinor" required>{t('amountCurrencyLabel', { currency })}</Label>
                 <AmountInput id="amountMinor" value={amountMinor} onValueChange={setAmountMinor} required />
               </div>
             </div>
             <div>
-              <Label htmlFor="currency">{t('currencyLabel')}</Label>
+              <Label htmlFor="currency" required>{t('currencyLabel')}</Label>
               <Select items={currencyItems} value={currency} onValueChange={(value) => setCurrency(value ?? '')}>
                 <SelectTrigger id="currency" className="w-full">
                   <SelectValue />
@@ -409,7 +439,7 @@ export default function RecurrencesPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="accountId">{t('accountLabel')}</Label>
+              <Label htmlFor="accountId" required>{t('accountLabel')}</Label>
               <Select items={accountItemsForCreate} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue />
@@ -425,7 +455,7 @@ export default function RecurrencesPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="frequency">{t('frequencyLabel')}</Label>
+                <Label htmlFor="frequency" required>{t('frequencyLabel')}</Label>
                 <Select
                   items={frequencyItems}
                   value={frequency}
@@ -444,13 +474,13 @@ export default function RecurrencesPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="interval">{t('intervalLabel')}</Label>
+                <Label htmlFor="interval" required>{t('intervalLabel')}</Label>
                 <Input id="interval" type="number" min={1} step={1} value={interval} onChange={(e) => setInterval(e.target.value)} required />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="startsOn">{t('startsOnLabel')}</Label>
+                <Label htmlFor="startsOn" required>{t('startsOnLabel')}</Label>
                 <Input id="startsOn" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} required />
               </div>
               <div>
@@ -459,7 +489,7 @@ export default function RecurrencesPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="description">{t('descriptionLabel')}</Label>
+              <Label htmlFor="description" required>{t('descriptionLabel')}</Label>
               <Input
                 id="description"
                 placeholder={t('descriptionPlaceholder')}
@@ -469,7 +499,9 @@ export default function RecurrencesPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit">{t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -487,6 +519,7 @@ export default function RecurrencesPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);

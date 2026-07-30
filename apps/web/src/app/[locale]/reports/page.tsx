@@ -8,6 +8,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 interface MonthlyPoint {
   month: string;
@@ -523,6 +524,10 @@ export default function ReportsPage() {
         </Alert>
       )}
 
+      {months === null && !error && <PageLoader />}
+
+      {months && (
+      <>
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
@@ -705,6 +710,8 @@ export default function ReportsPage() {
           )}
         </Card>
       </motion.div>
+      </>
+      )}
     </div>
   );
 }

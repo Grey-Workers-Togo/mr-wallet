@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 interface Profile {
   id: string;
@@ -56,6 +58,7 @@ export default function PreferencesPage() {
   const t = useTranslations('preferences');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
   const activeRouteLocale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -68,6 +71,8 @@ export default function PreferencesPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
   const [confirmAction, setConfirmAction] = useState<'removePin' | 'deleteAccount' | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [removingDeviceId, setRemovingDeviceId] = useState<string | null>(null);
 
   async function loadAll() {
     const [me, deviceList] = await Promise.all([
@@ -84,12 +89,18 @@ export default function PreferencesPage() {
     loadAll().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
   }, []);
 
-  async function run(action: () => Promise<void>) {
+  async function run(key: string, action: () => Promise<void>) {
     setError(null);
+    setPending(key);
     try {
       await action();
+      toast({ title: tCommon('updateSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setPending(null);
     }
   }
 
@@ -97,7 +108,7 @@ export default function PreferencesPage() {
     e.preventDefault();
     if (!profile) return;
     const form = new FormData(e.currentTarget);
-    await run(async () => {
+    await run('profile', async () => {
       await apiClient.patch('/me', {
         displayName: (form.get('displayName') as string) || undefined,
         locale,
@@ -115,7 +126,7 @@ export default function PreferencesPage() {
 
   async function onSetPin(e: FormEvent) {
     e.preventDefault();
-    await run(async () => {
+    await run('setPin', async () => {
       await apiClient.post('/me/pin', { pin, lockMinutes: pinLockMinutes });
       await setLocalPin(pin);
       setPin('');
@@ -124,7 +135,7 @@ export default function PreferencesPage() {
   }
 
   async function onRemovePin() {
-    await run(async () => {
+    await run('removePin', async () => {
       await apiClient.delete('/me/pin');
       await clearLocalPin();
       await loadAll();
@@ -132,7 +143,7 @@ export default function PreferencesPage() {
   }
 
   async function onEnablePush() {
-    await run(async () => {
+    await run('enablePush', async () => {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return;
@@ -156,18 +167,20 @@ export default function PreferencesPage() {
   }
 
   async function onRemoveDevice(id: string) {
-    await run(async () => {
+    setRemovingDeviceId(id);
+    await run('removeDevice', async () => {
       await apiClient.delete(`/notifications/push/devices/${id}`);
       await loadAll();
     });
+    setRemovingDeviceId(null);
   }
 
   async function onTestPush() {
-    await run(() => apiClient.post('/notifications/push/test', {}));
+    await run('testPush', () => apiClient.post('/notifications/push/test', {}));
   }
 
   async function onDeleteAccount() {
-    await run(async () => {
+    await run('deleteAccount', async () => {
       await apiClient.delete('/me');
       await clearLocalPin();
       await purgeOfflineCache();
@@ -184,7 +197,7 @@ export default function PreferencesPage() {
         </Alert>
       )}
 
-      {!profile && <p className="text-neutral-600">...</p>}
+      {!profile && <PageLoader />}
 
       {profile && (
         <>
@@ -234,7 +247,9 @@ export default function PreferencesPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Button type="submit">{t('save')}</Button>
+                  <Button type="submit" loading={pending === 'profile'}>
+                    {t('save')}
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -248,7 +263,7 @@ export default function PreferencesPage() {
               <p className="text-neutral-600">{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
               <form onSubmit={onSetPin} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="pin">{t('pinLabel')}</Label>
+                  <Label htmlFor="pin" required>{t('pinLabel')}</Label>
                   <Input
                     id="pin"
                     value={pin}
@@ -271,7 +286,9 @@ export default function PreferencesPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Button type="submit">{t('setPin')}</Button>
+                  <Button type="submit" loading={pending === 'setPin'}>
+                    {t('setPin')}
+                  </Button>
                 </div>
               </form>
               {profile.pinEnabled && (
@@ -306,10 +323,10 @@ export default function PreferencesPage() {
                 </div>
               )}
               <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={onEnablePush}>
+                <Button type="button" variant="secondary" loading={pending === 'enablePush'} onClick={onEnablePush}>
                   {t('pushEnable')}
                 </Button>
-                <Button type="button" variant="secondary" onClick={onTestPush}>
+                <Button type="button" variant="secondary" loading={pending === 'testPush'} onClick={onTestPush}>
                   {t('pushTest')}
                 </Button>
               </div>
@@ -341,6 +358,7 @@ export default function PreferencesPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={removingDeviceId === confirmDelete?.id}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onRemoveDevice(confirmDelete.id);
@@ -367,6 +385,7 @@ export default function PreferencesPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={pending === 'removePin' || pending === 'deleteAccount'}
               onClick={async () => {
                 if (confirmAction === 'removePin') {
                   await onRemovePin();

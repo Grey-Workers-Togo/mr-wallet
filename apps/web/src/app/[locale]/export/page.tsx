@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { getAccessToken } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/useToast';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
@@ -18,7 +19,9 @@ async function downloadPost(path: string, body: unknown, fallbackFilename: strin
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) return;
+  if (!response.ok) {
+    throw new Error('EXPORT_FAILED');
+  }
 
   const disposition = response.headers.get('Content-Disposition') ?? '';
   const match = disposition.match(/filename="([^"]+)"/);
@@ -35,12 +38,16 @@ async function downloadPost(path: string, body: unknown, fallbackFilename: strin
 
 export default function ExportPage() {
   const t = useTranslations('export');
+  const tCommon = useTranslations('common');
   const [loading, setLoading] = useState<string | null>(null);
 
   async function run(key: string, action: () => Promise<void>) {
     setLoading(key);
     try {
       await action();
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+    } catch {
+      toast({ title: tCommon('actionErrorTitle'), variant: 'destructive' });
     } finally {
       setLoading(null);
     }
@@ -53,7 +60,7 @@ export default function ExportPage() {
         <Button
           type="button"
           variant="secondary"
-          disabled={loading === 'csv'}
+          loading={loading === 'csv'}
           onClick={() => run('csv', () => downloadPost('/export/transactions', { format: 'CSV' }, 'transactions.csv'))}
         >
           {t('transactionsCsv')}
@@ -61,7 +68,7 @@ export default function ExportPage() {
         <Button
           type="button"
           variant="secondary"
-          disabled={loading === 'xlsx'}
+          loading={loading === 'xlsx'}
           onClick={() => run('xlsx', () => downloadPost('/export/transactions', { format: 'XLSX' }, 'transactions.xlsx'))}
         >
           {t('transactionsXlsx')}
@@ -69,7 +76,7 @@ export default function ExportPage() {
         <Button
           type="button"
           variant="secondary"
-          disabled={loading === 'full'}
+          loading={loading === 'full'}
           onClick={() => run('full', () => downloadPost('/export/full', {}, 'export.zip'))}
         >
           {t('full')}

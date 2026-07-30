@@ -7,6 +7,7 @@ import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { PinLockGate } from '@/components/PinLockGate';
 import { ConditionalShell } from '@/components/layouts/ConditionalShell';
+import { Toaster } from '@/components/shared/Toaster';
 import type { ReactNode } from 'react';
 import '@/styles/globals.css';
 
@@ -89,6 +90,7 @@ export default async function LocaleLayout({
           <ServiceWorkerRegistration />
           <PinLockGate />
           <ConditionalShell>{children}</ConditionalShell>
+          <Toaster />
         </NextIntlClientProvider>
       </body>
     </html>

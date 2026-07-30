@@ -2,9 +2,23 @@
 
 import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
-import { TrendingUp, Target, LineChart } from 'lucide-react';
+import {
+  TrendingUp,
+  Target,
+  Repeat,
+  HandCoins,
+  BarChart3,
+  Smartphone,
+  Gauge,
+  Globe2,
+  BookOpenCheck,
+  ArrowRight,
+  CheckCircle2,
+} from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { buttonVariants } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Accordion } from '@/components/ui/accordion';
 import { Logo } from '@/components/shared/Logo';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
@@ -13,7 +27,7 @@ import { TimelineStep } from '@/components/landing/TimelineStep';
 import { FAQItem } from '@/components/landing/FAQItem';
 import { cn } from '@/lib/utils';
 
-const FEATURE_ICONS = [TrendingUp, Target, LineChart];
+const FEATURE_ICONS = [BarChart3, Smartphone, Gauge, Target, Repeat, HandCoins];
 
 export default function HomePage() {
   const t = useTranslations('home');
@@ -55,11 +69,20 @@ export default function HomePage() {
           >
             <Logo size={40} />
           </motion.div>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/70 px-3 py-1 text-xs font-medium text-primary-dark shadow-sm"
+          >
+            <Globe2 aria-hidden className="size-3.5" />
+            {t('hero.badge')}
+          </motion.div>
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-3xl font-semibold text-neutral-900"
+            className="text-4xl font-bold tracking-tight text-neutral-900 md:text-5xl"
           >
             {t('hero.tagline')}
           </motion.h1>
@@ -82,39 +105,114 @@ export default function HomePage() {
               className={cn(buttonVariants({ size: 'lg' }), 'transition-shadow hover:shadow-[0_0_20px_var(--color-primary-light)]')}
             >
               {t('hero.ctaPrimary')}
+              <ArrowRight aria-hidden className="size-4" />
             </Link>
             <Link href="#features" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
               {t('hero.ctaSecondary')}
             </Link>
           </motion.div>
-        </motion.div>
-        <motion.div
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="relative z-10 hidden items-center justify-center md:flex"
-        >
           <motion.div
-            animate={reduce ? undefined : { y: [0, -12, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex size-56 items-center justify-center rounded-full bg-primary/10 shadow-lg md:size-72"
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="mt-4 grid grid-cols-3 gap-6 text-left"
           >
-            <motion.div
-              animate={reduce ? undefined : { scale: [1, 1.08, 1] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <TrendingUp aria-hidden className="size-24 text-primary md:size-32" />
-            </motion.div>
+            {(
+              [
+                { icon: Globe2, title: t('hero.trust.multiCurrencyTitle'), description: t('hero.trust.multiCurrencyDescription') },
+                { icon: BookOpenCheck, title: t('hero.trust.ledgerTitle'), description: t('hero.trust.ledgerDescription') },
+                { icon: Smartphone, title: t('hero.trust.mobileTitle'), description: t('hero.trust.mobileDescription') },
+              ] as const
+            ).map((item) => (
+              <div key={item.title} className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900">
+                  <item.icon aria-hidden className="size-3.5 text-primary" />
+                  {item.title}
+                </div>
+                <span className="text-xs text-neutral-500">{item.description}</span>
+              </div>
+            ))}
           </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="relative z-10 hidden md:flex md:items-center md:justify-center"
+        >
+          <Card className="w-full max-w-sm p-5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-neutral-600">{t('hero.mock.dailyBudget')}</span>
+              <Badge className="bg-emerald-100 text-emerald-700">{t('hero.mock.stable')}</Badge>
+            </div>
+            <p className="mt-1 text-2xl font-semibold text-neutral-900">
+              18 450 F <span className="text-sm font-normal text-neutral-500">{t('hero.mock.perDay')}</span>
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-border p-3">
+                <span className="text-xs tracking-wide text-neutral-500 uppercase">{t('hero.mock.totalBalance')}</span>
+                <p className="mt-1 text-lg font-semibold text-neutral-900">1 248 000 F</p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '68%' }}
+                    transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-primary"
+                  />
+                </div>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <span className="text-xs tracking-wide text-neutral-500 uppercase">{t('hero.mock.savings')}</span>
+                <p className="mt-1 text-lg font-semibold text-neutral-900">32%</p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '32%' }}
+                    transition={{ duration: 0.8, delay: 1, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {(
+                [
+                  { label: t('hero.mock.row1Label'), sub: t('hero.mock.row1Sub'), amount: '-12 500 F', negative: true },
+                  { label: t('hero.mock.row2Label'), sub: t('hero.mock.row2Sub'), amount: '+50 000 F', negative: false },
+                  { label: t('hero.mock.row3Label'), sub: t('hero.mock.row3Sub'), amount: '-18 000 F', negative: true },
+                ] as const
+              ).map((row, i) => (
+                <motion.div
+                  key={row.label}
+                  initial={reduce ? false : { opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 1.1 + i * 0.1 }}
+                  className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">{row.label}</p>
+                    <p className="text-xs text-neutral-500">{row.sub}</p>
+                  </div>
+                  <span className={cn('text-sm font-semibold', row.negative ? 'text-red-600' : 'text-emerald-600')}>
+                    {row.amount}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </Card>
         </motion.div>
       </section>
 
       {/* Features */}
       <section id="features" className="px-4 py-16 md:px-12 md:py-24">
-        <h2 className="mb-10 text-center text-2xl font-semibold text-neutral-900">
-          {t('features.title')}
-        </h2>
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('features.title')}</h2>
+          <p className="mt-3 text-base text-neutral-600">{t('features.subtitle')}</p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
           {features.map((feature, index) => (
             <FeatureCard
               key={feature.title}
@@ -124,6 +222,43 @@ export default function HomePage() {
               index={index}
             />
           ))}
+        </div>
+      </section>
+
+      {/* Designed for West Africa */}
+      <section className="border-y border-border bg-bg-secondary px-4 py-16 md:px-12 md:py-24">
+        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('designedFor.title')}</h2>
+            <p className="mt-4 text-base text-neutral-600">{t('designedFor.description')}</p>
+            <Link href="/register" className={cn(buttonVariants({ size: 'lg' }), 'mt-6')}>
+              {t('designedFor.cta')}
+              <ArrowRight aria-hidden className="size-4" />
+            </Link>
+          </motion.div>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
+            <Card className="p-6">
+              <h3 className="font-medium text-neutral-900">{t('designedFor.whyTitle')}</h3>
+              <ul className="mt-4 space-y-3">
+                {(t.raw('designedFor.reasons') as string[]).map((reason) => (
+                  <li key={reason} className="flex items-start gap-2 text-sm text-neutral-700">
+                    <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                    {reason}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
