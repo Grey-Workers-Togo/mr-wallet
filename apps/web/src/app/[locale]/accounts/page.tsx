@@ -152,8 +152,8 @@ export default function AccountsPage() {
   }
 
   const totalBalanceMinor = (accounts ?? []).reduce((sum, a) => sum + BigInt(a.currentBalanceMinor), 0n);
-  const totalEntriesMinor = (accounts ?? []).reduce((sum, a) => sum + BigInt(a.entriesMinor), 0n);
-  const totalExitsMinor = (accounts ?? []).reduce((sum, a) => sum + BigInt(a.exitsMinor), 0n);
+  const totalEntriesMinor = (accounts ?? []).reduce((sum, a) => sum + BigInt(a.entriesMinor ?? '0'), 0n);
+  const totalExitsMinor = (accounts ?? []).reduce((sum, a) => sum + BigInt(a.exitsMinor ?? '0'), 0n);
   const displayCurrency = accounts?.[0]?.currency ?? 'XOF';
   const displayMinorUnits = minorUnitsByCode[displayCurrency] ?? 0;
 
@@ -275,10 +275,10 @@ export default function AccountsPage() {
                     </td>
                     <td className="px-5 py-3 text-neutral-600">{account.currency}</td>
                     <td className="px-5 py-3 text-emerald-600">
-                      +{formatMinor(account.entriesMinor, account.currency, minorUnits)}
+                      +{formatMinor(account.entriesMinor ?? '0', account.currency, minorUnits)}
                     </td>
                     <td className="px-5 py-3 text-red-600">
-                      -{formatMinor(account.exitsMinor, account.currency, minorUnits)}
+                      -{formatMinor(account.exitsMinor ?? '0', account.currency, minorUnits)}
                     </td>
                     <td className="px-5 py-3 font-semibold text-emerald-600">
                       {formatMinor(account.currentBalanceMinor, account.currency, minorUnits)}
