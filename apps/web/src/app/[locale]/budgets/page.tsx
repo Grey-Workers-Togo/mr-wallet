@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, FormEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2, CheckCircle2, AlertTriangle, Gauge, Wallet } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import {
@@ -29,6 +30,7 @@ import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useCurrencies } from '@/hooks/useCurrencies';
 
 const PERIODS = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'] as const;
 
@@ -43,6 +45,7 @@ interface Budget {
   name: string;
   categoryId: string | null;
   amountMinor: string;
+  currency: string;
   period: (typeof PERIODS)[number];
   rollover: boolean;
 }
@@ -54,12 +57,34 @@ interface CurrentBudget {
 
 const DEFAULT_STARTS_ON = () => new Date().toISOString().slice(0, 10);
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+function formatMinor(amountMinor: string | bigint, currency: string, minorUnits: number) {
+  const value = Number(amountMinor) / 10 ** minorUnits;
+  const formatted = new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: minorUnits > 0 ? minorUnits : 0,
+    maximumFractionDigits: minorUnits > 0 ? minorUnits : 0,
+  }).format(value);
+  return `${formatted} ${currency}`;
+}
+
 export default function BudgetsPage() {
   const t = useTranslations('budgets');
   const tPeriod = useTranslations('budgets.period');
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+
+  const currencies = useCurrencies();
+  const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [current, setCurrent] = useState<CurrentBudget[] | null>(null);
@@ -156,52 +181,176 @@ export default function BudgetsPage() {
     }
   }
 
+  const displayCurrency = current?.[0]?.budget.currency ?? 'XOF';
+  const displayMinorUnits = minorUnitsByCode[displayCurrency] ?? 0;
+  const totalAllocatedMinor = (current ?? []).reduce((sum, c) => sum + BigInt(c.period.allocatedMinor), 0n);
+  const totalSpentMinor = (current ?? []).reduce((sum, c) => sum + BigInt(c.period.spentMinor), 0n);
+  const totalRemainingMinor = totalAllocatedMinor - totalSpentMinor;
+  const exceededCount = (current ?? []).filter((c) => BigInt(c.period.spentMinor) > BigInt(c.period.allocatedMinor)).length;
+  const usagePct = totalAllocatedMinor > 0n ? Number((totalSpentMinor * 10000n) / totalAllocatedMinor) / 100 : 0;
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="flex items-center justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+        </div>
         <Button type="button" onClick={openCreateDialog}>
           <Plus className="size-4" />
           {t('add')}
         </Button>
-      </div>
+      </motion.div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{tError(error as never)}</AlertDescription>
-        </Alert>
+      <AnimatePresence>
+        {error && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <Alert variant="destructive">
+              <AlertDescription>{tError(error as never)}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {current && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="flex items-center gap-2 text-sm text-neutral-600">
+                <Wallet className="size-4" />
+                {t('totalBudget')}
+              </div>
+              <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                {formatMinor(totalAllocatedMinor, displayCurrency, displayMinorUnits)}
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">
+                {t('totalSpent', { amount: formatMinor(totalSpentMinor, displayCurrency, displayMinorUnits) })}
+              </p>
+            </Card>
+          </motion.div>
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="flex items-center gap-2 text-sm text-neutral-600">
+                {exceededCount > 0 ? <AlertTriangle className="size-4 text-red-600" /> : <CheckCircle2 className="size-4 text-emerald-600" />}
+                {t('exceededBudgets')}
+              </div>
+              <p className={`mt-2 text-2xl font-semibold ${exceededCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                {exceededCount} / {current.length}
+              </p>
+            </Card>
+          </motion.div>
+          <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+            <Card className="p-5">
+              <div className="flex items-center gap-2 text-sm text-neutral-600">
+                <Gauge className="size-4" />
+                {t('usageRate')}
+              </div>
+              <p className="mt-2 text-2xl font-semibold text-neutral-900">{Math.round(usagePct)}%</p>
+              <p className="mt-1 text-xs text-emerald-600">
+                {t('remainingAmount', { amount: formatMinor(totalRemainingMinor, displayCurrency, displayMinorUnits) })}
+              </p>
+            </Card>
+          </motion.div>
+        </motion.div>
       )}
 
       {current === null && <p className="text-neutral-600">...</p>}
-      {current?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
-      {current && current.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {current.map(({ budget, period: budgetPeriod }) => (
-            <Card key={budget.id} className="p-5">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-lg font-medium text-neutral-900">{budget.name}</h3>
-                <div className="flex gap-2">
-                  <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(budget)}>
-                    <Pencil className="size-3.5" />
-                    {t('edit')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setConfirmDelete({ id: budget.id, label: budget.name })}
-                  >
-                    {t('delete')}
-                  </Button>
-                </div>
+
+      {current && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_2fr]"
+        >
+          <Card className="p-5">
+            <h2 className="text-lg font-medium text-neutral-900">{t('overviewTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600">{t('overviewSubtitle')}</p>
+            {current.length === 0 ? (
+              <p className="mt-8 text-center text-sm text-neutral-500">{t('overviewEmpty')}</p>
+            ) : (
+              <div className="mt-5 space-y-4">
+                {current.map(({ budget, period: budgetPeriod }) => {
+                  const allocated = BigInt(budgetPeriod.allocatedMinor);
+                  const spent = BigInt(budgetPeriod.spentMinor);
+                  const pct = allocated > 0n ? Math.min(100, Number((spent * 10000n) / allocated) / 100) : 0;
+                  const exceeded = spent > allocated;
+                  return (
+                    <div key={budget.id}>
+                      <div className="flex items-center justify-between text-xs text-neutral-600">
+                        <span>{budget.name}</span>
+                        <span>{Math.round(pct)}%</span>
+                      </div>
+                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
+                          className={`h-full rounded-full ${exceeded ? 'bg-red-500' : 'bg-emerald-500'}`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="mt-1 text-sm text-neutral-600">{tPeriod(budget.period)}</p>
-              <p className="mt-3 text-neutral-900">
-                {t('spent')}: {budgetPeriod.spentMinor} / {budgetPeriod.allocatedMinor}
-              </p>
-            </Card>
-          ))}
-        </div>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            {current.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center py-10 text-center">
+                <h2 className="text-lg font-medium text-neutral-900">{t('listTitle')}</h2>
+                <p className="mt-1 max-w-sm text-sm text-neutral-600">{t('listSubtitle')}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <AnimatePresence initial={false}>
+                  {current.map(({ budget, period: budgetPeriod }, index) => (
+                    <motion.div
+                      key={budget.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -16 }}
+                      transition={{ duration: 0.25, delay: index * 0.03 }}
+                      className="rounded-lg border p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-medium text-neutral-900">{budget.name}</h3>
+                          <p className="text-sm text-neutral-600">{tPeriod(budget.period)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="ghost" size="icon-sm" aria-label={t('edit')} onClick={() => openEditDialog(budget)}>
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={t('delete')}
+                            onClick={() => setConfirmDelete({ id: budget.id, label: budget.name })}
+                          >
+                            <Trash2 className="size-3.5 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-neutral-900">
+                        {t('spent')}: {formatMinor(budgetPeriod.spentMinor, budget.currency, minorUnitsByCode[budget.currency] ?? 0)} /{' '}
+                        {formatMinor(budgetPeriod.allocatedMinor, budget.currency, minorUnitsByCode[budget.currency] ?? 0)}
+                      </p>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </Card>
+        </motion.div>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
