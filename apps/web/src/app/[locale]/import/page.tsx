@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from '@/hooks/useToast';
 
 interface Account {
   id: string;
@@ -33,6 +34,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v
 export default function ImportPage() {
   const t = useTranslations('import');
   const tError = useTranslations('error');
+  const tCommon = useTranslations('common');
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountId, setAccountId] = useState('');
@@ -41,6 +43,7 @@ export default function ImportPage() {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [committing, setCommitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
   const dateFormatItems: Record<string, string> = {
@@ -64,6 +67,7 @@ export default function ImportPage() {
     setError(null);
     setResult(null);
     if (!file) return;
+    setUploading(true);
 
     const payload = {
       accountId,
@@ -79,19 +83,26 @@ export default function ImportPage() {
     form.append('file', file);
     form.append('payload', JSON.stringify(payload));
 
-    const token = getAccessToken();
-    const response = await fetch(`${API_BASE}/import/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: form,
-    });
-    const body = await response.json();
-    if (!response.ok) {
-      setError(body.code ?? 'INTERNAL_ERROR');
-      return;
+    try {
+      const token = getAccessToken();
+      const response = await fetch(`${API_BASE}/import/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        const code = body.code ?? 'INTERNAL_ERROR';
+        setError(code);
+        toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+        return;
+      }
+      setResult(body);
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+    } finally {
+      setUploading(false);
     }
-    setResult(body);
   }
 
   async function onCommit() {
@@ -102,8 +113,11 @@ export default function ImportPage() {
       await apiClient.post(`/import/batches/${result.batch.id}/commit`, { excludeRowIndexes: [] });
       setResult(null);
       setFile(null);
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
     } finally {
       setCommitting(false);
     }
@@ -123,7 +137,7 @@ export default function ImportPage() {
         <CardContent className="p-0">
           <form onSubmit={onUpload} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="accountId">{t('accountLabel')}</Label>
+              <Label htmlFor="accountId" required>{t('accountLabel')}</Label>
               <Select items={accountItems} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue />
@@ -138,7 +152,7 @@ export default function ImportPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="dateFormat">{t('dateFormatLabel')}</Label>
+              <Label htmlFor="dateFormat" required>{t('dateFormatLabel')}</Label>
               <Select
                 items={dateFormatItems}
                 value={dateFormat}
@@ -155,7 +169,7 @@ export default function ImportPage() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label htmlFor="file">{t('fileLabel')}</Label>
+              <Label htmlFor="file" required>{t('fileLabel')}</Label>
               <Input
                 id="file"
                 type="file"
@@ -165,7 +179,9 @@ export default function ImportPage() {
               />
             </div>
             <div className="md:col-span-2">
-              <Button type="submit">{t('submit')}</Button>
+              <Button type="submit" loading={uploading}>
+                {t('submit')}
+              </Button>
             </div>
           </form>
         </CardContent>
@@ -195,7 +211,7 @@ export default function ImportPage() {
               </table>
             </div>
             <div className="flex gap-3">
-              <Button type="button" onClick={onCommit} disabled={committing}>
+              <Button type="button" onClick={onCommit} loading={committing}>
                 {t('commit')}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setResult(null)}>
