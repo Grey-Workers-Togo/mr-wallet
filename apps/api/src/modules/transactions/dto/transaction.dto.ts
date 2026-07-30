@@ -53,10 +53,12 @@ export const listTransactionsSchema = z
     limit: z.coerce.number().int().min(1).max(200).default(50),
     accountId: z.string().uuid().optional(),
     categoryId: z.string().uuid().optional(),
+    type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
     minAmountMinor: z.string().regex(/^\d+$/).optional(),
     maxAmountMinor: z.string().regex(/^\d+$/).optional(),
+    q: z.string().max(200).optional(),
   })
   .strict();
 export type ListTransactionsDto = z.infer<typeof listTransactionsSchema>;

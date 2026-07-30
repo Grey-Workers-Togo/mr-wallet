@@ -8,10 +8,30 @@ import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 export class AccountsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(userId: string, includeArchived: boolean) {
-    return this.prisma.account.findMany({
+  async list(userId: string, includeArchived: boolean) {
+    const accounts = await this.prisma.account.findMany({
       where: { userId, ...(includeArchived ? {} : { isArchived: false }) },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+    if (accounts.length === 0) return accounts;
+
+    const accountIds = accounts.map((a) => a.id);
+    const grouped = await this.prisma.transaction.groupBy({
+      by: ['accountId', 'type'],
+      where: { userId, accountId: { in: accountIds } },
+      _sum: { amountMinor: true },
+    });
+    const totalsByAccount = new Map<string, { entriesMinor: bigint; exitsMinor: bigint }>();
+    for (const row of grouped) {
+      const totals = totalsByAccount.get(row.accountId) ?? { entriesMinor: 0n, exitsMinor: 0n };
+      if (row.type === 'INCOME') totals.entriesMinor += row._sum.amountMinor ?? 0n;
+      if (row.type === 'EXPENSE') totals.exitsMinor += row._sum.amountMinor ?? 0n;
+      totalsByAccount.set(row.accountId, totals);
+    }
+
+    return accounts.map((account) => {
+      const totals = totalsByAccount.get(account.id) ?? { entriesMinor: 0n, exitsMinor: 0n };
+      return { ...account, entriesMinor: totals.entriesMinor, exitsMinor: totals.exitsMinor };
     });
   }
 
