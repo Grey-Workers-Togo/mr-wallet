@@ -31,6 +31,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const ACCOUNT_TYPES = ['CASH', 'BANK', 'MOBILE_MONEY', 'CREDIT_CARD', 'SAVINGS', 'WALLET', 'OTHER'] as const;
 
@@ -71,6 +73,7 @@ export default function AccountsPage() {
   const tType = useTranslations('account.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const currencies = useCurrencies();
   const typeItems = Object.fromEntries(ACCOUNT_TYPES.map((value) => [value, tType(value)]));
@@ -87,6 +90,8 @@ export default function AccountsPage() {
   const [openingBalanceAt, setOpeningBalanceAt] = useState(DEFAULT_OPENING_BALANCE_AT);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function loadAccounts() {
     const list = await apiClient.get<Account[]>('/accounts');
@@ -120,6 +125,7 @@ export default function AccountsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (editingId) {
         // type/currency/opening balance are immutable after creation (docs/03-modele-donnees.md)
@@ -136,18 +142,29 @@ export default function AccountsPage() {
       }
       setDialogOpen(false);
       await loadAccounts();
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/accounts/${id}`);
       await loadAccounts();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -233,7 +250,7 @@ export default function AccountsPage() {
         </motion.div>
       )}
 
-      {accounts === null && <p className="text-neutral-600">...</p>}
+      {accounts === null && <PageLoader />}
       {accounts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
       {accounts && accounts.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
@@ -322,7 +339,7 @@ export default function AccountsPage() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="name">{t('nameLabel')}</Label>
+              <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input
                 id="name"
                 placeholder={t('namePlaceholder')}
@@ -332,7 +349,7 @@ export default function AccountsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="openingBalance">{t('openingBalanceLabel')}</Label>
+              <Label htmlFor="openingBalance" required>{t('openingBalanceLabel')}</Label>
               <AmountInput
                 id="openingBalance"
                 value={openingBalance}
@@ -343,7 +360,7 @@ export default function AccountsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="type">{t('typeLabel')}</Label>
+                <Label htmlFor="type" required>{t('typeLabel')}</Label>
                 <Select
                   items={typeItems}
                   value={type}
@@ -363,7 +380,7 @@ export default function AccountsPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="currency">{t('currencyLabel')}</Label>
+                <Label htmlFor="currency" required>{t('currencyLabel')}</Label>
                 <Select
                   items={currencyItems}
                   value={currency}
@@ -384,7 +401,7 @@ export default function AccountsPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="openingBalanceAt">{t('openingBalanceAtLabel')}</Label>
+              <Label htmlFor="openingBalanceAt" required>{t('openingBalanceAtLabel')}</Label>
               <Input
                 id="openingBalanceAt"
                 type="date"
@@ -395,7 +412,9 @@ export default function AccountsPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit">{editingId ? t('saveChanges') : t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? t('saveChanges') : t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -413,6 +432,7 @@ export default function AccountsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);

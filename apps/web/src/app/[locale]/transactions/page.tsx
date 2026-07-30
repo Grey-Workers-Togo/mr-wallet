@@ -33,6 +33,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { toast } from '@/hooks/useToast';
+import { PageLoader } from '@/components/shared/PageLoader';
 
 const CREATE_TYPES = ['EXPENSE', 'INCOME', 'TRANSFER'] as const;
 const FILTER_TYPES = ['ALL', 'EXPENSE', 'INCOME', 'TRANSFER'] as const;
@@ -97,6 +99,7 @@ export default function TransactionsPage() {
   const tCategoryType = useTranslations('category.type');
   const tError = useTranslations('error');
   const tConfirm = useTranslations('confirm');
+  const tCommon = useTranslations('common');
 
   const currencies = useCurrencies();
   const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
@@ -111,6 +114,8 @@ export default function TransactionsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<(typeof FILTER_TYPES)[number]>('ALL');
@@ -201,6 +206,7 @@ export default function TransactionsPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
       if (type === 'TRANSFER') {
         await apiClient.post('/transactions/transfer', {
@@ -223,18 +229,29 @@ export default function TransactionsPage() {
       setDialogOpen(false);
       setCursorStack([]);
       await loadPage(null);
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
     setError(null);
+    setIsDeleting(true);
     try {
       await apiClient.delete(`/transactions/${id}`);
       await loadPage(currentCursor);
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR');
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -402,7 +419,7 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        {transactions === null && <p className="p-5 text-neutral-600">...</p>}
+        {transactions === null && <PageLoader />}
         {transactions?.length === 0 && <p className="p-5 text-neutral-600">{t('empty')}</p>}
         {transactions && transactions.length > 0 && (
           <div className="overflow-x-auto">
@@ -503,7 +520,7 @@ export default function TransactionsPage() {
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="type">{t('typeLabel')}</Label>
+                <Label htmlFor="type" required>{t('typeLabel')}</Label>
                 <Select items={typeItems} value={type} onValueChange={(value) => setType(value as (typeof CREATE_TYPES)[number])}>
                   <SelectTrigger id="type" className="w-full">
                     <SelectValue />
@@ -518,12 +535,12 @@ export default function TransactionsPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="amount">{t('amountCurrencyLabel', { currency })}</Label>
+                <Label htmlFor="amount" required>{t('amountCurrencyLabel', { currency })}</Label>
                 <AmountInput id="amount" value={amount} onValueChange={setAmount} required />
               </div>
             </div>
             <div>
-              <Label htmlFor="currency">{t('currencyLabel')}</Label>
+              <Label htmlFor="currency" required>{t('currencyLabel')}</Label>
               <Select items={currencyItems} value={currency} onValueChange={(value) => setCurrency(value ?? '')}>
                 <SelectTrigger id="currency" className="w-full">
                   <SelectValue />
@@ -560,7 +577,7 @@ export default function TransactionsPage() {
               </div>
             )}
             <div>
-              <Label htmlFor="accountId">{type === 'TRANSFER' ? t('fromAccountLabel') : t('accountLabel')}</Label>
+              <Label htmlFor="accountId" required>{type === 'TRANSFER' ? t('fromAccountLabel') : t('accountLabel')}</Label>
               <Select
                 items={createAccountItems}
                 value={accountId}
@@ -580,7 +597,7 @@ export default function TransactionsPage() {
             </div>
             {type === 'TRANSFER' && (
               <div>
-                <Label htmlFor="toAccountId">{t('toAccountLabel')}</Label>
+                <Label htmlFor="toAccountId" required>{t('toAccountLabel')}</Label>
                 <Select items={createAccountItems} value={toAccountId} onValueChange={(value) => setToAccountId(value ?? '')}>
                   <SelectTrigger id="toAccountId" className="w-full">
                     <SelectValue />
@@ -596,7 +613,7 @@ export default function TransactionsPage() {
               </div>
             )}
             <div>
-              <Label htmlFor="occurredAt">{t('occurredAtLabel')}</Label>
+              <Label htmlFor="occurredAt" required>{t('occurredAtLabel')}</Label>
               <Input id="occurredAt" type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
             </div>
             <div>
@@ -604,7 +621,9 @@ export default function TransactionsPage() {
               <Textarea id="notes" placeholder={t('notePlaceholder')} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
             <DialogFooter>
-              <Button type="submit">{t('submit')}</Button>
+              <Button type="submit" loading={isSubmitting}>
+                {t('submit')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -710,6 +729,7 @@ export default function TransactionsPage() {
             <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              loading={isDeleting}
               onClick={async () => {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);
