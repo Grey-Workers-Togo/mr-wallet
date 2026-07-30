@@ -180,7 +180,6 @@ export default function TransactionsPage() {
   useEffect(() => {
     setCursorStack([]);
     loadPage(null).catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType, filterAccountId, filterCategoryId, filterFrom, filterTo, filterMin, filterMax, search]);
 
   function resolveCategoryName(category: Category): string {
