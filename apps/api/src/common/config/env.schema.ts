@@ -16,11 +16,24 @@ export const envSchema = z.object({
   IP_HASH_SALT: z.string().min(1),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   PORT: z.coerce.number().int().positive().default(3000),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  /** Empty disables Sentry (dev default). */
+  SENTRY_DSN: z.string().default(''),
   /** Comma-separated allowed origins for CORS. Empty in dev only (falls back to reflecting the request origin). */
   CORS_ORIGIN: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+/** In production, secrets that default to '' for local dev convenience become mandatory. */
+function assertRequiredInProduction(env: Env): void {
+  if (env.NODE_ENV !== 'production') return;
+  const requiredInProd: (keyof Env)[] = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'CORS_ORIGIN'];
+  const missing = requiredInProd.filter((key) => !env[key]);
+  if (missing.length > 0) {
+    throw new Error(`Invalid environment configuration: missing required production values: ${missing.join(', ')}`);
+  }
+}
 
 export function validateEnv(config: Record<string, unknown>): Env {
   const result = envSchema.safeParse(config);
@@ -28,5 +41,6 @@ export function validateEnv(config: Record<string, unknown>): Env {
     // Boot must fail loudly here — never fall back to a default for an obligatory secret.
     throw new Error(`Invalid environment configuration: ${result.error.toString()}`);
   }
+  assertRequiredInProduction(result.data);
   return result.data;
 }
