@@ -135,7 +135,7 @@ function LineChart({
     return [x, y];
   };
 
-  const toPath = (values: number[]) => values.map((_, i) => toPoint(values, i).join(',')).join(' L ');
+  const toPath = (values: number[]) => values.map((_, i) => toPoint(values, i).join(',')).join(' ');
   const bandWidth = (width - padding * 2) / Math.max(months.length - 1, 1);
 
   return (
@@ -240,8 +240,9 @@ function AreaChart({ months, values, color, label, unit }: { months: string[]; v
     return [x, y];
   };
   const zeroY = height - padding - ((0 - min) / range) * (height - padding * 2);
-  const linePoints = values.map((_, i) => toPoint(i).join(',')).join(' L ');
-  const areaPoints = `${padding},${zeroY} L ${linePoints} L ${width - padding},${zeroY} Z`;
+  const pointCoords = values.map((_, i) => toPoint(i).join(','));
+  const linePoints = pointCoords.join(' ');
+  const areaPoints = `${padding},${zeroY} L ${pointCoords.join(' L ')} L ${width - padding},${zeroY} Z`;
   const bandWidth = (width - padding * 2) / Math.max(months.length - 1, 1);
 
   return (
@@ -622,15 +623,15 @@ export default function ReportsPage() {
                 months={monthLabels}
                 seriesA={incomeValues}
                 seriesB={expenseValues}
-                colorA="#7dd3fc"
-                colorB="#0c4a6e"
+                colorA="#22c55e"
+                colorB="#ef4444"
                 labelA={t('incomeLabel')}
                 labelB={t('expenseLabel')}
                 unit={currency}
               />
               <div className="mt-2 flex items-center justify-center gap-4 text-xs text-neutral-600">
-                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-300" />{t('incomeLabel')}</span>
-                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-900" />{t('expenseLabel')}</span>
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-green-500" />{t('incomeLabel')}</span>
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" />{t('expenseLabel')}</span>
               </div>
               <p className="mt-1 text-center text-xs text-neutral-400">{t('clickToSeeTransactions')}</p>
             </div>
