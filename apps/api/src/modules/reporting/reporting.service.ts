@@ -6,6 +6,7 @@ import { DebtsFacade } from '../debts/debts.facade';
 import { CurrencyFacade } from '../currency/currency.facade';
 import { BudgetsFacade } from '../budgets/budgets.facade';
 import { consolidateToBase } from './domain/consolidate';
+import { computeStreak, Streak } from './domain/streak';
 import { ComparisonDto, DateRangeDto, MonthlySummaryDto, TopTransactionsDto } from './dto/report.dto';
 
 interface MonthRow {
@@ -235,12 +236,31 @@ export class ReportingService {
     }));
   }
 
+  /** Consecutive local-calendar days with at least one non-deleted transaction (fidelization nudge). */
+  async streak(userId: string): Promise<Streak> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { timezone: true } });
+    const rows = await this.prisma.transaction.findMany({
+      where: { userId, deletedAt: null },
+      select: { occurredAt: true },
+    });
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: user.timezone });
+    const dates = rows.map((row) => formatter.format(row.occurredAt));
+    const today = formatter.format(new Date());
+    return computeStreak(dates, today);
+  }
+
   async dashboard(userId: string) {
-    const [netWorth, budgetVsActual, monthly] = await Promise.all([
+    const [netWorth, budgetVsActual, monthly, streak] = await Promise.all([
       this.netWorth(userId),
       this.budgetVsActual(userId),
       this.monthlySummary(userId, { months: 1 }),
+      this.streak(userId),
     ]);
-    return { netWorth, budgets: budgetVsActual, currentMonth: monthly.months[monthly.months.length - 1] ?? null };
+    return {
+      netWorth,
+      budgets: budgetVsActual,
+      currentMonth: monthly.months[monthly.months.length - 1] ?? null,
+      streak,
+    };
   }
 }
