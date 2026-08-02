@@ -11,3 +11,17 @@ coverage/
 .DS_Store
 apps/api/generated/
 *.tsbuildinfo
+
+# Bubblewrap/TWA build output (regenerate via `npx @bubblewrap/cli build`)
+apps/web/.gradle/
+apps/web/app/
+apps/web/gradle/
+apps/web/gradlew
+apps/web/gradlew.bat
+apps/web/build.gradle
+apps/web/settings.gradle
+apps/web/gradle.properties
+apps/web/manifest-checksum.txt
+apps/web/store_icon.png
+*.keystore
+*.jks
