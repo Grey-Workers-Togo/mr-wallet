@@ -8,4 +8,11 @@ export class HealthController {
   check() {
     return { status: 'ok' };
   }
+
+  /** Throws intentionally to verify Sentry wiring. Remove once confirmed working in the dashboard. */
+  @Public()
+  @Get('debug-sentry')
+  debugSentry() {
+    throw new Error('Sentry test error');
+  }
 }
