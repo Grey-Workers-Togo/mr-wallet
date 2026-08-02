@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './common/config/env.schema';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { GlobalExceptionFilter } from './common/errors/global-exception.filter';
@@ -28,9 +29,11 @@ import { GoalsModule } from './modules/goals/goals.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { ForecastingModule } from './modules/forecasting/forecasting.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
@@ -55,6 +58,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     ReportingModule,
     ForecastingModule,
     AuditLogModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

@@ -19,7 +19,7 @@ RUN npm run prisma:generate -w apps/api
 RUN npm run build -w apps/api
 
 FROM node:22-alpine AS runtime
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl curl
 ENV NODE_ENV=production
 WORKDIR /repo
 COPY package.json package-lock.json ./
@@ -29,7 +29,11 @@ COPY --from=build /repo/apps/api/prisma apps/api/prisma
 RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --include-workspace-root --omit=dev --ignore-scripts
 RUN npm run prisma:generate -w apps/api
 COPY --from=build /repo/apps/api/dist apps/api/dist
+RUN chown -R node:node /repo
 
+USER node
 EXPOSE 3000
 WORKDIR /repo/apps/api
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3000/api/v1/health || exit 1
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

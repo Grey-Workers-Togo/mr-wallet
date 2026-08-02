@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Request } from 'express';
-import * as Sentry from '@sentry/node';
+import { SentryExceptionCaptured } from '@sentry/nestjs';
 
 interface NormalizedErrorBody {
   code: string;
@@ -20,6 +20,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
+  @SentryExceptionCaptured()
   catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
@@ -29,7 +30,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(`requestId=${body.requestId} code=${body.code}`, (exception as Error)?.stack);
-      Sentry.captureException(exception, { tags: { requestId: body.requestId, code: body.code } });
     }
 
     httpAdapter.reply(ctx.getResponse(), body, status);
