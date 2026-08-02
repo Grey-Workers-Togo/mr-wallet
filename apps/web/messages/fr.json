@@ -583,7 +583,13 @@
     }
   },
   "pwa": {
-    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour."
+    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour.",
+    "installIosTitle": "Installer l'application",
+    "installIosBody": "Appuyez sur <shareIcon/> puis « Sur l'écran d'accueil » pour installer.",
+    "installBannerTitle": "Installer l'application",
+    "installBannerBody": "Ajoutez Mr Wallet à votre écran d'accueil pour un accès rapide.",
+    "installAction": "Installer",
+    "dismiss": "Ignorer"
   },
   "preferences": {
     "title": "Préférences",

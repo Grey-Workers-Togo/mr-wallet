@@ -5,6 +5,7 @@ import { Rubik } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { PinLockGate } from '@/components/PinLockGate';
 import { ConditionalShell } from '@/components/layouts/ConditionalShell';
 import { Toaster } from '@/components/shared/Toaster';
@@ -89,6 +90,7 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
+          <InstallPrompt />
           <PinLockGate />
           <ConditionalShell>{children}</ConditionalShell>
           <Toaster />

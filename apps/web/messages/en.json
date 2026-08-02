@@ -583,7 +583,13 @@
     }
   },
   "pwa": {
-    "offlineBanner": "Offline — the data shown may not be up to date."
+    "offlineBanner": "Offline — the data shown may not be up to date.",
+    "installIosTitle": "Install this app",
+    "installIosBody": "Tap <shareIcon/> then \"Add to Home Screen\" to install.",
+    "installBannerTitle": "Install this app",
+    "installBannerBody": "Add Mr Wallet to your home screen for quick access.",
+    "installAction": "Install",
+    "dismiss": "Dismiss"
   },
   "preferences": {
     "title": "Preferences",
