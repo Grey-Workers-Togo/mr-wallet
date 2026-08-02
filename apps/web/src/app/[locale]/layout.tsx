@@ -100,11 +100,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={rubik.variable}>
       <body>
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <InstallPrompt />
