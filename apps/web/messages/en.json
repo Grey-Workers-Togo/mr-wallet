@@ -146,7 +146,8 @@
     "preferences": "Settings",
     "logout": "Log out",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "more": "More"
   },
   "auth": {
     "register": {

@@ -146,7 +146,8 @@
     "preferences": "Réglages",
     "logout": "Se déconnecter",
     "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu"
+    "closeMenu": "Fermer le menu",
+    "more": "Plus"
   },
   "auth": {
     "register": {
