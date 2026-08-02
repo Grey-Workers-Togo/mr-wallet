@@ -308,12 +308,16 @@ export default function PreferencesPage() {
               {devices && devices.length > 0 && (
                 <div className="space-y-2">
                   {devices.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
-                      <span className="text-neutral-900">{d.deviceLabel ?? d.id}</span>
+                    <div
+                      key={d.id}
+                      className="flex flex-col items-start gap-2 border-b border-border pb-2 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <span className="text-neutral-900 break-all">{d.deviceLabel ?? d.id}</span>
                       <Button
                         type="button"
                         variant="destructive"
                         size="sm"
+                        className="w-full shrink-0 sm:w-auto"
                         onClick={() => setConfirmDelete({ id: d.id, label: d.deviceLabel ?? d.id })}
                       >
                         {t('pushRemove')}
@@ -322,11 +326,11 @@ export default function PreferencesPage() {
                   ))}
                 </div>
               )}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" loading={pending === 'enablePush'} onClick={onEnablePush}>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button type="button" variant="secondary" className="w-full sm:w-auto" loading={pending === 'enablePush'} onClick={onEnablePush}>
                   {t('pushEnable')}
                 </Button>
-                <Button type="button" variant="secondary" loading={pending === 'testPush'} onClick={onTestPush}>
+                <Button type="button" variant="secondary" className="w-full sm:w-auto" loading={pending === 'testPush'} onClick={onTestPush}>
                   {t('pushTest')}
                 </Button>
               </div>
