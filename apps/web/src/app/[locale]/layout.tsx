@@ -51,7 +51,7 @@ export async function generateMetadata({
       images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: title }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
       images: ['/icon-512x512.png'],
@@ -85,9 +85,26 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const t = await getTranslations({ locale, namespace: 'home' });
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: t('hero.title'),
+    description: t('hero.description'),
+    url: `${SITE_URL}/${locale}`,
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Web',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  };
+
   return (
     <html lang={locale} className={rubik.variable}>
       <body>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <InstallPrompt />

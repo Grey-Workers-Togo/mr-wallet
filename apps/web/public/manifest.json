@@ -2,6 +2,7 @@
   "name": "Mr Wallet",
   "short_name": "Mr Wallet",
   "description": "Suivi de budget, transactions, dettes et objectifs.",
+  "lang": "fr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

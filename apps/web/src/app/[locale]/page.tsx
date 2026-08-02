@@ -288,6 +288,21 @@ export default function HomePage() {
             <FAQItem key={faq.question} value={`faq-${index}`} question={faq.question} answer={faq.answer} />
           ))}
         </Accordion>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((faq) => ({
+                '@type': 'Question',
+                name: faq.question,
+                acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+              })),
+            }),
+          }}
+        />
       </section>
 
       {/* CTA final */}

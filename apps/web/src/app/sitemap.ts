@@ -11,6 +11,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: path === '' ? 'weekly' : 'monthly',
       priority: path === '' ? 1 : 0.5,
+      alternates: {
+        languages: Object.fromEntries(routing.locales.map((l) => [l, `${SITE_URL}/${l}${path}`])),
+      },
     })),
   );
 }
