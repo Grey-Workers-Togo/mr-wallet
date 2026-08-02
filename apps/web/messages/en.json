@@ -124,8 +124,21 @@
       "docs": "Docs",
       "github": "GitHub",
       "contact": "Contact",
+      "accountDeletion": "Delete my account",
       "rights": "All rights reserved."
     }
+  },
+  "accountDeletion": {
+    "title": "Request account deletion",
+    "intro": "You can permanently delete your Mr Wallet account and all associated data at any time.",
+    "selfServiceTitle": "Delete it yourself (instant)",
+    "selfServiceStep1": "Log in to your account.",
+    "selfServiceStep2": "Go to Settings.",
+    "selfServiceStep3": "Scroll to \"Delete account\" and confirm.",
+    "selfServiceNote": "Your account and all associated data (accounts, transactions, budgets, categories, tags, debts, goals, recurrences, notifications, push devices) are permanently deleted immediately. This action cannot be undone.",
+    "noAccessTitle": "Can't log in?",
+    "noAccessBody": "Email us from the address linked to your account and we will delete it for you within 30 days.",
+    "contactLink": "contact@mister-wallet.com"
   },
   "nav": {
     "mainNavigation": "Main navigation",

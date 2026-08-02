@@ -344,6 +344,9 @@ export default function HomePage() {
           <a href="mailto:contact@mister-wallet.com" className="hover:text-white">
             {t('footer.contact')}
           </a>
+          <Link href="/account-deletion" className="hover:text-white">
+            {t('footer.accountDeletion')}
+          </Link>
         </div>
         <div className="flex items-end justify-start md:justify-end">
           <span>

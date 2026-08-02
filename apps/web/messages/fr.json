@@ -124,8 +124,21 @@
       "docs": "Docs",
       "github": "GitHub",
       "contact": "Contact",
+      "accountDeletion": "Supprimer mon compte",
       "rights": "Tous droits réservés."
     }
+  },
+  "accountDeletion": {
+    "title": "Demander la suppression du compte",
+    "intro": "Vous pouvez supprimer définitivement votre compte Mr Wallet et toutes les données associées à tout moment.",
+    "selfServiceTitle": "Supprimer vous-même (immédiat)",
+    "selfServiceStep1": "Connectez-vous à votre compte.",
+    "selfServiceStep2": "Allez dans Paramètres.",
+    "selfServiceStep3": "Faites défiler jusqu'à « Supprimer le compte » et confirmez.",
+    "selfServiceNote": "Votre compte et toutes les données associées (comptes, transactions, budgets, catégories, tags, dettes, objectifs, récurrences, notifications, appareils push) sont supprimés définitivement et immédiatement. Cette action est irréversible.",
+    "noAccessTitle": "Vous ne pouvez pas vous connecter ?",
+    "noAccessBody": "Écrivez-nous depuis l'adresse email liée à votre compte, nous le supprimerons sous 30 jours.",
+    "contactLink": "contact@mister-wallet.com"
   },
   "nav": {
     "mainNavigation": "Navigation principale",
