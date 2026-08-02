@@ -146,7 +146,8 @@
     "preferences": "Réglages",
     "logout": "Se déconnecter",
     "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu"
+    "closeMenu": "Fermer le menu",
+    "more": "Plus"
   },
   "auth": {
     "register": {
@@ -527,6 +528,9 @@
     "totalExpense": "Dépenses totales",
     "netSavings": "Épargne nette",
     "avgDailySpend": "Dépense moy./jour",
+    "streakTitle": "Série de saisies",
+    "streakCurrent": "{days, plural, =0 {Aucune série active} =1 {1 jour} other {# jours}}",
+    "streakLongest": "{days, plural, =0 {Record : 0 jour} =1 {Record : 1 jour} other {Record : # jours}}",
     "recommendationsTitle": "Recommandations",
     "recommendationsSubtitle": "Analyse de vos habitudes financières",
     "recommendationCategoryPct": "{category} représente {pct}% de vos dépenses totales.",
@@ -579,7 +583,13 @@
     }
   },
   "pwa": {
-    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour."
+    "offlineBanner": "Hors ligne — les données affichées peuvent ne pas être à jour.",
+    "installIosTitle": "Installer l'application",
+    "installIosBody": "Appuyez sur <shareIcon/> puis « Sur l'écran d'accueil » pour installer.",
+    "installBannerTitle": "Installer l'application",
+    "installBannerBody": "Ajoutez Mr Wallet à votre écran d'accueil pour un accès rapide.",
+    "installAction": "Installer",
+    "dismiss": "Ignorer"
   },
   "preferences": {
     "title": "Préférences",

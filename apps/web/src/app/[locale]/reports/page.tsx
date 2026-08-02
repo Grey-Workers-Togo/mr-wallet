@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
-import { Banknote, TrendingDown, PiggyBank, Gauge } from 'lucide-react';
+import { Banknote, TrendingDown, PiggyBank, Gauge, Flame } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -39,6 +39,11 @@ interface BudgetVsActual {
 interface Transaction {
   occurredAt: string;
   transferGroupId: string | null;
+}
+
+interface Streak {
+  current: number;
+  longest: number;
 }
 
 const DONUT_COLORS = ['#38bdf8', '#0ea5e9', '#0284c7', '#0369a1', '#075985', '#7dd3fc'];
@@ -130,7 +135,7 @@ function LineChart({
     return [x, y];
   };
 
-  const toPath = (values: number[]) => values.map((_, i) => toPoint(values, i).join(',')).join(' L ');
+  const toPath = (values: number[]) => values.map((_, i) => toPoint(values, i).join(',')).join(' ');
   const bandWidth = (width - padding * 2) / Math.max(months.length - 1, 1);
 
   return (
@@ -235,8 +240,9 @@ function AreaChart({ months, values, color, label, unit }: { months: string[]; v
     return [x, y];
   };
   const zeroY = height - padding - ((0 - min) / range) * (height - padding * 2);
-  const linePoints = values.map((_, i) => toPoint(i).join(',')).join(' L ');
-  const areaPoints = `${padding},${zeroY} L ${linePoints} L ${width - padding},${zeroY} Z`;
+  const pointCoords = values.map((_, i) => toPoint(i).join(','));
+  const linePoints = pointCoords.join(' ');
+  const areaPoints = `${padding},${zeroY} L ${pointCoords.join(' L ')} L ${width - padding},${zeroY} Z`;
   const bandWidth = (width - padding * 2) / Math.max(months.length - 1, 1);
 
   return (
@@ -433,6 +439,7 @@ export default function ReportsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<BudgetVsActual[] | null>(null);
   const [weekdayCounts, setWeekdayCounts] = useState<number[]>(new Array(7).fill(0));
+  const [streak, setStreak] = useState<Streak | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -448,12 +455,14 @@ export default function ReportsPage() {
       apiClient.get<Category[]>('/categories'),
       apiClient.get<BudgetVsActual[]>('/reports/budget-vs-actual'),
       apiClient.get<{ items: Transaction[] }>(`/transactions?from=${monthStart}&to=${todayStr}&limit=200`),
+      apiClient.get<{ streak: Streak }>('/reports/dashboard'),
     ])
-      .then(([monthly, spend, categoryList, budgetList, txPage]) => {
+      .then(([monthly, spend, categoryList, budgetList, txPage, dashboard]) => {
         setMonths(monthly.months);
         setCategorySpend(spend);
         setCategories(categoryList);
         setBudgets(budgetList);
+        setStreak(dashboard.streak);
         const counts = new Array(7).fill(0);
         for (const tx of txPage.items) {
           if (tx.transferGroupId) continue;
@@ -528,7 +537,7 @@ export default function ReportsPage() {
 
       {months && (
       <>
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
             <div className="flex items-center gap-2 text-sm text-neutral-600">
@@ -565,6 +574,16 @@ export default function ReportsPage() {
               {t('avgDailySpend')}
             </div>
             <p className="mt-2 text-xl font-semibold text-neutral-900">{formatMinor(avgDailySpendMinor, currency, minorUnits)}</p>
+          </Card>
+        </motion.div>
+        <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
+          <Card className="p-5">
+            <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <Flame className="size-4 text-orange-600" />
+              {t('streakTitle')}
+            </div>
+            <p className="mt-2 text-xl font-semibold text-neutral-900">{t('streakCurrent', { days: streak?.current ?? 0 })}</p>
+            <p className="mt-1 text-xs text-neutral-500">{t('streakLongest', { days: streak?.longest ?? 0 })}</p>
           </Card>
         </motion.div>
       </motion.div>
@@ -604,15 +623,15 @@ export default function ReportsPage() {
                 months={monthLabels}
                 seriesA={incomeValues}
                 seriesB={expenseValues}
-                colorA="#7dd3fc"
-                colorB="#0c4a6e"
+                colorA="#22c55e"
+                colorB="#ef4444"
                 labelA={t('incomeLabel')}
                 labelB={t('expenseLabel')}
                 unit={currency}
               />
               <div className="mt-2 flex items-center justify-center gap-4 text-xs text-neutral-600">
-                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-300" />{t('incomeLabel')}</span>
-                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-900" />{t('expenseLabel')}</span>
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-green-500" />{t('incomeLabel')}</span>
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" />{t('expenseLabel')}</span>
               </div>
               <p className="mt-1 text-center text-xs text-neutral-400">{t('clickToSeeTransactions')}</p>
             </div>

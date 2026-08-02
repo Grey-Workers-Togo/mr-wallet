@@ -1,17 +1,18 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { Inter } from 'next/font/google';
+import { Rubik } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { PinLockGate } from '@/components/PinLockGate';
 import { ConditionalShell } from '@/components/layouts/ConditionalShell';
 import { Toaster } from '@/components/shared/Toaster';
 import type { ReactNode } from 'react';
 import '@/styles/globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const rubik = Rubik({ subsets: ['latin'], variable: '--font-rubik', display: 'swap' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mister-wallet.com';
 
@@ -50,7 +51,7 @@ export async function generateMetadata({
       images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: title }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
       images: ['/icon-512x512.png'],
@@ -69,6 +70,7 @@ export const viewport: Viewport = {
   themeColor: '#0f766e',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default async function LocaleLayout({
@@ -83,11 +85,25 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const t = await getTranslations({ locale, namespace: 'home' });
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: t('hero.title'),
+    description: t('hero.description'),
+    url: `${SITE_URL}/${locale}`,
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Web',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  };
+
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={rubik.variable}>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
+          <InstallPrompt />
           <PinLockGate />
           <ConditionalShell>{children}</ConditionalShell>
           <Toaster />
