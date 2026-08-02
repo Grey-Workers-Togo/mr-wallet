@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.grey.gwallet.gestion_portefeuilles",
+      "sha256_cert_fingerprints": [
+        "5C:AD:7C:52:55:C9:5F:1D:0A:73:D2:5D:9E:62:6C:D3:3C:DB:6B:E7:01:53:90:8C:43:37:1F:03:03:72:4F:2B"
+      ]
+    }
+  }
+]
