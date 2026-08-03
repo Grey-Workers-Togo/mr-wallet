@@ -27,14 +27,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'home' });
-  const title = t('hero.title');
-  const description = t('hero.description');
+  const appName = t('hero.title');
+  const title = t('seo.title');
+  const description = t('seo.description');
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: { default: title, template: `%s · ${title}` },
+    title: { default: title, template: `%s · ${appName}` },
     description,
-    applicationName: title,
+    applicationName: appName,
     manifest: '/manifest.json',
     keywords: ['budget', 'finances personnelles', 'dépenses', 'épargne', 'personal finance', 'expense tracker'],
     alternates: {
@@ -44,7 +45,7 @@ export async function generateMetadata({
     openGraph: {
       type: 'website',
       url: `/${locale}`,
-      siteName: title,
+      siteName: appName,
       title,
       description,
       locale,

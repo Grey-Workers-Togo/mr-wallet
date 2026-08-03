@@ -20,6 +20,10 @@
   "home": {
     "login": "Se connecter",
     "register": "S'inscrire",
+    "seo": {
+      "title": "Mr Wallet — Gestion de budget et suivi des dépenses",
+      "description": "Gère comptes, budgets, dépenses, dettes, objectifs et récurrences dans une seule application simple. Multi-devises (FCFA, EUR, USD). Gratuit pour démarrer."
+    },
     "hero": {
       "title": "Mr Wallet",
       "badge": "Gestion financière personnelle",
@@ -76,6 +80,62 @@
         {
           "title": "Dettes & créances",
           "description": "Garde une trace claire de ce qu'on te doit et de ce que tu dois rembourser."
+        }
+      ]
+    },
+    "screenshots": {
+      "title": "Vois-le en action",
+      "subtitle": "Un aperçu rapide du dashboard, des budgets et des transactions sur ton téléphone.",
+      "alt": "Capture d'écran de l'application Mr Wallet"
+    },
+    "testimonials": {
+      "title": "Adopté par les premiers utilisateurs",
+      "subtitle": "Quelques mots de personnes qui gèrent leur argent avec Mr Wallet.",
+      "items": [
+        {
+          "name": "Awa D.",
+          "role": "Designer freelance, Lomé",
+          "quote": "La première appli budget qui comprend vraiment les frais mobile money et les revenus irréguliers."
+        },
+        {
+          "name": "Kossi M.",
+          "role": "Commerçante, Cotonou",
+          "quote": "Je sais enfin exactement combien je peux dépenser aujourd'hui sans vérifier trois applis."
+        },
+        {
+          "name": "Fatou S.",
+          "role": "Étudiante, Dakar",
+          "quote": "Créer mon premier objectif d'épargne a pris deux minutes. Voir la barre de progression avancer me motive."
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Tarifs simples",
+      "subtitle": "Tout ce qu'il faut pour gérer ton argent, gratuit pendant qu'on construit.",
+      "plans": [
+        {
+          "name": "Gratuit",
+          "price": "0 F",
+          "period": "/ pour toujours",
+          "badge": "Plan actuel",
+          "cta": "Créer mon espace",
+          "features": [
+            "Comptes et transactions illimités",
+            "Budgets, objectifs, dettes et récurrences",
+            "Import et export CSV/Excel",
+            "Multi-devises (FCFA, EUR, USD)"
+          ]
+        },
+        {
+          "name": "Pro",
+          "price": "Bientôt",
+          "cta": "Me prévenir",
+          "features": [
+            "Connecteurs bancaires",
+            "Comptes partagés et budgets familiaux",
+            "Rapports et prévisions avancés",
+            "Support prioritaire"
+          ]
         }
       ]
     },

@@ -25,6 +25,9 @@ import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { FeatureCard } from '@/components/landing/FeatureCard';
 import { TimelineStep } from '@/components/landing/TimelineStep';
 import { FAQItem } from '@/components/landing/FAQItem';
+import { ScreenshotsGallery } from '@/components/landing/ScreenshotsGallery';
+import { TestimonialCard } from '@/components/landing/TestimonialCard';
+import { PricingCard } from '@/components/landing/PricingCard';
 import { cn } from '@/lib/utils';
 
 const FEATURE_ICONS = [BarChart3, Smartphone, Gauge, Target, Repeat, HandCoins];
@@ -36,6 +39,15 @@ export default function HomePage() {
   const features = t.raw('features.items') as { title: string; description: string }[];
   const steps = t.raw('howItWorks.steps') as { title: string; description: string }[];
   const faqs = t.raw('faq.items') as { question: string; answer: string }[];
+  const testimonials = t.raw('testimonials.items') as { name: string; role: string; quote: string }[];
+  const plans = t.raw('pricing.plans') as {
+    name: string;
+    price: string;
+    period?: string;
+    badge?: string;
+    cta: string;
+    features: string[];
+  }[];
 
   return (
     <main className="flex flex-col">
@@ -225,6 +237,17 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Screenshots */}
+      <section className="border-y border-border bg-neutral-950 px-4 py-16 md:px-12 md:py-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-semibold text-white md:text-3xl">{t('screenshots.title')}</h2>
+          <p className="mt-3 text-base text-neutral-400">{t('screenshots.subtitle')}</p>
+        </div>
+        <div className="mt-10">
+          <ScreenshotsGallery alt={t('screenshots.alt')} />
+        </div>
+      </section>
+
       {/* Designed for West Africa */}
       <section className="border-y border-border bg-bg-secondary px-4 py-16 md:px-12 md:py-24">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
@@ -275,6 +298,49 @@ export default function HomePage() {
               title={step.title}
               description={step.description}
               isLast={index === steps.length - 1}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="px-4 py-16 md:px-12 md:py-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('testimonials.title')}</h2>
+          <p className="mt-3 text-base text-neutral-600">{t('testimonials.subtitle')}</p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
+          {testimonials.map((testimonial, index) => (
+            <TestimonialCard
+              key={testimonial.name}
+              name={testimonial.name}
+              role={testimonial.role}
+              quote={testimonial.quote}
+              index={index}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="border-y border-border bg-bg-secondary px-4 py-16 md:px-12 md:py-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('pricing.title')}</h2>
+          <p className="mt-3 text-base text-neutral-600">{t('pricing.subtitle')}</p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-3xl gap-6 md:grid-cols-2">
+          {plans.map((plan, index) => (
+            <PricingCard
+              key={plan.name}
+              name={plan.name}
+              price={plan.price}
+              period={plan.period}
+              badge={plan.badge}
+              features={plan.features}
+              ctaLabel={plan.cta}
+              href={index === 0 ? '/register' : 'mailto:contact@mister-wallet.com?subject=Mr%20Wallet%20Pro'}
+              highlighted={index === 0}
+              index={index}
             />
           ))}
         </div>

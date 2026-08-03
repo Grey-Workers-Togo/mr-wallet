@@ -4,6 +4,15 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+const ICON_STYLES = [
+  'bg-primary/10 text-primary',
+  'bg-emerald-100 text-emerald-700',
+  'bg-amber-100 text-amber-700',
+  'bg-sky-100 text-sky-700',
+  'bg-fuchsia-100 text-fuchsia-700',
+  'bg-orange-100 text-orange-700',
+];
+
 export function FeatureCard({
   icon: Icon,
   title,
@@ -30,7 +39,7 @@ export function FeatureCard({
         <motion.div
           whileHover={reduce ? undefined : { scale: 1.1, rotate: 6 }}
           transition={{ duration: 0.3 }}
-          className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
+          className={`flex size-10 items-center justify-center rounded-lg ${ICON_STYLES[index % ICON_STYLES.length]}`}
         >
           <Icon aria-hidden className="size-5" />
         </motion.div>

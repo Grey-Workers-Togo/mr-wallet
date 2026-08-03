@@ -12,7 +12,7 @@ export function Logo({
 }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Image src="/logo-symbol.svg" alt="" width={size} height={size} priority />
+      <Image src="/logo-symbol.svg" alt="Mr Wallet logo" width={size} height={size} priority />
       <span className={cn('text-lg font-bold text-primary-dark', textClassName)}>Mr Wallet</span>
     </div>
   );
