@@ -83,6 +83,62 @@
         }
       ]
     },
+    "screenshots": {
+      "title": "See it in action",
+      "subtitle": "A quick look at the dashboard, budgets and transactions on your phone.",
+      "alt": "Mr Wallet app screenshot"
+    },
+    "testimonials": {
+      "title": "Loved by early users",
+      "subtitle": "A few words from people managing their money with Mr Wallet.",
+      "items": [
+        {
+          "name": "Awa D.",
+          "role": "Freelance designer, Lomé",
+          "quote": "First budget app that actually understands mobile money fees and irregular income."
+        },
+        {
+          "name": "Kossi M.",
+          "role": "Small business owner, Cotonou",
+          "quote": "I finally know exactly how much I can spend today without checking three apps."
+        },
+        {
+          "name": "Fatou S.",
+          "role": "Student, Dakar",
+          "quote": "Setting up my first savings goal took two minutes. Seeing the progress bar move keeps me motivated."
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Simple pricing",
+      "subtitle": "Everything you need to manage your money, free while we're building.",
+      "plans": [
+        {
+          "name": "Free",
+          "price": "0 F",
+          "period": "/ forever",
+          "badge": "Current plan",
+          "cta": "Create my space",
+          "features": [
+            "Unlimited accounts and transactions",
+            "Budgets, goals, debts and recurrences",
+            "CSV/Excel import and export",
+            "Multi-currency (FCFA, EUR, USD)"
+          ]
+        },
+        {
+          "name": "Pro",
+          "price": "Soon",
+          "cta": "Notify me",
+          "features": [
+            "Bank connectors",
+            "Shared accounts and household budgets",
+            "Advanced reports and forecasts",
+            "Priority support"
+          ]
+        }
+      ]
+    },
     "designedFor": {
       "title": "Designed for West Africa",
       "description": "The app starts from the ground: cash, mobile money, variable income, family support, informal debts and very concrete savings goals.",
