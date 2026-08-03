@@ -319,7 +319,7 @@ export default function TransactionsPage() {
         type="button"
         onClick={openCreateDialog}
         aria-label={t('add')}
-        className="fixed bottom-20 left-4 z-30 size-14 rounded-full p-0 shadow-lg md:hidden"
+        className="fixed bottom-20 right-4 z-30 size-14 rounded-full p-0 shadow-lg md:hidden"
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
       >
         <Plus className="size-6" />
