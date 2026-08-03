@@ -20,6 +20,10 @@
   "home": {
     "login": "Log in",
     "register": "Sign up",
+    "seo": {
+      "title": "Mr Wallet — Personal Budget & Expense Tracker",
+      "description": "Track accounts, budgets, expenses, debts, goals and recurring payments in one simple app. Multi-currency support (FCFA, EUR, USD). Free to start."
+    },
     "hero": {
       "title": "Mr Wallet",
       "badge": "Personal finance management",

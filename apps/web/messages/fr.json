@@ -20,6 +20,10 @@
   "home": {
     "login": "Se connecter",
     "register": "S'inscrire",
+    "seo": {
+      "title": "Mr Wallet — Gestion de budget et suivi des dépenses",
+      "description": "Gère comptes, budgets, dépenses, dettes, objectifs et récurrences dans une seule application simple. Multi-devises (FCFA, EUR, USD). Gratuit pour démarrer."
+    },
     "hero": {
       "title": "Mr Wallet",
       "badge": "Gestion financière personnelle",
