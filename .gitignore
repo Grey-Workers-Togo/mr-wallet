@@ -25,3 +25,8 @@ apps/web/manifest-checksum.txt
 apps/web/store_icon.png
 *.keystore
 *.jks
+apps/web/*.aab
+apps/web/*.apk
+apps/web/*.idsig
+apps/web/upload_certificate.pem
+screenshots/
