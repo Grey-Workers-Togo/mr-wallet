@@ -28,6 +28,7 @@ export function InstallPrompt() {
   useEffect(() => {
     if (isStandalone() || localStorage.getItem(DISMISSED_KEY) === '1') return;
 
+    // iOS Safari never fires beforeinstallprompt - fall back to manual Share-sheet instructions.
     if (isIos()) {
       setMode('ios');
       return;
