@@ -41,6 +41,8 @@ model Session {
   ipHash           String?
   expiresAt        DateTime  @db.Timestamptz(6)
   revokedAt        DateTime? @db.Timestamptz(6)
+  supersededAt     DateTime? @db.Timestamptz(6)
+  successorId      String?
   createdAt        DateTime  @default(now()) @db.Timestamptz(6)
   lastUsedAt       DateTime? @db.Timestamptz(6)
 

@@ -57,19 +57,30 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
 
 // Concurrent 401s (several requests firing in parallel after the access token expires) must
 // share one refresh call — the refresh token is single-use, so a second concurrent call would
-// reuse an already-consumed token and the backend revokes the whole session (RG "REFRESH_TOKEN_REUSED").
+// reuse an already-consumed token. The Web Locks API additionally serializes refresh calls
+// across browser tabs (same origin), since the refresh cookie is shared by all of them; the
+// API's grace window (auth.service.ts REFRESH_REUSE_GRACE_MS) covers browsers without it.
 let refreshInFlight: Promise<boolean> | null = null;
+
+async function doRefresh(): Promise<boolean> {
+  try {
+    const result = await request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }, false);
+    setAccessToken(result.accessToken);
+    return true;
+  } catch {
+    setAccessToken(null);
+    return false;
+  }
+}
 
 function tryRefresh(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const result = await request<{ accessToken: string }>('/auth/refresh', { method: 'POST' }, false);
-        setAccessToken(result.accessToken);
-        return true;
-      } catch {
-        setAccessToken(null);
-        return false;
+        if (typeof navigator !== 'undefined' && 'locks' in navigator) {
+          return await navigator.locks.request('mr-wallet-auth-refresh', doRefresh);
+        }
+        return await doRefresh();
       } finally {
         refreshInFlight = null;
       }

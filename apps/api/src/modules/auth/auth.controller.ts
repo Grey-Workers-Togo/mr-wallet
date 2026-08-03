@@ -93,7 +93,9 @@ export class AuthController {
       throw new UnauthorizedException();
     }
     const result = await this.authService.refresh(presented, this.ipHash(req), req.headers['user-agent'] ?? null);
-    this.setRefreshCookie(res, result.refreshToken);
+    if (!result.skipCookie) {
+      this.setRefreshCookie(res, result.refreshToken);
+    }
     return { accessToken: result.accessToken, user: result.user };
   }
 
