@@ -14,7 +14,6 @@
   "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://www.mister-wallet.com/logo-symbol.svg",
-  "maskableIconUrl": "https://www.mister-wallet.com/logo-symbol.svg",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Users\\kameganvi\\Documents\\Projects\\budget_manager\\apps\\web\\android.keystore",
