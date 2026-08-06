@@ -267,6 +267,10 @@
     "notifications": "Notifications",
     "preferences": "Settings",
     "logout": "Log out",
+    "logoutConfirmTitle": "Log out?",
+    "logoutConfirmDescription": "You will need to sign in again to access your account.",
+    "logoutConfirmAction": "Log out",
+    "logoutConfirmCancel": "Cancel",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "more": "More"
