@@ -267,6 +267,10 @@
     "notifications": "Notifications",
     "preferences": "Réglages",
     "logout": "Se déconnecter",
+    "logoutConfirmTitle": "Se déconnecter ?",
+    "logoutConfirmDescription": "Vous devrez vous reconnecter pour accéder à votre compte.",
+    "logoutConfirmAction": "Se déconnecter",
+    "logoutConfirmCancel": "Annuler",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
     "more": "Plus"
