@@ -13,6 +13,14 @@ export const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().default(''),
   VAPID_PRIVATE_KEY: z.string().default(''),
   VAPID_SUBJECT: z.string().default(''),
+  /** Empty disables transactional email (password reset, etc.) - dev default, logs instead of sending. */
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  SMTP_FROM: z.string().default('Mr Wallet <no-reply@mister-wallet.com>'),
+  /** Base URL of the web app, used to build links in transactional emails (e.g. password reset). */
+  WEB_APP_URL: z.string().default('http://localhost:3001'),
   IP_HASH_SALT: z.string().min(1),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -28,7 +36,13 @@ export type Env = z.infer<typeof envSchema>;
 /** In production, secrets that default to '' for local dev convenience become mandatory. */
 function assertRequiredInProduction(env: Env): void {
   if (env.NODE_ENV !== 'production') return;
-  const requiredInProd: (keyof Env)[] = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'CORS_ORIGIN'];
+  const requiredInProd: (keyof Env)[] = [
+    'VAPID_PUBLIC_KEY',
+    'VAPID_PRIVATE_KEY',
+    'VAPID_SUBJECT',
+    'CORS_ORIGIN',
+    'SMTP_HOST',
+  ];
   const missing = requiredInProd.filter((key) => !env[key]);
   if (missing.length > 0) {
     throw new Error(`Invalid environment configuration: missing required production values: ${missing.join(', ')}`);

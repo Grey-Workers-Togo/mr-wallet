@@ -36,3 +36,9 @@ export const changePasswordSchema = z
   })
   .strict();
 export type ChangePasswordDto = z.infer<typeof changePasswordSchema>;
+
+export const verifyEmailSchema = z.object({ token: z.string().min(1) }).strict();
+export type VerifyEmailDto = z.infer<typeof verifyEmailSchema>;
+
+export const resendVerificationSchema = z.object({ email: z.string().email() }).strict();
+export type ResendVerificationDto = z.infer<typeof resendVerificationSchema>;

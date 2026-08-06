@@ -7,6 +7,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './common/config/env.schema';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { MailModule } from './common/mail/mail.module';
 import { GlobalExceptionFilter } from './common/errors/global-exception.filter';
 import { AuditInterceptor } from './common/audit/audit.interceptor';
 import { RequestIdMiddleware } from './common/request-id.middleware';
@@ -40,6 +41,7 @@ import { HealthModule } from './modules/health/health.module';
     // Default rate limit for all endpoints; auth endpoints override with a stricter @Throttle (see auth.controller.ts).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
+    MailModule,
     UsersModule,
     AuthModule,
     CurrencyModule,

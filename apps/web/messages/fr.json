@@ -276,21 +276,58 @@
       "subtitle": "Commencez à suivre vos finances en quelques minutes",
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
       "baseCurrencyLabel": "Devise de référence",
       "submit": "S'inscrire",
       "submitting": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
-      "loginLink": "Se connecter"
+      "loginLink": "Se connecter",
+      "successTitle": "Vérifiez votre boîte mail",
+      "successMessage": "Un e-mail de confirmation vient d'être envoyé. Cliquez sur le lien qu'il contient pour activer votre compte."
     },
     "login": {
       "title": "Connexion",
       "subtitle": "Gérez vos finances en toute confiance",
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
+      "forgotPasswordLink": "Mot de passe oublié ?",
       "submit": "Se connecter",
       "submitting": "Connexion...",
       "noAccount": "Pas encore de compte ?",
-      "registerLink": "S'inscrire"
+      "registerLink": "S'inscrire",
+      "resendVerification": "Renvoyer l'e-mail de confirmation",
+      "resendVerificationSending": "Envoi...",
+      "resendVerificationSent": "E-mail de confirmation renvoyé, si le compte existe."
+    },
+    "verifyEmail": {
+      "title": "Confirmation de l'e-mail",
+      "verifying": "Vérification en cours...",
+      "successTitle": "E-mail confirmé",
+      "successMessage": "Votre compte est activé, redirection...",
+      "missingToken": "Lien invalide : jeton manquant.",
+      "loginLink": "Se connecter"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Indiquez votre adresse e-mail, nous vous enverrons un lien de réinitialisation.",
+      "emailLabel": "Adresse e-mail",
+      "submit": "Envoyer le lien",
+      "submitting": "Envoi...",
+      "successTitle": "E-mail envoyé",
+      "successMessage": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d'être envoyé.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe.",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submit": "Réinitialiser",
+      "submitting": "Réinitialisation...",
+      "successTitle": "Mot de passe modifié",
+      "successMessage": "Votre mot de passe a été réinitialisé. Vous pouvez vous connecter.",
+      "loginLink": "Se connecter",
+      "missingToken": "Lien invalide : jeton manquant."
     }
   },
   "accounts": {
@@ -750,6 +787,10 @@
     "INVALID_CREDENTIALS": "E-mail ou mot de passe incorrect.",
     "EMAIL_ALREADY_REGISTERED": "Cette adresse e-mail est déjà utilisée.",
     "PASSWORD_TOO_WEAK": "Le mot de passe doit contenir au moins 12 caractères.",
+    "INVALID_RESET_TOKEN": "Ce lien de réinitialisation est invalide ou a expiré.",
+    "PASSWORDS_DO_NOT_MATCH": "Les mots de passe ne correspondent pas.",
+    "EMAIL_NOT_VERIFIED": "Confirmez votre adresse e-mail avant de vous connecter.",
+    "INVALID_VERIFICATION_TOKEN": "Ce lien de confirmation est invalide ou a expiré.",
     "CURRENCY_UNKNOWN": "Devise inconnue.",
     "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard.",
     "CATEGORY_NOT_FOUND": "Catégorie introuvable.",

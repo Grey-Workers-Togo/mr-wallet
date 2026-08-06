@@ -26,10 +26,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setResent(false);
     setSubmitting(true);
     try {
       const result = await apiClient.post<LoginResponse>('/auth/login', { email, password });
@@ -40,6 +43,16 @@ export default function LoginPage() {
       setError(code);
       toast({ title: tError(code as never), variant: 'destructive' });
       setSubmitting(false);
+    }
+  }
+
+  async function onResendVerification() {
+    setResending(true);
+    try {
+      await apiClient.post('/auth/email/resend', { email });
+      setResent(true);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -64,7 +77,12 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="password" required>{t('passwordLabel')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" required>{t('passwordLabel')}</Label>
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  {t('forgotPasswordLink')}
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -75,7 +93,26 @@ export default function LoginPage() {
             </div>
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{tError(error as never)}</AlertDescription>
+                <AlertDescription>
+                  {tError(error as never)}
+                  {error === 'EMAIL_NOT_VERIFIED' && (
+                    <>
+                      {' '}
+                      {resent ? (
+                        t('resendVerificationSent')
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={onResendVerification}
+                          disabled={resending}
+                          className="font-medium text-primary underline hover:no-underline disabled:opacity-50"
+                        >
+                          {resending ? t('resendVerificationSending') : t('resendVerification')}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
             <Button type="submit" className="w-full" loading={submitting}>
