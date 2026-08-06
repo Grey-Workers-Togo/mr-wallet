@@ -53,8 +53,7 @@ function VerifyEmailContent() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-secondary px-4">
