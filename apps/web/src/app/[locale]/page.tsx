@@ -83,10 +83,27 @@ export default function HomePage() {
           className="absolute -right-16 bottom-0 size-80 rounded-full bg-primary-light/20 blur-3xl"
         />
         <motion.div
+          initial={reduce ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="relative z-10 order-1 flex items-center justify-center md:order-2"
+        >
+          <div className="aspect-video w-full max-w-lg overflow-hidden rounded-2xl shadow-xl">
+            <iframe
+              className="size-full"
+              src="https://www.youtube.com/embed/VwYdEFJwzeY"
+              title="Mr Wallet"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+        </motion.div>
+
+        <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 flex flex-col items-center gap-6 text-center md:items-start md:text-left"
+          className="relative z-10 order-2 flex flex-col items-center gap-6 text-center md:order-1 md:items-start md:text-left"
         >
           <motion.div
             initial={reduce ? false : { opacity: 0 }}
@@ -99,10 +116,23 @@ export default function HomePage() {
             initial={reduce ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/70 px-3 py-1 text-xs font-medium text-primary-dark shadow-sm"
+            className="flex flex-wrap items-center justify-center gap-2 md:justify-start"
           >
-            <Globe2 aria-hidden className="size-3.5" />
-            {t('hero.badge')}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-white/70 px-3 py-1 text-xs font-medium text-primary-dark shadow-sm">
+              <Globe2 aria-hidden className="size-3.5" />
+              {t('hero.badge')}
+            </span>
+            <a
+              href="https://www.producthunt.com/products/mr-wallet-budget-finance-management?utm_source=other&utm_medium=social"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-white/70 px-3 py-1 text-xs font-medium text-orange-600 shadow-sm transition-colors hover:bg-white"
+            >
+              <svg aria-hidden viewBox="0 0 40 40" className="size-3.5" fill="currentColor">
+                <path d="M20 0C8.95 0 0 8.95 0 20s8.95 20 20 20 20-8.95 20-20S31.05 0 20 0zm4.5 24h-6v6h-4V10h10a7 7 0 010 14zm0-4a3 3 0 000-6h-6v6h6z" />
+              </svg>
+              {t('hero.producthuntBadge')}
+            </a>
           </motion.div>
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -159,76 +189,6 @@ export default function HomePage() {
               </div>
             ))}
           </motion.div>
-        </motion.div>
-
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="relative z-10 hidden md:flex md:items-center md:justify-center"
-        >
-          <Card className="w-full max-w-sm p-5 shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-600">{t('hero.mock.dailyBudget')}</span>
-              <Badge className="bg-emerald-100 text-emerald-700">{t('hero.mock.stable')}</Badge>
-            </div>
-            <p className="mt-1 text-2xl font-semibold text-neutral-900">
-              18 450 F <span className="text-sm font-normal text-neutral-500">{t('hero.mock.perDay')}</span>
-            </p>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border p-3">
-                <span className="text-xs tracking-wide text-neutral-500 uppercase">{t('hero.mock.totalBalance')}</span>
-                <p className="mt-1 text-lg font-semibold text-neutral-900">1 248 000 F</p>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: '68%' }}
-                    transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-primary"
-                  />
-                </div>
-              </div>
-              <div className="rounded-lg border border-border p-3">
-                <span className="text-xs tracking-wide text-neutral-500 uppercase">{t('hero.mock.savings')}</span>
-                <p className="mt-1 text-lg font-semibold text-neutral-900">32%</p>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: '32%' }}
-                    transition={{ duration: 0.8, delay: 1, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-emerald-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {(
-                [
-                  { label: t('hero.mock.row1Label'), sub: t('hero.mock.row1Sub'), amount: '-12 500 F', negative: true },
-                  { label: t('hero.mock.row2Label'), sub: t('hero.mock.row2Sub'), amount: '+50 000 F', negative: false },
-                  { label: t('hero.mock.row3Label'), sub: t('hero.mock.row3Sub'), amount: '-18 000 F', negative: true },
-                ] as const
-              ).map((row, i) => (
-                <motion.div
-                  key={row.label}
-                  initial={reduce ? false : { opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 1.1 + i * 0.1 }}
-                  className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900">{row.label}</p>
-                    <p className="text-xs text-neutral-500">{row.sub}</p>
-                  </div>
-                  <span className={cn('text-sm font-semibold', row.negative ? 'text-red-600' : 'text-emerald-600')}>
-                    {row.amount}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </Card>
         </motion.div>
       </section>
 
