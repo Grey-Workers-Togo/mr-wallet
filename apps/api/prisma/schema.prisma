@@ -757,6 +757,17 @@ model PasswordResetToken {
   @@index([userId, expiresAt])
 }
 
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, expiresAt])
+}
+
 enum ExportKind {
   TRANSACTIONS
   FULL

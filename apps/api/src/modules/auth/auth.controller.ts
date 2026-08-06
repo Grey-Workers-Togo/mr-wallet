@@ -25,12 +25,16 @@ import {
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
+  ResendVerificationDto,
   ResetPasswordDto,
+  VerifyEmailDto,
   changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resendVerificationSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
 } from './dto/auth.dto';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -60,14 +64,31 @@ export class AuthController {
   @Public()
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
   @Audit({ action: 'auth.register', entityType: 'User' })
-  async register(
-    @Body(new ZodValidationPipe(registerSchema)) dto: RegisterDto,
+  async register(@Body(new ZodValidationPipe(registerSchema)) dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post('email/verify')
+  @Audit({ action: 'auth.email_verify', entityType: 'User' })
+  async verifyEmail(
+    @Body(new ZodValidationPipe(verifyEmailSchema)) dto: VerifyEmailDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(dto);
+    const result = await this.authService.verifyEmail(dto);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post('email/resend')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resendVerification(@Body(new ZodValidationPipe(resendVerificationSchema)) dto: ResendVerificationDto) {
+    await this.authService.resendVerification(dto);
   }
 
   @Public()

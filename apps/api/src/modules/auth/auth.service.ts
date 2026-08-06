@@ -3,13 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
+import { MailService } from '../../common/mail/mail.service';
+import { passwordResetEmail } from '../../common/mail/templates/password-reset';
+import { emailVerificationEmail } from '../../common/mail/templates/email-verify';
 import { UsersFacade } from '../users/users.facade';
 import { CategoriesFacade } from '../categories/categories.facade';
 import { hashPassword, isPasswordAcceptable, verifyPassword } from './domain/password';
 import { generateRefreshToken, hashRefreshToken, refreshTokenMatches } from './domain/refresh-token';
 import { signAccessToken } from '../../common/auth/jwt.util';
 import { assertNotLocked, recordFailure, recordSuccess } from './login-throttle';
-import { ChangePasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
+import {
+  ChangePasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResendVerificationDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+} from './dto/auth.dto';
 
 export interface AuthResult {
   accessToken: string;
@@ -20,6 +30,7 @@ export interface AuthResult {
 }
 
 const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /**
  * Refresh tokens rotate on every use. Two tabs/requests racing on the same expired
@@ -37,6 +48,7 @@ export class AuthService {
     private readonly users: UsersFacade,
     private readonly categories: CategoriesFacade,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
   private issueTokens(userId: string, sessionId: string): { accessToken: string; refreshToken: string } {
@@ -49,7 +61,8 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async register(dto: RegisterDto): Promise<AuthResult> {
+  /** Registration never issues a session — the account is unusable until the email is verified (see `login`). */
+  async register(dto: RegisterDto): Promise<{ email: string }> {
     if (!isPasswordAcceptable(dto.password)) {
       throw new ValidationAppError('PASSWORD_TOO_WEAK');
     }
@@ -70,8 +83,9 @@ export class AuthService {
       timezone: dto.timezone,
     });
     await this.categories.seedSystemDefaults(user.id);
+    await this.sendVerificationEmail(user.id, user.email, user.locale);
 
-    return this.createSessionAndTokens(user.id, user.email, null, null);
+    return { email: user.email };
   }
 
   async login(dto: LoginDto, ipHash: string, userAgent: string | null): Promise<AuthResult> {
@@ -89,9 +103,51 @@ export class AuthService {
       throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED);
     }
 
+    if (!user.emailVerifiedAt) {
+      throw new AppError('EMAIL_NOT_VERIFIED', HttpStatus.FORBIDDEN);
+    }
+
     recordSuccess(dto.email, ipHash);
     await this.users.markLastLogin(user.id);
     return this.createSessionAndTokens(user.id, user.email, ipHash, userAgent);
+  }
+
+  private async sendVerificationEmail(userId: string, email: string, locale: string): Promise<void> {
+    const token = generateRefreshToken();
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId,
+        tokenHash: hashRefreshToken(token),
+        expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+      },
+    });
+    const verifyLink = `${this.config.getOrThrow('WEB_APP_URL')}/verify-email?token=${token}`;
+    const { subject, text } = emailVerificationEmail(locale, verifyLink);
+    await this.mail.send({ to: email, subject, text });
+  }
+
+  /** Verifying proves email ownership, so it doubles as first login (issues a session). */
+  async verifyEmail(dto: VerifyEmailDto): Promise<AuthResult> {
+    const hash = hashRefreshToken(dto.token);
+    const verificationToken = await this.prisma.emailVerificationToken.findUnique({ where: { tokenHash: hash } });
+    if (!verificationToken || verificationToken.usedAt || verificationToken.expiresAt < new Date()) {
+      throw new AppError('INVALID_VERIFICATION_TOKEN', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.users.markEmailVerified(verificationToken.userId);
+    await this.prisma.emailVerificationToken.update({
+      where: { id: verificationToken.id },
+      data: { usedAt: new Date() },
+    });
+
+    return this.createSessionAndTokens(user.id, user.email, null, null);
+  }
+
+  /** Always resolves, whether or not the account exists or is already verified — no account enumeration. */
+  async resendVerification(dto: ResendVerificationDto): Promise<void> {
+    const user = await this.users.findByEmail(dto.email);
+    if (!user || user.emailVerifiedAt) return;
+    await this.sendVerificationEmail(user.id, user.email, user.locale);
   }
 
   private async createSessionAndTokens(
@@ -235,7 +291,10 @@ export class AuthService {
         expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
       },
     });
-    // Sending the email itself is out of scope for Lot 1 (no transactional email provider wired yet).
+
+    const resetLink = `${this.config.getOrThrow('WEB_APP_URL')}/reset-password?token=${token}`;
+    const { subject, text } = passwordResetEmail(user.locale ?? 'fr', resetLink);
+    await this.mail.send({ to: user.email, subject, text });
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
