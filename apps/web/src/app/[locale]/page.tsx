@@ -123,15 +123,17 @@ export default function HomePage() {
               {t('hero.badge')}
             </span>
             <a
-              href="https://www.producthunt.com/products/mr-wallet-budget-finance-management?utm_source=other&utm_medium=social"
+              href="https://www.producthunt.com/products/mr-wallet-budget-finance-management?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-mr-wallet-budget-finance-management"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-white/70 px-3 py-1 text-xs font-medium text-orange-600 shadow-sm transition-colors hover:bg-white"
             >
-              <svg aria-hidden viewBox="0 0 40 40" className="size-3.5" fill="currentColor">
-                <path d="M20 0C8.95 0 0 8.95 0 20s8.95 20 20 20 20-8.95 20-20S31.05 0 20 0zm4.5 24h-6v6h-4V10h10a7 7 0 010 14zm0-4a3 3 0 000-6h-6v6h6z" />
-              </svg>
-              {t('hero.producthuntBadge')}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1214083&theme=light"
+                alt={t('hero.producthuntBadge')}
+                width={200}
+                height={43}
+                className="h-[43px] w-[200px]"
+              />
             </a>
           </motion.div>
           <motion.h1
