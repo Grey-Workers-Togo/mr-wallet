@@ -209,11 +209,21 @@ export default function GoalsPage() {
           <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
           <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
         </div>
-        <Button type="button" onClick={openCreateDialog}>
+        <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
           {t('add')}
         </Button>
       </motion.div>
+
+      <Button
+        type="button"
+        onClick={openCreateDialog}
+        aria-label={t('add')}
+        className="fixed bottom-20 right-4 z-30 size-14 rounded-full p-0 shadow-lg md:hidden"
+        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <Plus className="size-6" />
+      </Button>
 
       <AnimatePresence>
         {error && (
