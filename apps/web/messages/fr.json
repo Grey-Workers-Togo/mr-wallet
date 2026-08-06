@@ -435,6 +435,7 @@
     "add": "Ajouter",
     "create": "Nouvelle transaction",
     "createDescription": "Ajoutez un revenu, une dépense ou un transfert entre comptes.",
+    "editDescription": "Modifiez les détails de cette transaction.",
     "empty": "Aucune transaction pour l'instant.",
     "typeLabel": "Type",
     "accountLabel": "Compte",
