@@ -27,6 +27,7 @@
     "hero": {
       "title": "Mr Wallet",
       "badge": "Gestion financière personnelle",
+      "producthuntBadge": "En vedette sur Product Hunt",
       "tagline": "Pilote ton cash, tes budgets et tes projets.",
       "description": "Mr Wallet rassemble tes comptes, tes dépenses, tes dettes, tes objectifs et tes récurrences dans une expérience simple et actionnable.",
       "ctaPrimary": "Créer mon espace",
