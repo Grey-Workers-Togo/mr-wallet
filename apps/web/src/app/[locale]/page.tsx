@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   TrendingUp,
-  Target,
   Repeat,
   HandCoins,
   BarChart3,
@@ -14,6 +13,22 @@ import {
   BookOpenCheck,
   ArrowRight,
   CheckCircle2,
+  Wallet,
+  Receipt,
+  PiggyBank,
+  FileSpreadsheet,
+  LineChart,
+  Boxes,
+  Plug,
+  ClipboardList,
+  WifiOff,
+  Languages,
+  Coins,
+  Ruler,
+  ShieldCheck,
+  Lock,
+  FileCheck,
+  Check,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { buttonVariants } from '@/components/ui/button';
@@ -27,32 +42,31 @@ import { TimelineStep } from '@/components/landing/TimelineStep';
 import { FAQItem } from '@/components/landing/FAQItem';
 import { ScreenshotsGallery } from '@/components/landing/ScreenshotsGallery';
 import { TestimonialCard } from '@/components/landing/TestimonialCard';
-import { PricingCard } from '@/components/landing/PricingCard';
 import { cn } from '@/lib/utils';
 
-const FEATURE_ICONS = [BarChart3, Smartphone, Gauge, Target, Repeat, HandCoins];
+const FEATURE_ICONS = [Wallet, Receipt, Repeat, BarChart3, HandCoins, PiggyBank, FileSpreadsheet, LineChart, Gauge];
+const PRINCIPLE_ICONS = [Boxes, Plug, ClipboardList, WifiOff, Smartphone, Languages, Coins, Ruler];
+const SECURITY_ICONS = [Lock, FileCheck, ShieldCheck];
+const SECTION_GRADIENT = 'bg-gradient-to-br from-bg-secondary via-primary/5 to-primary/10';
+const ROUNDED_BUTTON = 'rounded-full';
 
 export default function HomePage() {
   const t = useTranslations('home');
   const reduce = useReducedMotion();
 
   const features = t.raw('features.items') as { title: string; description: string }[];
+  const principles = t.raw('principles.items') as { title: string; description: string }[];
+  const securityItems = t.raw('security.items') as { title: string; description: string }[];
+  const securityLog = t.raw('security.log.lines') as { time: string; action: string; target: string }[];
   const steps = t.raw('howItWorks.steps') as { title: string; description: string }[];
   const faqs = t.raw('faq.items') as { question: string; answer: string }[];
   const testimonials = t.raw('testimonials.items') as { name: string; role: string; quote: string }[];
-  const plans = t.raw('pricing.plans') as {
-    name: string;
-    price: string;
-    period?: string;
-    badge?: string;
-    cta: string;
-    features: string[];
-  }[];
+  const controlPoints = t.raw('controlCta.points') as string[];
 
   return (
     <main className="flex flex-col">
       {/* Hero */}
-      <section className="relative grid gap-10 overflow-hidden bg-gradient-to-br from-bg-secondary via-primary/5 to-primary/10 px-4 py-16 md:grid-cols-2 md:items-center md:px-12 md:py-24">
+      <section className={cn('relative grid gap-10 overflow-hidden px-4 py-16 md:grid-cols-2 md:items-center md:px-12 md:py-24', SECTION_GRADIENT)}>
         <div className="absolute top-4 right-4 z-20 md:top-6 md:right-6">
           <LanguageSwitcher />
         </div>
@@ -114,12 +128,12 @@ export default function HomePage() {
           >
             <Link
               href="/register"
-              className={cn(buttonVariants({ size: 'lg' }), 'transition-shadow hover:shadow-[0_0_20px_var(--color-primary-light)]')}
+              className={cn(buttonVariants({ size: 'lg' }), ROUNDED_BUTTON, 'transition-shadow hover:shadow-[0_0_20px_var(--color-primary-light)]')}
             >
               {t('hero.ctaPrimary')}
               <ArrowRight aria-hidden className="size-4" />
             </Link>
-            <Link href="#features" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
+            <Link href="#features" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), ROUNDED_BUTTON)}>
               {t('hero.ctaSecondary')}
             </Link>
           </motion.div>
@@ -218,8 +232,8 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="px-4 py-16 md:px-12 md:py-24">
+      {/* Features / Modules */}
+      <section id="features" className={cn('px-4 py-16 md:px-12 md:py-24', SECTION_GRADIENT)}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('features.title')}</h2>
           <p className="mt-3 text-base text-neutral-600">{t('features.subtitle')}</p>
@@ -237,6 +251,104 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Principles */}
+      <section id="principes" className="px-4 py-16 md:px-12 md:py-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('principles.title')}</h2>
+          <p className="mt-3 text-base text-neutral-600">{t('principles.subtitle')}</p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
+          {principles.map((principle, index) => {
+            const Icon = PRINCIPLE_ICONS[index % PRINCIPLE_ICONS.length] ?? TrendingUp;
+            return (
+              <motion.div
+                key={principle.title}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.5, delay: Math.min(index, 5) * 0.08 }}
+                whileHover={reduce ? undefined : { y: -3 }}
+              >
+                <Card className="flex h-full flex-row items-start gap-4 p-6">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon aria-hidden className="size-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-semibold text-neutral-900">{principle.title}</h3>
+                    <p className="mt-1 text-sm text-neutral-600">{principle.description}</p>
+                  </div>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Security & traceability */}
+      <section id="securite" className={cn('px-4 py-16 md:px-12 md:py-24', SECTION_GRADIENT)}>
+        <div className="mx-auto grid max-w-5xl gap-12 md:grid-cols-2 md:items-center">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="text-sm font-semibold tracking-widest text-primary uppercase">{t('security.badge')}</span>
+            <h2 className="mt-3 text-2xl font-semibold text-neutral-900 md:text-3xl">{t('security.title')}</h2>
+            <p className="mt-4 text-base text-neutral-600">{t('security.description')}</p>
+            <ul className="mt-8 space-y-4">
+              {securityItems.map((item, index) => {
+                const Icon = SECURITY_ICONS[index % SECURITY_ICONS.length] ?? ShieldCheck;
+                return (
+                  <li key={item.title} className="flex gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon aria-hidden className="size-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-neutral-900">{item.title}</p>
+                      <p className="text-sm text-neutral-600">{item.description}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </motion.div>
+
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="relative"
+          >
+            <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-2xl" aria-hidden />
+            <Card className="relative gap-0 p-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <span className="text-sm font-semibold text-neutral-900">{t('security.log.label')}</span>
+                <span className="text-xs text-neutral-500">{t('security.log.sublabel')}</span>
+              </div>
+              <div className="mt-4 space-y-2 font-mono text-xs">
+                {securityLog.map((line) => {
+                  const color =
+                    line.action === 'DELETE'
+                      ? 'text-rose-500'
+                      : line.action === 'UPDATE'
+                        ? 'text-amber-600'
+                        : 'text-primary';
+                  return (
+                    <div key={`${line.time}-${line.target}`} className="flex items-center gap-3 rounded-lg bg-bg-secondary px-3 py-2">
+                      <span className="text-neutral-500">{line.time}</span>
+                      <span className={cn('font-semibold', color)}>{line.action}</span>
+                      <span className="truncate text-neutral-600">{line.target}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Screenshots */}
       <section className="border-y border-border bg-neutral-950 px-4 py-16 md:px-12 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
@@ -249,7 +361,7 @@ export default function HomePage() {
       </section>
 
       {/* Designed for West Africa */}
-      <section className="border-y border-border bg-bg-secondary px-4 py-16 md:px-12 md:py-24">
+      <section className={cn('border-y border-border px-4 py-16 md:px-12 md:py-24', SECTION_GRADIENT)}>
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -259,7 +371,7 @@ export default function HomePage() {
           >
             <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('designedFor.title')}</h2>
             <p className="mt-4 text-base text-neutral-600">{t('designedFor.description')}</p>
-            <Link href="/register" className={cn(buttonVariants({ size: 'lg' }), 'mt-6')}>
+            <Link href="/register" className={cn(buttonVariants({ size: 'lg' }), ROUNDED_BUTTON, 'mt-6')}>
               {t('designedFor.cta')}
               <ArrowRight aria-hidden className="size-4" />
             </Link>
@@ -286,7 +398,7 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="bg-gradient-to-b from-bg-secondary to-primary/5 px-4 py-16 md:px-12 md:py-24">
+      <section className={cn('px-4 py-16 md:px-12 md:py-24', SECTION_GRADIENT)}>
         <h2 className="mb-12 text-center text-2xl font-semibold text-neutral-900">
           {t('howItWorks.title')}
         </h2>
@@ -322,28 +434,53 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="border-y border-border bg-bg-secondary px-4 py-16 md:px-12 md:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-semibold text-neutral-900 md:text-3xl">{t('pricing.title')}</h2>
-          <p className="mt-3 text-base text-neutral-600">{t('pricing.subtitle')}</p>
-        </div>
-        <div className="mx-auto mt-10 grid max-w-3xl gap-6 md:grid-cols-2">
-          {plans.map((plan, index) => (
-            <PricingCard
-              key={plan.name}
-              name={plan.name}
-              price={plan.price}
-              period={plan.period}
-              badge={plan.badge}
-              features={plan.features}
-              ctaLabel={plan.cta}
-              href={index === 0 ? '/register' : 'mailto:contact@mister-wallet.com?subject=Mr%20Wallet%20Pro'}
-              highlighted={index === 0}
-              index={index}
-            />
-          ))}
-        </div>
+      {/* Reprenez le contrôle */}
+      <section className={cn('border-y border-border px-4 py-16 md:px-12 md:py-24', SECTION_GRADIENT)}>
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.5 }}
+          className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-neutral-900 px-8 py-16 text-center md:px-16"
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/30 blur-[100px]"
+          />
+          <div className="relative">
+            <h2 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">{t('controlCta.title')}</h2>
+            <p className="mx-auto mt-4 max-w-xl text-base text-neutral-300 md:text-lg">{t('controlCta.description')}</p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/register"
+                className={cn(buttonVariants({ size: 'lg' }), ROUNDED_BUTTON, 'transition-transform hover:scale-[1.03]')}
+              >
+                {t('controlCta.primary')}
+                <ArrowRight aria-hidden className="size-4" />
+              </Link>
+              <Link
+                href="#features"
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'lg' }),
+                  ROUNDED_BUTTON,
+                  'border-white/20 bg-transparent text-white hover:bg-white/10',
+                )}
+              >
+                {t('controlCta.secondary')}
+              </Link>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-neutral-400">
+              {controlPoints.map((point) => (
+                <span key={point} className="inline-flex items-center gap-1.5">
+                  <Check aria-hidden className="size-4 text-primary" />
+                  {point}
+                </span>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* FAQ */}
@@ -371,11 +508,11 @@ export default function HomePage() {
       </section>
 
       {/* CTA final */}
-      <section className="flex flex-col items-center gap-4 bg-gradient-to-br from-bg-secondary via-primary/5 to-primary/10 px-4 py-16 text-center md:px-12 md:py-24">
+      <section className={cn('flex flex-col items-center gap-4 px-4 py-16 text-center md:px-12 md:py-24', SECTION_GRADIENT)}>
         <h2 className="text-2xl font-semibold text-neutral-900">{t('ctaFinal.title')}</h2>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <motion.div whileHover={reduce ? undefined : { scale: 1.05 }}>
-            <Link href="/register" className={cn(buttonVariants({ size: 'lg' }))}>
+            <Link href="/register" className={cn(buttonVariants({ size: 'lg' }), ROUNDED_BUTTON)}>
               {t('ctaFinal.primary')}
             </Link>
           </motion.div>

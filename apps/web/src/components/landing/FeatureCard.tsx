@@ -31,7 +31,7 @@ export function FeatureCard({
       initial={reduce ? false : { opacity: 0, y: 20 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.5 }}
-      transition={{ duration: 0.6, delay: index * 0.2, ease: [0.34, 1.56, 0.64, 1] }}
+      transition={{ duration: 0.6, delay: Math.min(index, 5) * 0.1, ease: [0.34, 1.56, 0.64, 1] }}
       whileHover={reduce ? undefined : { y: -4 }}
       className="group"
     >
