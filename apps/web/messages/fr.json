@@ -54,34 +54,105 @@
       }
     },
     "features": {
-      "title": "Le contenu métier est centré sur les décisions du mois",
-      "subtitle": "Chaque module répond à une question simple : combien j'ai, où part l'argent, combien je peux encore dépenser et ce qui doit être remboursé.",
+      "title": "Tout votre pilotage financier, en un seul endroit",
+      "subtitle": "Une architecture modulaire où chaque domaine métier est isolé, avec ses entités, ses règles et son API.",
       "items": [
         {
-          "title": "Vue claire du mois",
-          "description": "Solde disponible, revenus, dépenses, épargne et patrimoine net en une seule lecture."
+          "title": "Comptes multiples",
+          "description": "Centralisez tous vos comptes dans une vue unique, avec soldes et historique consolidés."
         },
         {
-          "title": "Cash, banque, mobile money",
-          "description": "Enregistre tes opérations du quotidien avec comptes source et destination."
+          "title": "Transactions & catégories",
+          "description": "Classez chaque opération, suivez vos dépenses par catégorie et identifiez vos tendances."
         },
         {
-          "title": "Budgets qui parlent vrai",
-          "description": "Fixe des limites par catégorie et vois combien il te reste à dépenser sans stress."
+          "title": "Transactions récurrentes",
+          "description": "Automatisez les opérations répétitives : loyer, salaire, abonnements."
+        },
+        {
+          "title": "Budgets avec alertes",
+          "description": "Définissez des plafonds par catégorie et recevez des alertes avant de les dépasser."
+        },
+        {
+          "title": "Dettes & échéancier",
+          "description": "Planifiez le remboursement de vos dettes avec un échéancier clair et prévisionnel."
         },
         {
           "title": "Objectifs d'épargne",
-          "description": "Prépare un achat important ou une réserve d'urgence avec une progression visible."
+          "description": "Fixez des cibles, suivez votre progression et restez motivé jusqu'au but."
         },
         {
-          "title": "Récurrences automatiques",
-          "description": "Planifie tes revenus, dépenses et transferts qui reviennent chaque mois."
+          "title": "Import & export CSV/Excel",
+          "description": "Importez vos relevés avec dédoublonnage automatique, exportez vos données à tout moment."
         },
         {
-          "title": "Dettes & créances",
-          "description": "Garde une trace claire de ce qu'on te doit et de ce que tu dois rembourser."
+          "title": "Prévisions de trésorerie",
+          "description": "Projetez votre situation financière future à partir de vos encaissements et décaissements."
+        },
+        {
+          "title": "Tableau de bord patrimoine",
+          "description": "Une vision synthétique de votre patrimoine net, en temps réel et lisible."
         }
       ]
+    },
+    "principles": {
+      "title": "Une conception pensée pour la confiance",
+      "subtitle": "Des choix d'architecture qui garantissent exactitude, indépendance et transparence.",
+      "items": [
+        {
+          "title": "Modularité",
+          "description": "Chaque domaine métier est un module isolé avec ses entités, ses règles et son API."
+        },
+        {
+          "title": "Pas de connecteurs tiers en V1",
+          "description": "Les données entrent par import CSV/Excel ou saisie manuelle. Aucune dépendance externe."
+        },
+        {
+          "title": "Traçabilité totale",
+          "description": "Toute action est horodatée et journalisée dans un journal d'audit immuable."
+        },
+        {
+          "title": "Consultation hors ligne",
+          "description": "Un cache en lecture seule. L'écriture exige toujours le réseau."
+        },
+        {
+          "title": "Un seul front, web et mobile",
+          "description": "PWA installable et responsive-first, plutôt qu'une application native."
+        },
+        {
+          "title": "Bilingue de bout en bout",
+          "description": "Français et anglais dès le MVP. Aucun texte humain en base, que des identifiants stables."
+        },
+        {
+          "title": "Devises découplées",
+          "description": "Conversion multi-devises avec taux saisissables manuellement. Aucun abonnement payant requis."
+        },
+        {
+          "title": "Exactitude monétaire",
+          "description": "Aucun montant jamais stocké ou calculé en nombre flottant."
+        }
+      ]
+    },
+    "security": {
+      "badge": "Sécurité & traçabilité",
+      "title": "Vos données restent les vôtres",
+      "description": "Aucune donnée n'est envoyée à un tiers. Chaque action — création, modification, suppression — est horodatée et conservée dans un journal d'audit immuable. Vous exportez quand vous voulez, vous repartez quand vous voulez.",
+      "items": [
+        { "title": "Aucune dépendance externe", "description": "Vos relevés entrent par import. Rien ne sort." },
+        { "title": "Import avec dédoublonnage", "description": "Vos relevés CSV/Excel sont nettoyés automatiquement." },
+        { "title": "Export à tout moment", "description": "Récupérez vos données en CSV/Excel, sans verrou." }
+      ],
+      "log": {
+        "label": "Journal d'audit",
+        "sublabel": "Horodaté · immuable",
+        "lines": [
+          { "time": "08:42:11", "action": "CREATE", "target": "transaction" },
+          { "time": "08:41:03", "action": "UPDATE", "target": "budget:courses" },
+          { "time": "08:39:50", "action": "IMPORT", "target": "relevé_2026-08.csv" },
+          { "time": "08:38:22", "action": "CREATE", "target": "dette:prêt_auto" },
+          { "time": "08:36:01", "action": "DELETE", "target": "transaction #482" }
+        ]
+      }
     },
     "screenshots": {
       "title": "Vois-le en action",
@@ -109,35 +180,12 @@
         }
       ]
     },
-    "pricing": {
-      "title": "Tarifs simples",
-      "subtitle": "Tout ce qu'il faut pour gérer ton argent, gratuit pendant qu'on construit.",
-      "plans": [
-        {
-          "name": "Gratuit",
-          "price": "0 F",
-          "period": "/ pour toujours",
-          "badge": "Plan actuel",
-          "cta": "Créer mon espace",
-          "features": [
-            "Comptes et transactions illimités",
-            "Budgets, objectifs, dettes et récurrences",
-            "Import et export CSV/Excel",
-            "Multi-devises (FCFA, EUR, USD)"
-          ]
-        },
-        {
-          "name": "Pro",
-          "price": "Bientôt",
-          "cta": "Me prévenir",
-          "features": [
-            "Connecteurs bancaires",
-            "Comptes partagés et budgets familiaux",
-            "Rapports et prévisions avancés",
-            "Support prioritaire"
-          ]
-        }
-      ]
+    "controlCta": {
+      "title": "Reprenez le contrôle de vos finances",
+      "description": "Commencez gratuitement. Importez vos relevés, créez vos budgets et projetez votre avenir financier dès aujourd'hui.",
+      "primary": "Créer un compte",
+      "secondary": "En savoir plus",
+      "points": ["Sans carte bancaire", "Bilingue FR · EN", "Export à tout moment"]
     },
     "designedFor": {
       "title": "Conçu pour l'Afrique de l'Ouest",
