@@ -51,7 +51,9 @@ export class AuthController {
     res.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      // Front-end (Vercel) and API run on different domains — cross-site by definition.
+      // 'strict'/'lax' would never let the browser attach this cookie to the fetch() refresh call.
+      sameSite: 'none',
       path: REFRESH_COOKIE_PATH,
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
