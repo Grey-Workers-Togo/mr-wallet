@@ -1,17 +1,17 @@
-# Questions ouvertes
+# Open questions
 
-## RG-RP2 — conversion multi-devises dans les rapports (lot 6)
+## RG-RP2 — multi-currency conversion in reports (batch 6)
 
-RG-RP2 (docs/04-modules.md §J) demande que la conversion utilise **le taux à la date de chaque transaction**. Une
-implémentation exacte suppose soit une jointure SQL par ligne sur l'historique de taux, soit un chargement en
-mémoire des transactions à convertir — ce qui entre en tension avec RG-RP1 (« tous les agrégats en SQL, jamais
-de chargement mémoire »).
+RG-RP2 (docs/04-modules.md §J) requires that conversion use **the rate at the date of each transaction**. An
+exact implementation assumes either a per-row SQL join against the rate history, or an in-memory load of the
+transactions to convert — which conflicts with RG-RP1 ("all aggregates in SQL, never
+in-memory loading").
 
-**Comportement implémenté (conservateur) :** les totaux sont d'abord agrégés en SQL par devise, puis chaque
-total par devise est converti vers la devise de consolidation avec **le taux applicable à la date de fin de
-période du rapport** (ou à la date du jour pour les rapports instantanés), plutôt qu'un taux par transaction.
-Le rapport indique la devise de consolidation ; la méthode de conversion n'est pas encore affichée à l'écran.
+**Implemented behavior (conservative):** totals are first aggregated in SQL by currency, then each
+total per currency is converted to the consolidation currency using **the rate applicable at the report's
+period end date** (or today's date for instant reports), rather than a per-transaction rate.
+The report indicates the consolidation currency; the conversion method is not yet displayed on screen.
 
-Impact : négligeable pour un utilisateur mono-devise (cas XOF/EUR fixe le plus courant) ; peut introduire un
-écart pour un historique multi-devises avec des taux modifiés entre deux dates. À corriger si des utilisateurs
-multi-devises signalent un écart perceptible.
+Impact: negligible for a single-currency user (the most common fixed XOF/EUR case); may introduce a
+discrepancy for a multi-currency history with rates changed between two dates. To be fixed if multi-currency
+users report a perceptible discrepancy.

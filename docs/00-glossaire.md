@@ -1,78 +1,80 @@
-# 00 — Glossaire
+# 00 — Glossary
 
-Vocabulaire commun au produit, au code et à la base de données. **Les termes anglais entre parenthèses sont les noms utilisés dans le code et le schéma.** Le français est utilisé dans l'interface et la documentation.
+Vocabulary shared by the product, the code, and the database. **The English terms in parentheses are the names used in the code and schema.** French is used in the interface and documentation.
 
 ---
 
-## Entités de base
+## Core entities
 
-**Compte** *(Account)* — Un lieu où se trouve de l'argent : compte bancaire, espèces, mobile money, carte de crédit, portefeuille. Porte un solde et une devise unique.
+**Account** *(Account)* — A place where money resides: bank account, cash, mobile money, credit card, wallet. Carries a balance and a single currency.
 
-**Transaction** *(Transaction)* — Un mouvement d'argent sur un compte. Trois natures possibles :
-- **Dépense** *(EXPENSE)* — sortie d'argent.
-- **Revenu** *(INCOME)* — entrée d'argent.
-- **Transfert** *(TRANSFER)* — déplacement entre deux comptes de l'utilisateur ; ne modifie pas le patrimoine net.
+**Transaction** *(Transaction)* — A movement of money on an account. Three possible natures:
+- **Expense** *(EXPENSE)* — outgoing money.
+- **Income** *(INCOME)* — incoming money.
+- **Transfer** *(TRANSFER)* — movement between two of the user's accounts; does not change net worth.
 
-**Catégorie** *(Category)* — Classement métier d'une transaction (Alimentation, Transport, Loyer…). Hiérarchique sur deux niveaux maximum (catégorie → sous-catégorie).
+**Category** *(Category)* — Business classification of a transaction (Food, Transport, Rent…). Hierarchical, two levels maximum (category → subcategory).
 
-**Tag** *(Tag)* — Étiquette libre, transversale aux catégories (« vacances 2026 », « déductible »). Une transaction peut porter plusieurs tags.
+**Tag** *(Tag)* — Free-form label, cross-cutting across categories ("vacation 2026", "deductible"). A transaction can carry several tags.
 
-## Temps et montants
+## Time and amounts
 
-**Date métier** *(occurredAt)* — Date à laquelle l'opération a réellement eu lieu. C'est elle qui sert à tous les calculs (budgets, rapports, prévisions).
+**Business date** *(occurredAt)* — The date on which the operation actually took place. This is the date used for all calculations (budgets, reports, forecasts).
 
-**Date d'enregistrement** *(createdAt)* — Date/heure à laquelle la ligne a été créée dans le système. Sert à l'audit, jamais aux calculs métier.
+**Recording date** *(createdAt)* — The date/time at which the row was created in the system. Used for auditing, never for business calculations.
 
-**Unité mineure** *(minor unit)* — Plus petite unité d'une devise. 1 EUR = 100 unités mineures ; 1 XOF = 1 unité mineure (le franc CFA n'a pas de sous-division en usage). Tous les montants sont stockés en entiers d'unités mineures.
+**Minor unit** *(minor unit)* — Smallest unit of a currency. 1 EUR = 100 minor units; 1 XOF = 1 minor unit (the CFA franc has no subdivision in use). All amounts are stored as integers of minor units.
 
-**Devise de référence** *(base currency)* — Devise choisie par l'utilisateur dans laquelle sont consolidés les totaux multi-comptes (patrimoine net, rapports globaux).
+**Base currency** *(base currency)* — Currency chosen by the user in which multi-account totals are consolidated (net worth, global reports).
 
 ## Budget
 
-**Budget** *(Budget)* — Enveloppe de dépense pour une catégorie sur une période donnée. Ex. : « Alimentation, 150 000 XOF, mensuel ».
+**Budget** *(Budget)* — Spending envelope for a category over a given period. E.g.: "Food, 150,000 XOF, monthly".
 
-**Période budgétaire** *(BudgetPeriod)* — Instance datée d'un budget : « Alimentation, juillet 2026 ». C'est sur elle que se calculent la consommation et les alertes.
+**Budget period** *(BudgetPeriod)* — Dated instance of a budget: "Food, July 2026". Consumption and alerts are calculated against it.
 
-**Consommation** *(spent)* — Somme des transactions rattachées à la catégorie du budget sur la période.
+**Consumption** *(spent)* — Sum of the transactions attached to the budget's category over the period.
 
-**Reste à dépenser** *(remaining)* — Montant du budget moins la consommation. Peut être négatif (dépassement).
+**Remaining to spend** *(remaining)* — Budget amount minus consumption. Can be negative (overrun).
 
-**Report** *(rollover)* — Option qui reporte le solde non consommé (ou le dépassement) d'une période sur la suivante.
+**Rollover** *(rollover)* — Option that carries the unconsumed balance (or the overrun) of one period over to the next.
 
-## Dettes
+## Debts
 
-**Dette** *(Debt)* — Somme due par l'utilisateur (prêt, crédit, dette informelle) ou due à l'utilisateur (créance). Le sens est porté par le champ `direction` (`OWED_BY_ME` / `OWED_TO_ME`).
+**Debt** *(Debt)* — Amount owed by the user (loan, credit, informal debt) or owed to the user (receivable). The direction is carried by the `direction` field (`OWED_BY_ME` / `OWED_TO_ME`).
 
-**Capital restant dû** *(outstandingPrincipal)* — Montant du principal non encore remboursé.
+**Outstanding principal** *(outstandingPrincipal)* — Amount of the principal not yet repaid.
 
-**Échéancier** *(AmortizationSchedule)* — Liste des échéances prévues, chacune décomposée en part de capital et part d'intérêts.
+**Amortization schedule** *(AmortizationSchedule)* — List of planned installments, each broken down into a principal portion and an interest portion.
 
-**Échéance** *(Installment)* — Une ligne de l'échéancier : date prévue, montant, part capital, part intérêts, statut (prévue / payée / en retard / partielle).
+**Installment** *(Installment)* — A line of the amortization schedule: planned date, amount, principal portion, interest portion, status (planned / paid / late / partial).
 
-## Objectifs et prévisions
+## Goals and forecasts
 
-**Objectif d'épargne** *(SavingsGoal)* — Montant cible à atteindre à une date cible, avec suivi de progression et contributions rattachées.
+**Savings goal** *(SavingsGoal)* — Target amount to reach by a target date, with progress tracking and attached contributions.
 
-**Patrimoine net** *(Net worth)* — Somme des soldes des comptes (actifs) moins le capital restant dû de toutes les dettes, converti en devise de référence.
+**Net worth** *(Net worth)* — Sum of account balances (assets) minus the outstanding principal of all debts, converted into the base currency.
 
-**Prévision** *(Forecast)* — Projection du solde et du patrimoine net sur N mois, à partir des transactions récurrentes connues, des échéances de dettes et d'une tendance sur les dépenses non récurrentes.
+**Forecast** *(Forecast)* — Projection of balance and net worth over N months, based on known recurring transactions, debt installments, and a trend on non-recurring expenses.
 
-**Scénario** *(Scenario)* — Variante d'une prévision où l'utilisateur modifie des hypothèses (« si je réduis Transport de 20 % »). Non persisté en V1 : calculé à la volée.
+**Scenario** *(Scenario)* — Variant of a forecast where the user changes assumptions ("if I reduce Transport by 20%"). Not persisted in V1: computed on the fly.
 
 ## Import / export
 
-**Source d'import** *(ImportSource)* — Configuration de mapping réutilisable, associée à un format de fichier donné (ex. : « Relevé Ecobank CSV »). Mémorise la correspondance colonnes → champs.
+**Import source** *(ImportSource)* — Reusable mapping configuration, associated with a given file format (e.g.: "Ecobank CSV statement"). Stores the column → field correspondence.
 
-**Lot d'import** *(ImportBatch)* — Une exécution d'import : le fichier, ses métadonnées, le nombre de lignes acceptées / rejetées / marquées en doublon, et l'horodatage. Annulable en bloc.
+**Import batch** *(ImportBatch)* — One import run: the file, its metadata, the number of rows accepted / rejected / flagged as duplicate, and the timestamp. Cancellable as a whole.
 
-**Empreinte de transaction** *(fingerprint)* — Hachage déterministe calculé sur (compte, date métier, montant, libellé normalisé), servant à détecter les doublons à l'import.
+**Transaction fingerprint** *(fingerprint)* — Deterministic hash computed on (account, business date, amount, normalized label), used to detect duplicates on import.
 
-## Technique
+## Technical
 
-**Module** — Unité de découpage du back-end. Voir `docs/02-architecture.md`.
+**Module** — Back-end division unit. See `docs/02-architecture.md`.
 
-**Façade** *(Facade)* — Interface publique d'un module, seul point d'entrée autorisé pour les autres modules.
+**Facade** *(Facade)* — Public interface of a module, the only entry point authorized for other modules.
 
-**Journal d'audit** *(AuditLog)* — Table append-only enregistrant qui a fait quoi, quand, sur quelle entité, avec quel avant/après.
+**Audit log** *(AuditLog)* — Append-only table recording who did what, when, on which entity, with what before/after.
 
-**Suppression douce** *(soft delete)* — Une entité supprimée est marquée `deletedAt` mais reste en base ; elle est exclue de toutes les lectures par défaut.
+**Soft delete** *(soft delete)* — A deleted entity is marked `deletedAt` but remains in the database; it is excluded from all reads by default.
+</content>
+</invoke>

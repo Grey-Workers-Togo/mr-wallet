@@ -1,25 +1,25 @@
-# 10 — Conventions de développement
+# 10 — Development conventions
 
 ---
 
-## 1. Langue
+## 1. Language
 
-| Élément | Langue |
+| Element | Language |
 |---|---|
-| Code, identifiants, noms de tables et de champs | **Anglais** |
-| Codes d'erreur, `i18nKey`, types de notification | **Anglais**, stables, jamais traduits |
-| Commentaires de code | Français ou anglais, mais cohérent par fichier |
-| Documentation, commits | **Français** |
-| Interface utilisateur | **Français et anglais** (ADR-0009) |
-| Données saisies par l'utilisateur | Sa langue, jamais traduites |
+| Code, identifiers, table and field names | **English** |
+| Error codes, `i18nKey`, notification types | **English**, stable, never translated |
+| Code comments | French or English, but consistent per file |
+| Documentation, commits | **French** |
+| User interface | **French and English** (ADR-0009) |
+| Data entered by the user | Their language, never translated |
 
-## 1 bis. Internationalisation
+## 1 bis. Internationalization
 
-Règle unique, dont tout le reste découle (ADR-0009) :
+Single rule, from which everything else follows (ADR-0009):
 
-> **La base et l'API ne contiennent jamais de texte destiné à être lu par un humain.** Elles transportent des identifiants stables et des paramètres ; le rendu se fait côté client.
+> **The database and the API never contain text intended to be read by a human.** They carry stable identifiers and parameters; rendering happens client-side.
 
-### Structure des traductions
+### Translation structure
 
 ```
 apps/web/messages/
@@ -27,7 +27,7 @@ apps/web/messages/
 └── en.json
 ```
 
-Clés hiérarchiques par domaine, miroir des modules :
+Hierarchical keys by domain, mirroring the modules:
 
 ```jsonc
 {
@@ -40,55 +40,55 @@ Clés hiérarchiques par domaine, miroir des modules :
 }
 ```
 
-Les messages destinés au push sont dupliqués côté serveur (`apps/api/messages/`), puisqu'ils sont rendus au moment de l'envoi (RG-N10).
+Messages intended for push notifications are duplicated server-side (`apps/api/messages/`), since they are rendered at the moment of sending (RG-N10).
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-L1 | Aucune chaîne visible par l'utilisateur n'est écrite en dur dans un composant. Règle de lint dédiée. |
-| RG-L2 | **Parité des clés vérifiée en CI** : `fr.json` et `en.json` doivent avoir exactement le même jeu de clés. Une clé manquante fait échouer le build, elle ne retombe pas silencieusement sur l'autre langue. |
-| RG-L3 | Un message est une **phrase complète paramétrée**, jamais une concaténation de fragments. L'ordre des mots et les accords diffèrent entre langues. |
-| RG-L4 | La pluralisation passe par le mécanisme ICU (`{count, plural, one {…} other {…}}`), jamais par un `if (n > 1)`. |
-| RG-L5 | Tout enum exposé à l'utilisateur (`AccountType`, `DebtKind`, `TxStatus`…) a une entrée de traduction par valeur. Ajouter une valeur d'enum sans sa traduction fait échouer la CI. |
-| RG-L6 | Les dates et les nombres sont formatés via `Intl`, avec `user.locale` et `user.timezone`. Jamais de format construit à la main. |
-| RG-L7 | Le formatage d'un montant combine `locale` (séparateurs, position du symbole) et `Currency.minorUnits` (nombre de décimales). Les deux sont indépendants : un utilisateur en `en` peut afficher des XOF. |
-| RG-L8 | Utiliser les propriétés CSS logiques (`margin-inline-start`, `padding-inline`, `text-align: start`) plutôt que `left`/`right`. Convention gratuite qui limite le coût d'un éventuel RTL. |
-| RG-L9 | Les libellés d'accessibilité (`aria-label`, `alt`) sont traduits comme le reste. |
+| RG-L1 | No string visible to the user is hardcoded in a component. Dedicated lint rule. |
+| RG-L2 | **Key parity checked in CI**: `fr.json` and `en.json` must have exactly the same set of keys. A missing key fails the build; it does not silently fall back to the other language. |
+| RG-L3 | A message is a **complete, parameterized sentence**, never a concatenation of fragments. Word order and agreement differ between languages. |
+| RG-L4 | Pluralization goes through the ICU mechanism (`{count, plural, one {…} other {…}}`), never an `if (n > 1)`. |
+| RG-L5 | Every enum exposed to the user (`AccountType`, `DebtKind`, `TxStatus`…) has one translation entry per value. Adding an enum value without its translation fails CI. |
+| RG-L6 | Dates and numbers are formatted via `Intl`, with `user.locale` and `user.timezone`. Never a hand-built format. |
+| RG-L7 | Formatting an amount combines `locale` (separators, symbol position) and `Currency.minorUnits` (number of decimals). The two are independent: a user in `en` can display XOF. |
+| RG-L8 | Use logical CSS properties (`margin-inline-start`, `padding-inline`, `text-align: start`) rather than `left`/`right`. A free convention that limits the cost of an eventual RTL. |
+| RG-L9 | Accessibility labels (`aria-label`, `alt`) are translated like everything else. |
 
 ---
 
-## 2. Style de code
+## 2. Code style
 
-- TypeScript en mode `strict`, `noUncheckedIndexedAccess` activé.
-- Pas de `any`. Utiliser `unknown` puis valider (Zod).
-- Pas de `enum` TypeScript côté partagé : préférer les union de littéraux ou les enums Prisma générées.
-- Fonctions pures pour toute la logique de calcul (montants, échéanciers, périodes) — elles doivent être testables sans base de données.
-- Nommage : `camelCase` (variables, fonctions), `PascalCase` (types, classes), `SCREAMING_SNAKE_CASE` (constantes).
-- Un fichier = une responsabilité. Au-delà de 300 lignes, découper.
+- TypeScript in `strict` mode, `noUncheckedIndexedAccess` enabled.
+- No `any`. Use `unknown` then validate (Zod).
+- No TypeScript `enum` on the shared side: prefer literal unions or generated Prisma enums.
+- Pure functions for all calculation logic (amounts, schedules, periods) — they must be testable without a database.
+- Naming: `camelCase` (variables, functions), `PascalCase` (types, classes), `SCREAMING_SNAKE_CASE` (constants).
+- One file = one responsibility. Beyond 300 lines, split it up.
 
-### Interdits
+### Forbidden
 
 ```ts
-// ❌ Montant en nombre flottant
+// ❌ Amount as a floating-point number
 const total = 12.5 + 7.3;
 
-// ❌ Précision codée en dur
+// ❌ Hardcoded precision
 const display = amountMinor / 100;
 
-// ❌ Requête non scopée
+// ❌ Unscoped query
 await prisma.transaction.findMany({ where: { accountId } });
 
-// ❌ Date de calcul métier prise sur createdAt
+// ❌ Business calculation date taken from createdAt
 where: { createdAt: { gte: monthStart } }
 
-// ❌ Chaîne visible en dur, et concaténation de fragments
+// ❌ Hardcoded visible string, and concatenation of fragments
 <button>Enregistrer</button>
 const msg = "Budget " + name + " dépassé de " + n + " %";
 
 // ✅ Corrections
 const total = Money.add(a, b);
-const display = formatMoney(amountMinor, currency);  // lit minorUnits
+const display = formatMoney(amountMinor, currency);  // reads minorUnits
 await prisma.transaction.findMany({ where: { userId, accountId } });
 where: { userId, occurredAt: { gte: monthStart } }
 <button>{t("common.save")}</button>
@@ -97,77 +97,77 @@ const msg = t("budget.exceeded", { name, percent: n });
 
 ---
 
-## 3. Structure d'un module back-end
+## 3. Structure of a back-end module
 
 ```
-modules/<nom>/
-├── <nom>.module.ts          # déclaration Nest, imports, exports
-├── <nom>.controller.ts      # HTTP uniquement : validation, mapping, codes
-├── <nom>.service.ts         # règles métier
-├── <nom>.facade.ts          # interface publique consommée par les autres modules
-├── <nom>.repository.ts      # accès Prisma (si la logique de requête est non triviale)
+modules/<name>/
+├── <name>.module.ts          # Nest declaration, imports, exports
+├── <name>.controller.ts      # HTTP only: validation, mapping, codes
+├── <name>.service.ts         # business rules
+├── <name>.facade.ts          # public interface consumed by other modules
+├── <name>.repository.ts      # Prisma access (if query logic is non-trivial)
 ├── dto/
 │   ├── create-<x>.dto.ts
 │   └── update-<x>.dto.ts
-├── domain/                  # fonctions pures : calculs, règles, invariants
+├── domain/                  # pure functions: calculations, rules, invariants
 └── __tests__/
-    ├── <nom>.service.spec.ts
-    ├── <nom>.controller.e2e-spec.ts
+    ├── <name>.service.spec.ts
+    ├── <name>.controller.e2e-spec.ts
     └── domain/*.spec.ts
 ```
 
-Règles :
+Rules:
 
-- Le **controller** ne contient aucune règle métier.
-- Le **service** ne connaît pas HTTP (pas de `Request`, pas de codes de statut).
-- La **façade** est le seul export du module vers l'extérieur. Ce qui n'est pas dans la façade est privé.
-- Le dossier **domain** ne dépend ni de Nest ni de Prisma. C'est là que vit le calcul d'échéancier, le calcul de période budgétaire, l'arithmétique monétaire.
+- The **controller** contains no business rules.
+- The **service** knows nothing about HTTP (no `Request`, no status codes).
+- The **facade** is the module's only export to the outside. Whatever is not in the facade is private.
+- The **domain** folder depends neither on Nest nor on Prisma. This is where schedule calculation, budget period calculation, and monetary arithmetic live.
 
 ---
 
 ## 4. Validation
 
-- Toute entrée d'API est validée par un schéma Zod, avant d'atteindre le service.
-- Les schémas Zod vivent dans `packages/contracts` et sont partagés avec le front — une seule source de vérité pour la forme des données.
-- La validation métier (« la devise doit correspondre au compte ») reste dans le service, pas dans le schéma.
+- Every API input is validated by a Zod schema, before reaching the service.
+- Zod schemas live in `packages/contracts` and are shared with the front end — a single source of truth for data shape.
+- Business validation ("the currency must match the account") stays in the service, not in the schema.
 
 ---
 
-## 5. Base de données
+## 5. Database
 
-- Une migration par changement fonctionnel, nommée explicitement : `20260728_add_debt_installments`.
-- **Toute migration doit être réversible.** Si ce n'est pas possible, le documenter dans le fichier de migration.
-- Pas de `prisma db push` en dehors du prototypage local.
-- Toute nouvelle table métier porte les 5 champs obligatoires (`id`, `userId`, `createdAt`, `updatedAt`, `deletedAt`) et l'index `(userId, deletedAt)`.
-- Les requêtes analytiques passent par `$queryRaw` avec `Prisma.sql` (jamais de concaténation de chaîne).
-- Toute opération touchant à l'argent s'exécute dans une transaction SQL explicite.
+- One migration per functional change, explicitly named: `20260728_add_debt_installments`.
+- **Every migration must be reversible.** If that's not possible, document it in the migration file.
+- No `prisma db push` outside of local prototyping.
+- Every new business table carries the 5 mandatory fields (`id`, `userId`, `createdAt`, `updatedAt`, `deletedAt`) and the `(userId, deletedAt)` index.
+- Analytical queries go through `$queryRaw` with `Prisma.sql` (never string concatenation).
+- Any operation touching money runs inside an explicit SQL transaction.
 
 ---
 
 ## 6. Tests
 
-### Répartition attendue
+### Expected breakdown
 
-| Type | Cible | Ce qui est testé |
+| Type | Target | What is tested |
 |---|---|---|
-| Unitaire (domain) | Couverture ≥ 95 % | Arithmétique monétaire, échéanciers, périodes budgétaires, dédoublonnage, parsing |
-| Service | Couverture ≥ 80 % | Règles métier avec base de test |
-| API (e2e) | Tous les endpoints | Codes de retour, validation, **isolation multi-utilisateur** |
-| Front e2e | 13 cas d'usage MVP | Parcours complets |
+| Unit (domain) | Coverage ≥ 95% | Monetary arithmetic, schedules, budget periods, deduplication, parsing |
+| Service | Coverage ≥ 80% | Business rules with a test database |
+| API (e2e) | All endpoints | Return codes, validation, **multi-user isolation** |
+| Front e2e | 13 MVP use cases | Complete flows |
 
-### Tests obligatoires, non négociables
+### Mandatory, non-negotiable tests
 
-1. **Isolation** : pour chaque endpoint, un utilisateur A reçoit 404 sur une ressource de B.
-2. **Arithmétique** : aucun test monétaire ne doit passer par un `number`.
-3. **Échéancier** : `Σ capital = principal` et dernier `balanceAfter = 0`, sur au moins 5 jeux de paramètres, dont un taux 0 et un montant non divisible.
-4. **Conversion** : 10,00 EUR → 6 560 XOF au taux 655,957.
-5. **Audit** : chaque mutation produit exactement une entrée, avec les bons `before`/`after`, sans champ sensible.
-6. **Réconciliation** : après une séquence aléatoire de 200 créations/modifications/suppressions, le solde stocké est égal au solde recalculé.
-7. **Idempotence** : rejouer un `POST` avec la même `Idempotency-Key` ne crée pas de doublon.
+1. **Isolation**: for each endpoint, a user A receives 404 on a resource belonging to B.
+2. **Arithmetic**: no monetary test may go through a `number`.
+3. **Schedule**: `Σ principal = principal` and last `balanceAfter = 0`, on at least 5 parameter sets, including a 0 rate and a non-divisible amount.
+4. **Conversion**: 10.00 EUR → 6,560 XOF at the rate of 655.957.
+5. **Audit**: every mutation produces exactly one entry, with the correct `before`/`after`, without any sensitive field.
+6. **Reconciliation**: after a random sequence of 200 creations/modifications/deletions, the stored balance equals the recalculated balance.
+7. **Idempotence**: replaying a `POST` with the same `Idempotency-Key` does not create a duplicate.
 
-### Ce qu'il ne faut pas tester
+### What not to test
 
-Getters triviaux, mappings DTO sans logique, code framework. La couverture n'est pas un objectif en soi ; couvrir les règles `RG-xx` de `04-modules.md` l'est.
+Trivial getters, DTO mappings without logic, framework code. Coverage is not a goal in itself; covering the `RG-xx` rules from `04-modules.md` is.
 
 ---
 
@@ -175,7 +175,7 @@ Getters triviaux, mappings DTO sans logique, code framework. La couverture n'est
 
 ### Branches
 
-`main` (protégée) ← `feat/<lot>-<sujet>` | `fix/<sujet>` | `chore/<sujet>`
+`main` (protected) ← `feat/<lot>-<subject>` | `fix/<subject>` | `chore/<subject>`
 
 ### Commits — Conventional Commits
 
@@ -188,79 +188,79 @@ refactor(budgets): extraction du calcul de période dans domain/
 chore(deps): mise à jour de prisma
 ```
 
-Un commit = un changement cohérent. Pas de commit « wip » sur `main`.
+One commit = one coherent change. No "wip" commits on `main`.
 
 ### Pull requests
 
-- Description : ce qui change, pourquoi, comment tester.
-- Référence au lot et aux règles `RG-xx` couvertes.
-- CI verte obligatoire.
+- Description: what changes, why, how to test it.
+- Reference to the lot and to the `RG-xx` rules covered.
+- Green CI mandatory.
 
 ---
 
-## 8. Definition of done (par tâche)
+## 8. Definition of done (per task)
 
-Une tâche n'est terminée que si **tous** les points sont vrais :
+A task is only complete if **all** the points below are true:
 
-- [ ] Le code respecte les interdits du § 2.
-- [ ] Les règles `RG-xx` concernées sont implémentées et testées.
-- [ ] Test d'isolation multi-utilisateur ajouté pour chaque nouvel endpoint.
-- [ ] Migration Prisma créée, nommée, réversible.
-- [ ] Journalisation d'audit vérifiée (l'action apparaît dans `AuditLog` avec le bon contenu).
-- [ ] `npm run lint && npm run typecheck && npm run test` passent.
-- [ ] La documentation (`docs/03`, `docs/05`) est à jour si le modèle ou l'API a changé.
-- [ ] Aucun `console.log`, aucun `TODO` sans ticket associé.
-- [ ] Aucune donnée sensible dans les logs ajoutés.
-- [ ] **Toute chaîne visible ajoutée existe en `fr` et en `en`** ; la parité des clés passe en CI (RG-L2).
-- [ ] Tout nouveau code d'erreur, type de notification ou valeur d'enum exposée a sa traduction dans les deux langues.
+- [ ] The code respects the prohibitions in §2.
+- [ ] The relevant `RG-xx` rules are implemented and tested.
+- [ ] Multi-user isolation test added for every new endpoint.
+- [ ] Prisma migration created, named, reversible.
+- [ ] Audit logging verified (the action appears in `AuditLog` with the correct content).
+- [ ] `npm run lint && npm run typecheck && npm run test` pass.
+- [ ] Documentation (`docs/03`, `docs/05`) is up to date if the model or the API changed.
+- [ ] No `console.log`, no `TODO` without an associated ticket.
+- [ ] No sensitive data in added logs.
+- [ ] **Every visible string added exists in `fr` and in `en`**; key parity passes in CI (RG-L2).
+- [ ] Every new error code, notification type, or exposed enum value has its translation in both languages.
 
 ---
 
-## 9. Environnements et configuration
+## 9. Environments and configuration
 
-| Variable | Rôle | Défaut |
+| Variable | Role | Default |
 |---|---|---|
-| `DATABASE_URL` | Connexion PostgreSQL | — |
-| `JWT_SECRET` | Signature des access tokens | — (obligatoire) |
-| `JWT_ACCESS_TTL` | Durée de l'access token | `15m` |
-| `REFRESH_TTL` | Durée du refresh token | `30d` |
-| `ARGON_MEMORY_COST` | Coût mémoire Argon2id | `19456` |
-| `UPLOAD_MAX_BYTES` | Taille max d'un import | `10485760` |
-| `UPLOAD_RETENTION_DAYS` | Rétention des fichiers importés | `30` |
-| `AUDIT_RETENTION_MONTHS` | Rétention du journal d'audit | `24` |
-| `EXCHANGE_RATE_PROVIDER` | Fournisseur de taux (vide = désactivé) | vide |
-| `VAPID_PUBLIC_KEY` | Clé publique Web Push (vide = push désactivé) | vide |
-| `VAPID_PRIVATE_KEY` | Clé privée Web Push | vide |
-| `VAPID_SUBJECT` | Contact `mailto:` exigé par la spécification Web Push | vide |
-| `IP_HASH_SALT` | Sel de hachage des IP | — (obligatoire) |
-| `LOG_LEVEL` | Niveau de log | `info` |
+| `DATABASE_URL` | PostgreSQL connection | — |
+| `JWT_SECRET` | Access token signing | — (mandatory) |
+| `JWT_ACCESS_TTL` | Access token lifetime | `15m` |
+| `REFRESH_TTL` | Refresh token lifetime | `30d` |
+| `ARGON_MEMORY_COST` | Argon2id memory cost | `19456` |
+| `UPLOAD_MAX_BYTES` | Max size of an import | `10485760` |
+| `UPLOAD_RETENTION_DAYS` | Retention of imported files | `30` |
+| `AUDIT_RETENTION_MONTHS` | Retention of the audit log | `24` |
+| `EXCHANGE_RATE_PROVIDER` | Rate provider (empty = disabled) | empty |
+| `VAPID_PUBLIC_KEY` | Web Push public key (empty = push disabled) | empty |
+| `VAPID_PRIVATE_KEY` | Web Push private key | empty |
+| `VAPID_SUBJECT` | `mailto:` contact required by the Web Push spec | empty |
+| `IP_HASH_SALT` | IP hashing salt | — (mandatory) |
+| `LOG_LEVEL` | Log level | `info` |
 
-L'application refuse de démarrer si une variable obligatoire manque — validation du schéma d'environnement au boot, pas d'échec silencieux en production.
+The application refuses to start if a mandatory variable is missing — environment schema validation at boot, no silent failure in production.
 
 ---
 
-## 10. Tâches planifiées
+## 10. Scheduled tasks
 
-| Tâche | Fréquence | Rôle |
+| Task | Frequency | Role |
 |---|---|---|
-| `generateBudgetPeriods` | quotidienne | Matérialise les périodes budgétaires sur 12 mois glissants |
-| `materializeRecurrences` | quotidienne | Crée les transactions des récurrences `autoCreate` échues (idempotent) |
-| `notifyUpcoming` | quotidienne | Rappels d'échéances de dettes et de récurrences |
-| `markLateInstallments` | quotidienne | Passe les échéances dépassées en `LATE` |
-| `reconcileBalances` | nocturne | Compare soldes stockés et recalculés, notifie les écarts |
-| `purgeUploads` | quotidienne | Supprime les fichiers importés de plus de 30 jours |
-| `purgeAuditLog` | mensuelle | Archive puis purge au-delà de la rétention |
-| `purgeDeletedAccounts` | quotidienne | Purge physique des comptes supprimés depuis 30 jours |
-| `purgeStaleDeviceTokens` | hebdomadaire | Supprime les abonnements push inactifs ou en échec depuis 90 jours |
-| `purgeExpiredSupportRows` | quotidienne | Purge `IdempotencyKey`, `PasswordResetToken` et `ExportJob` expirés |
+| `generateBudgetPeriods` | daily | Materializes budget periods over a rolling 12 months |
+| `materializeRecurrences` | daily | Creates transactions for due `autoCreate` recurrences (idempotent) |
+| `notifyUpcoming` | daily | Reminders for debt and recurrence due dates |
+| `markLateInstallments` | daily | Moves overdue installments to `LATE` |
+| `reconcileBalances` | nightly | Compares stored and recalculated balances, notifies on discrepancies |
+| `purgeUploads` | daily | Deletes imported files older than 30 days |
+| `purgeAuditLog` | monthly | Archives then purges beyond the retention period |
+| `purgeDeletedAccounts` | daily | Physical purge of accounts deleted more than 30 days ago |
+| `purgeStaleDeviceTokens` | weekly | Deletes push subscriptions inactive or failing for 90 days |
+| `purgeExpiredSupportRows` | daily | Purges expired `IdempotencyKey`, `PasswordResetToken`, and `ExportJob` |
 
-Toutes les tâches sont **idempotentes** et journalisées avec `actorType = SCHEDULER`.
+All tasks are **idempotent** and logged with `actorType = SCHEDULER`.
 
 ---
 
-## 11. Journal des décisions
+## 11. Decision log
 
-Toute décision d'architecture non triviale est consignée dans `docs/adr/NNNN-titre.md` :
+Every non-trivial architectural decision is recorded in `docs/adr/NNNN-title.md`:
 
 ```markdown
 # ADR-0003 — Solde de compte stocké plutôt que calculé
@@ -278,4 +278,4 @@ Accepté — 2026-07-28
 [bénéfices, coûts, ce que ça ferme]
 ```
 
-Les six premières ADR sont déjà rédigées (`docs/adr/0001` à `0006`) et couvrent les décisions structurantes prises en phase de conception. Toute nouvelle décision d'architecture prise pendant l'implémentation ajoute une ADR ; une décision qui en remplace une autre passe l'ancienne en statut « Remplacée par ADR-NNNN » sans la supprimer.
+The first six ADRs are already written (`docs/adr/0001` through `0006`) and cover the structuring decisions made during the design phase. Every new architectural decision made during implementation adds an ADR; a decision that replaces another one moves the old one to "Superseded by ADR-NNNN" status without deleting it.

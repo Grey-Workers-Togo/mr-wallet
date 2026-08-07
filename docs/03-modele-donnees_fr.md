@@ -1,41 +1,41 @@
-# 03 — Data Model
+# 03 — Modèle de données
 
-Notation: Prisma schema. `Bg` = `BigInt`, `Dt` = `DateTime @db.Timestamptz(6)`.
+Notation : schéma Prisma. `Bg` = `BigInt`, `Dt` = `DateTime @db.Timestamptz(6)`.
 
 ---
 
-## 1. Conventions applied to all business tables
+## 1. Conventions appliquées à toutes les tables métier
 
-Every business table **mandatorily** carries:
+Chaque table métier porte **obligatoirement** :
 
-| Field | Type | Role |
+| Champ | Type | Rôle |
 |---|---|---|
-| `id` | `String @id @default(uuid())` | Identifier. UUID v7 if available (sortable), otherwise v4. |
-| `userId` | `String` | Owner. **Every query is filtered on it.** |
-| `createdAt` | `Dt @default(now())` | Creation timestamp (UTC) |
-| `updatedAt` | `Dt @updatedAt` | Last modification timestamp (UTC) |
-| `deletedAt` | `Dt?` | Soft delete. `null` = active. |
+| `id` | `String @id @default(uuid())` | Identifiant. UUID v7 si disponible (ordonnable), sinon v4. |
+| `userId` | `String` | Propriétaire. **Toute requête est filtrée dessus.** |
+| `createdAt` | `Dt @default(now())` | Horodatage de création (UTC) |
+| `updatedAt` | `Dt @updatedAt` | Horodatage de dernière modification (UTC) |
+| `deletedAt` | `Dt?` | Suppression douce. `null` = actif. |
 
-Rules:
+Règles :
 
-- **No physical `DELETE`** on a business table. Only `deletedAt = now()`.
-- Every read filters `deletedAt: null` by default (global Prisma middleware, with an explicit escape hatch for audit and export).
-- `@@index([userId, deletedAt])` on every business table.
-- Amounts are `BigInt` in minor units, **always** accompanied by a `currency` field.
+- **Aucun `DELETE` physique** sur une table métier. Uniquement `deletedAt = now()`.
+- Toute lecture par défaut filtre `deletedAt: null` (middleware Prisma global, avec échappatoire explicite pour l'audit et l'export).
+- `@@index([userId, deletedAt])` sur chaque table métier.
+- Les montants sont des `BigInt` en unités mineures, **toujours** accompagnés d'un champ `currency`.
 
-## 2. Amounts: representation
+## 2. Montants : représentation
 
 ```prisma
-// Convention applied everywhere, never Float nor Decimal on the application side.
+// Convention appliquée partout, jamais de Float ni de Decimal côté application.
 amountMinor  BigInt   // 12345 = 123,45 EUR  |  12345 = 12 345 XOF
 currency     String   @db.Char(3)  // ISO 4217
 ```
 
-The precision (`minorUnits`) is **not** stored on each row: it is carried by the `Currency` table and read at formatting time. This avoids the inconsistency of the same currency having two different precisions.
+La précision (`minorUnits`) n'est **pas** stockée sur chaque ligne : elle est portée par la table `Currency` et lue au moment du formatage. Cela évite l'incohérence d'une même devise avec deux précisions différentes.
 
 ---
 
-## 3. Identity and preferences
+## 3. Identité et préférences
 
 ```prisma
 model User {
@@ -43,11 +43,11 @@ model User {
   email             String    @unique
   passwordHash      String                       // Argon2id
   displayName       String?
-  baseCurrency      String    @db.Char(3)        // consolidation currency
+  baseCurrency      String    @db.Char(3)        // devise de consolidation
   locale            String    @default("fr-FR")
   timezone          String    @default("Africa/Porto-Novo")
-  weekStartsOn      Int       @default(1)        // 1 = Monday
-  monthStartDay     Int       @default(1)        // budget anchored on the 1st, or on payday
+  weekStartsOn      Int       @default(1)        // 1 = lundi
+  monthStartDay     Int       @default(1)        // budget calé sur le 1er, ou sur le jour de paie
   emailVerifiedAt   Dt?
   lastLoginAt       Dt?
   createdAt         Dt        @default(now())
@@ -58,9 +58,9 @@ model User {
 model Session {
   id                String    @id @default(uuid())
   userId            String
-  refreshTokenHash  String                       // never the plaintext token
+  refreshTokenHash  String                       // jamais le token en clair
   userAgent         String?
-  ipHash            String?                      // hashed IP, never plaintext
+  ipHash            String?                      // IP hachée, pas en clair
   expiresAt         Dt
   revokedAt         Dt?
   createdAt         Dt        @default(now())
@@ -70,11 +70,11 @@ model Session {
 }
 ```
 
-`monthStartDay` allows budgets to be anchored on the pay cycle rather than the calendar — a frequent and often overlooked case.
+`monthStartDay` permet de caler les budgets sur le cycle de paie plutôt que sur le calendrier — cas fréquent et souvent oublié.
 
 ---
 
-## 4. Currencies
+## 4. Devises
 
 ```prisma
 model Currency {
@@ -87,7 +87,7 @@ model Currency {
 
 model ExchangeRate {
   id            String   @id @default(uuid())
-  userId        String?                    // null = global rate provided by the system
+  userId        String?                    // null = taux global fourni par le système
   fromCurrency  String   @db.Char(3)
   toCurrency    String   @db.Char(3)
   rate          Decimal  @db.Decimal(24, 12)
@@ -101,11 +101,11 @@ model ExchangeRate {
 enum RateSource { MANUAL  PROVIDER  PEGGED }
 ```
 
-`PEGGED` is used for fixed parities (XOF↔EUR: 655.957). Details in `08-devises.md`.
+`PEGGED` sert aux parités fixes (XOF↔EUR : 655,957). Détails dans `08-devises.md`.
 
 ---
 
-## 5. Accounts
+## 5. Comptes
 
 ```prisma
 model Account {
@@ -115,10 +115,10 @@ model Account {
   type               AccountType
   currency           String       @db.Char(3)
   openingBalanceMinor BigInt      @default(0)
-  openingBalanceAt   Dt                          // opening balance date
-  currentBalanceMinor BigInt      @default(0)    // maintained incrementally
-  balanceCheckedAt   Dt?                         // last successful reconciliation
-  creditLimitMinor   BigInt?                     // credit cards / authorized overdraft
+  openingBalanceAt   Dt                          // date du solde d'ouverture
+  currentBalanceMinor BigInt      @default(0)    // maintenu incrémentalement
+  balanceCheckedAt   Dt?                         // dernière réconciliation réussie
+  creditLimitMinor   BigInt?                     // cartes de crédit / découvert autorisé
   institution        String?
   color              String?
   icon               String?
@@ -143,27 +143,27 @@ enum AccountType {
 }
 ```
 
-Notes:
+Notes :
 
-- An account has **a single currency**. A user with a EUR account and an XOF account creates two accounts.
-- `CREDIT_CARD` normally has a negative balance (debt). It counts as a liability in net worth.
-- `isArchived` hides the account from current entry without deleting its history — distinct from `deletedAt`.
+- Un compte a **une seule devise**. Un utilisateur avec un compte EUR et un compte XOF crée deux comptes.
+- `CREDIT_CARD` a un solde normalement négatif (dette). Il compte comme passif dans le patrimoine net.
+- `isArchived` masque le compte de la saisie courante sans supprimer son historique — distinct de `deletedAt`.
 
 ---
 
-## 6. Categories and tags
+## 6. Catégories et tags
 
 ```prisma
 model Category {
   id           String        @id @default(uuid())
   userId       String
-  parentId     String?                     // 2 levels max — application-level constraint
-  i18nKey      String?                     // "category.food" — for system categories
-  name         String?                     // entered by the user; takes precedence over i18nKey
+  parentId     String?                     // 2 niveaux max — contrainte applicative
+  i18nKey      String?                     // « category.food » — pour les catégories système
+  name         String?                     // saisi par l'utilisateur ; prime sur i18nKey
   kind         CategoryKind
   color        String?
   icon         String?
-  isSystem     Boolean       @default(false)  // categories provided by default
+  isSystem     Boolean       @default(false)  // catégories fournies par défaut
   sortOrder    Int           @default(0)
   createdAt    Dt            @default(now())
   updatedAt    Dt            @updatedAt
@@ -196,25 +196,25 @@ model TransactionTag {
 }
 ```
 
-### Category name
+### Nom d'une catégorie
 
-Two fields, a simple resolution rule (ADR-0009):
+Deux champs, une règle de résolution simple (ADR-0009) :
 
-| Case | `i18nKey` | `name` | Display |
+| Cas | `i18nKey` | `name` | Affichage |
 |---|---|---|---|
-| System category, not renamed | `category.food` | `null` | Translated in the current language |
-| System category, renamed by the user | `category.food` | `"Courses"` | `"Courses"`, regardless of the language |
-| Category created by the user | `null` | `"Taxi brousse"` | `"Taxi brousse"` |
+| Catégorie système, non renommée | `category.food` | `null` | Traduit dans la langue courante |
+| Catégorie système, renommée par l'utilisateur | `category.food` | `"Courses"` | `"Courses"`, quelle que soit la langue |
+| Catégorie créée par l'utilisateur | `null` | `"Taxi brousse"` | `"Taxi brousse"` |
 
-`name` always takes precedence over `i18nKey`. A user who has renamed a category has expressed a choice; translating over it would be a regression. `i18nKey` is kept even after renaming, to allow reverting to the default label.
+`name` prime toujours sur `i18nKey`. Un utilisateur qui a renommé une catégorie a exprimé un choix ; le traduire par-dessus serait une régression. `i18nKey` est conservé même après renommage, pour permettre un retour au libellé par défaut.
 
-Constraints:
+Contraintes :
 
-- `i18nKey` or `name` must be set — never both `null`. `CHECK` constraint at the database level.
-- The `(userId, parentId, name)` uniqueness of the previous version is dropped: it no longer works with `name` nullable. The uniqueness of the **resolved name** is verified at the application level, in the user's language.
-- A renamed system category remains `isSystem = true`: it remains non-deletable.
+- `i18nKey` ou `name` doit être renseigné — jamais les deux à `null`. Contrainte `CHECK` en base.
+- L'unicité `(userId, parentId, name)` de la version précédente est abandonnée : elle ne fonctionne plus avec `name` nullable. L'unicité du **nom résolu** est vérifiée en applicatif, dans la langue de l'utilisateur.
+- Une catégorie système renommée reste `isSystem = true` : elle demeure non supprimable.
 
-**Deleting a category in use**: forbidden as long as transactions are attached to it. The API offers reassignment to another category in the same operation (`DELETE /categories/:id?reassignTo=<id>`).
+**Suppression d'une catégorie utilisée** : interdite tant que des transactions y sont rattachées. L'API propose une réaffectation vers une autre catégorie dans la même opération (`DELETE /categories/:id?reassignTo=<id>`).
 
 ---
 
@@ -226,27 +226,27 @@ model Transaction {
   userId           String
   accountId        String
   type             TransactionType
-  amountMinor      BigInt                        // ALWAYS positive; the sign comes from `type`
-  currency         String          @db.Char(3)   // = account currency
-  occurredAt       Dt                            // BUSINESS DATE — basis for all calculations
+  amountMinor      BigInt                        // TOUJOURS positif ; le sens vient de `type`
+  currency         String          @db.Char(3)   // = devise du compte
+  occurredAt       Dt                            // DATE MÉTIER — base de tous les calculs
   description      String
-  normalizedLabel  String                        // cleaned label, for deduplication and rules
+  normalizedLabel  String                        // libellé nettoyé, pour dédoublonnage et règles
   categoryId       String?
   payee            String?
   notes            String?
   status           TxStatus        @default(CLEARED)
 
-  // Transfers
-  transferGroupId  String?                       // links the two legs of a transfer
+  // Transferts
+  transferGroupId  String?                       // relie les deux jambes d'un transfert
   counterAccountId String?
 
-  // Origin traceability
+  // Traçabilité de l'origine
   source           TxSource        @default(MANUAL)
   importBatchId    String?
-  externalRef      String?                       // ref. present in the imported file
-  fingerprint      String                        // deduplication hash
+  externalRef      String?                       // réf. présente dans le fichier importé
+  fingerprint      String                        // hash de dédoublonnage
 
-  // Attachments
+  // Rattachements
   recurrenceId     String?
   debtPaymentId    String?
   goalContributionId String?
@@ -267,16 +267,16 @@ enum TxStatus        { PENDING  CLEARED  RECONCILED  VOID }
 enum TxSource         { MANUAL  IMPORT  RECURRENCE  DEBT_PAYMENT  GOAL_CONTRIBUTION  ADJUSTMENT }
 ```
 
-### Decisions that must be respected
+### Décisions à respecter impérativement
 
-1. **`amountMinor` is always positive.** The sign is derived from `type`. This avoids the "double negation" class of bugs during aggregations.
-2. **A transfer = two lines**, an outgoing `TRANSFER` on the source account, an incoming `TRANSFER` on the destination account, linked by `transferGroupId`. A transfer is therefore always created and deleted as a block. It is **excluded** from expense, income, and budget calculations.
-3. **Transfer between different currencies**: the two legs have different amounts, each with its own currency; the effective rate is derived and stored in structured `notes` or in a `TransferRate` table if a reporting need arises. In V1, both amounts are stored as-is without an additional table.
-4. `occurredAt` ≠ `createdAt`. Never use `createdAt` in a business calculation.
+1. **`amountMinor` est toujours positif.** Le signe est dérivé de `type`. Cela évite la classe de bugs « double négation » lors des agrégations.
+2. **Un transfert = deux lignes**, une `TRANSFER` sortante sur le compte source, une `TRANSFER` entrante sur le compte destination, liées par `transferGroupId`. Un transfert est donc toujours créé et supprimé en bloc. Il est **exclu** du calcul des dépenses, des revenus et des budgets.
+3. **Transfert entre devises différentes** : les deux jambes ont des montants différents et chacune sa devise ; le taux effectif est déduit et stocké dans `notes` structurées ou dans une table `TransferRate` si le besoin de reporting apparaît. En V1, on stocke les deux montants tels quels sans table supplémentaire.
+4. `occurredAt` ≠ `createdAt`. Ne jamais utiliser `createdAt` dans un calcul métier.
 
 ---
 
-## 8. Recurrences
+## 8. Récurrences
 
 ```prisma
 model RecurrenceRule {
@@ -288,17 +288,17 @@ model RecurrenceRule {
   categoryId       String?
   amountMinor      BigInt
   currency         String        @db.Char(3)
-  amountIsEstimate Boolean       @default(false)  // variable amount (electricity bill)
+  amountIsEstimate Boolean       @default(false)  // montant variable (facture élec.)
 
   frequency        Frequency
-  interval         Int           @default(1)      // every N (days/weeks/months)
-  dayOfMonth       Int?                           // 1-31; 31 → last day of the month
+  interval         Int           @default(1)      // tous les N (jours/semaines/mois)
+  dayOfMonth       Int?                           // 1-31 ; 31 → dernier jour du mois
   dayOfWeek        Int?                           // 0-6
   startsOn         Dt
   endsOn           Dt?
   maxOccurrences   Int?
 
-  autoCreate       Boolean       @default(false)  // automatically create the transaction
+  autoCreate       Boolean       @default(false)  // créer la transaction automatiquement
   reminderDaysBefore Int?        @default(3)
   lastGeneratedAt  Dt?
   isActive         Boolean       @default(true)
@@ -313,9 +313,9 @@ model RecurrenceRule {
 enum Frequency { DAILY  WEEKLY  BIWEEKLY  MONTHLY  QUARTERLY  SEMIANNUAL  YEARLY }
 ```
 
-**Day-31 rule**: for a monthly recurrence on the 31st, shorter months use the last day of the month. Never push it to the following month.
+**Règle du jour 31** : pour une récurrence mensuelle au 31, les mois plus courts utilisent le dernier jour du mois. Ne jamais décaler au mois suivant.
 
-**`autoCreate`**: if `false` (default), the occurrence appears as a forecast and triggers a reminder, but no transaction is created without user confirmation. The default is deliberately conservative: automatically creating fake transactions destroys trust in balances.
+**`autoCreate`** : si `false` (défaut), l'occurrence apparaît en prévision et déclenche un rappel, mais aucune transaction n'est créée sans confirmation de l'utilisateur. Le défaut est prudent volontairement : créer automatiquement de fausses transactions détruit la confiance dans les soldes.
 
 ---
 
@@ -326,14 +326,14 @@ model Budget {
   id              String        @id @default(uuid())
   userId          String
   name            String
-  categoryId      String?                       // null = global budget
+  categoryId      String?                       // null = budget global
   amountMinor     BigInt
   currency        String        @db.Char(3)
   period          BudgetPeriodType
   startsOn        Dt
   endsOn          Dt?
   rollover        Boolean       @default(false)
-  alertThresholds Int[]         @default([80, 100])   // in %
+  alertThresholds Int[]         @default([80, 100])   // en %
   isActive        Boolean       @default(true)
   createdAt       Dt            @default(now())
   updatedAt       Dt            @updatedAt
@@ -350,10 +350,10 @@ model BudgetPeriod {
   budgetId         String
   periodStart      Dt
   periodEnd        Dt
-  allocatedMinor   BigInt                  // budget amount + any rollover
+  allocatedMinor   BigInt                  // montant du budget + report éventuel
   rolloverInMinor  BigInt   @default(0)
-  spentMinor       BigInt   @default(0)    // maintained incrementally
-  lastAlertPct     Int?                    // last threshold crossed, avoids repeated alerts
+  spentMinor       BigInt   @default(0)    // maintenu incrémentalement
+  lastAlertPct     Int?                    // dernier seuil franchi, évite les alertes répétées
   closedAt         Dt?
   createdAt        Dt       @default(now())
   updatedAt        Dt       @updatedAt
@@ -363,11 +363,11 @@ model BudgetPeriod {
 }
 ```
 
-`BudgetPeriod` is materialized (one row per month) rather than computed on the fly. Reason: the rollover (`rollover`) is cumulative and depends on history — recalculating it from the origin on every read becomes costly and fragile. The price to pay is a task that generates upcoming periods.
+`BudgetPeriod` est matérialisé (une ligne par mois) plutôt que calculé à la volée. Raison : le report (`rollover`) est cumulatif et dépend de l'historique — le recalculer à chaque lecture depuis l'origine devient coûteux et fragile. Le prix à payer est une tâche de génération des périodes à venir.
 
 ---
 
-## 10. Debts
+## 10. Dettes
 
 ```prisma
 model Debt {
@@ -375,15 +375,15 @@ model Debt {
   userId                String
   name                  String
   direction             DebtDirection
-  counterparty          String?                     // lender or borrower
+  counterparty          String?                     // prêteur ou emprunteur
   kind                  DebtKind      @default(LOAN)
-  linkedAccountId       String?                     // account debited for payments
+  linkedAccountId       String?                     // compte débité pour les paiements
 
-  principalMinor        BigInt                      // originally borrowed amount
-  outstandingPrincipalMinor BigInt                  // remaining principal
+  principalMinor        BigInt                      // montant emprunté à l'origine
+  outstandingPrincipalMinor BigInt                  // capital restant dû
   currency              String        @db.Char(3)
 
-  annualRatePct         Decimal?      @db.Decimal(7, 4)   // 0 = interest-free loan
+  annualRatePct         Decimal?      @db.Decimal(7, 4)   // 0 = prêt sans intérêt
   rateType              RateType      @default(FIXED)
   compounding           Compounding   @default(MONTHLY)
 
@@ -391,7 +391,7 @@ model Debt {
   termMonths            Int?
   paymentFrequency      Frequency     @default(MONTHLY)
   paymentDayOfMonth     Int?
-  installmentMinor      BigInt?                     // installment, calculated or entered
+  installmentMinor      BigInt?                     // mensualité, calculée ou saisie
 
   status                DebtStatus    @default(ACTIVE)
   closedAt              Dt?
@@ -420,7 +420,7 @@ model DebtInstallment {
   principalMinor    BigInt
   interestMinor     BigInt
   feesMinor         BigInt            @default(0)
-  balanceAfterMinor BigInt                          // remaining principal after installment
+  balanceAfterMinor BigInt                          // capital restant dû après échéance
   status            InstallmentStatus @default(SCHEDULED)
   paidMinor         BigInt            @default(0)
   paidAt            Dt?
@@ -437,14 +437,14 @@ model DebtPayment {
   id             String   @id @default(uuid())
   userId         String
   debtId         String
-  installmentId  String?                    // null = payment outside the schedule
+  installmentId  String?                    // null = paiement hors échéancier
   paidAt         Dt
   amountMinor    BigInt
   principalMinor BigInt
   interestMinor  BigInt
   feesMinor      BigInt   @default(0)
-  isExtraPayment Boolean  @default(false)   // early repayment
-  transactionId  String?                    // generated transaction
+  isExtraPayment Boolean  @default(false)   // remboursement anticipé
+  transactionId  String?                    // transaction générée
   notes          String?
   createdAt      Dt       @default(now())
   updatedAt      Dt       @updatedAt
@@ -454,11 +454,11 @@ model DebtPayment {
 }
 ```
 
-This is the richest module in the model, and that is deliberate: treating a debt as a simple recurring expense would lose the remaining principal, the cost of interest, and the effect of an early repayment — i.e. the very point of the module. Calculation rules are in `04-modules.md § G — Module debts`.
+C'est le module le plus riche du modèle, et c'est délibéré : traiter une dette comme une simple dépense récurrente ferait perdre le capital restant dû, le coût des intérêts et l'effet d'un remboursement anticipé — c'est-à-dire l'essentiel de l'intérêt du module. Les règles de calcul sont dans `04-modules.md § G — Module debts`.
 
 ---
 
-## 11. Savings goals
+## 11. Objectifs d'épargne
 
 ```prisma
 model SavingsGoal {
@@ -469,7 +469,7 @@ model SavingsGoal {
   currentMinor    BigInt     @default(0)
   currency        String     @db.Char(3)
   targetDate      Dt?
-  linkedAccountId String?                        // savings tracked on a real account
+  linkedAccountId String?                        // épargne suivie sur un compte réel
   priority        Int        @default(0)
   status          GoalStatus @default(ACTIVE)
   color           String?
@@ -508,11 +508,11 @@ model GoalContribution {
 model ImportSource {
   id              String   @id @default(uuid())
   userId          String
-  name            String                 // "Ecobank CSV statement"
+  name            String                 // « Relevé Ecobank CSV »
   fileFormat      FileFormat
-  accountId       String?                // default target account
-  columnMapping   Json                   // see 06-import-export.md
-  dateFormat      String                 // "dd/MM/yyyy"
+  accountId       String?                // compte cible par défaut
+  columnMapping   Json                   // voir 06-import-export.md
+  dateFormat      String                 // « dd/MM/yyyy »
   decimalSeparator String  @default(",")
   thousandSeparator String @default(" ")
   encoding        String   @default("utf-8")
@@ -536,7 +536,7 @@ model ImportBatch {
   sourceId       String?
   accountId      String
   fileName       String
-  fileHash       String                      // detects re-import of the same file
+  fileHash       String                      // détecte le réimport du même fichier
   fileSizeBytes  Int
   status         ImportStatus @default(PENDING)
   totalRows      Int          @default(0)
@@ -556,17 +556,17 @@ model ImportBatch {
 enum ImportStatus { PENDING  PARSING  AWAITING_REVIEW  IMPORTING  COMPLETED  FAILED  REVERTED }
 ```
 
-`fileHash` allows warning "this file was already imported on July 12" even before parsing — the first line of defense against duplicates.
+`fileHash` permet d'avertir « ce fichier a déjà été importé le 12 juillet » avant même de parser — première ligne de défense contre les doublons.
 
 ---
 
-## 13. Automatic categorization rules
+## 13. Règles de catégorisation automatique
 
 ```prisma
 model CategorizationRule {
   id          String     @id @default(uuid())
   userId      String
-  priority    Int        @default(0)      // evaluated in decreasing priority order
+  priority    Int        @default(0)      // évaluées par priorité décroissante
   matchField  MatchField @default(DESCRIPTION)
   matchType   MatchType  @default(CONTAINS)
   matchValue  String
@@ -589,27 +589,27 @@ enum MatchField { DESCRIPTION  PAYEE  EXTERNAL_REF }
 enum MatchType  { CONTAINS  EQUALS  STARTS_WITH  ENDS_WITH  REGEX }
 ```
 
-Rules apply on import and on manual entry. **A rule never overwrites a category explicitly chosen by the user.**
+Les règles s'appliquent à l'import et à la saisie manuelle. **Une règle ne réécrit jamais une catégorie choisie explicitement par l'utilisateur.**
 
 ---
 
-## 14. Audit log
+## 14. Journal d'audit
 
 ```prisma
 model AuditLog {
   id           BigInt      @id @default(autoincrement())
-  userId       String?                       // null for system actions
+  userId       String?                       // null pour les actions système
   actorType    ActorType   @default(USER)
-  action       String                        // "transaction.create", "debt.payment.record"
-  entityType   String                        // "Transaction"
+  action       String                        // « transaction.create », « debt.payment.record »
+  entityType   String                        // « Transaction »
   entityId     String?
-  before       Json?                         // state before (modified fields only)
-  after        Json?                         // state after
+  before       Json?                         // état avant (champs modifiés uniquement)
+  after        Json?                         // état après
   metadata     Json?                         // {importBatchId, ruleId, …}
   ipHash       String?
   userAgent    String?
-  requestId    String?                       // correlation with application logs
-  occurredAt   Dt          @default(now())   // timestamp of the action
+  requestId    String?                       // corrélation avec les logs applicatifs
+  occurredAt   Dt          @default(now())   // horodatage de l'action
 
   @@index([userId, occurredAt])
   @@index([entityType, entityId])
@@ -619,10 +619,10 @@ model AuditLog {
 enum ActorType { USER  SYSTEM  IMPORT  SCHEDULER }
 ```
 
-SQL constraints to add in a raw migration:
+Contraintes SQL à ajouter en migration brute :
 
 ```sql
--- Forbids any modification or deletion of an audit entry
+-- Interdit toute modification ou suppression d'une entrée d'audit
 CREATE OR REPLACE FUNCTION audit_log_immutable() RETURNS TRIGGER AS $$
 BEGIN
   RAISE EXCEPTION 'audit_log is append-only';
@@ -634,7 +634,7 @@ CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON "AuditLog"
   FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
 ```
 
-**Never write `passwordHash`, `refreshTokenHash`, or a token in `before`/`after`.** A list of excluded fields is maintained in the audit interceptor.
+**Ne jamais écrire `passwordHash`, `refreshTokenHash`, ni de token dans `before`/`after`.** Une liste de champs exclus est maintenue dans l'intercepteur d'audit.
 
 ---
 
@@ -644,7 +644,7 @@ CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON "AuditLog"
 model Notification {
   id         String           @id @default(uuid())
   userId     String
-  type       NotificationType              // determines the message to render
+  type       NotificationType              // détermine le message à rendre
   params     Json                          // { budgetName, percentUsed, dueInDays, … }
   entityType String?
   entityId   String?
@@ -663,7 +663,7 @@ enum NotificationType {
 enum Severity { INFO  WARNING  CRITICAL }
 ```
 
-**No rendered text is stored** (ADR-0009). `type` designates the message, `params` supplies the values to interpolate; rendering happens at display time, in the current language. Direct consequence: switching language also translates the notification history.
+**Aucun texte rendu n'est stocké** (ADR-0009). `type` désigne le message, `params` fournit les valeurs à interpoler ; le rendu se fait à l'affichage, dans la langue courante. Conséquence directe : changer de langue traduit aussi l'historique des notifications.
 
 ```jsonc
 // Notification BUDGET_THRESHOLD
@@ -673,18 +673,18 @@ enum Severity { INFO  WARNING  CRITICAL }
   "entityType": "BudgetPeriod",
   "entityId": "bpd_..."
 }
-// fr rendering: « Budget Alimentation : 80 % consommé, 9 jours restants »
-// en rendering: "Alimentation budget: 80% used, 9 days left"
+// rendu fr : « Budget Alimentation : 80 % consommé, 9 jours restants »
+// rendu en : "Alimentation budget: 80% used, 9 days left"
 ```
 
-Two associated constraints:
+Deux contraintes associées :
 
-- `params` can contain a name entered by the user (`budgetName`), which is not translated — it is their data. It must never contain an amount intended for a push (see RG-N5).
-- A client receiving a `type` it does not recognize (older version) displays a generic fallback label rather than a blank line.
+- `params` peut contenir un nom saisi par l'utilisateur (`budgetName`), qui n'est pas traduit — c'est sa donnée. Il ne doit jamais contenir de montant destiné à un push (voir RG-N5).
+- Un client recevant un `type` qu'il ne connaît pas (version antérieure) affiche un libellé de repli générique plutôt qu'une ligne vide.
 
 ---
 
-## 16. Balance reconciliation
+## 16. Réconciliation des soldes
 
 ```prisma
 model BalanceCheck {
@@ -701,13 +701,13 @@ model BalanceCheck {
 }
 ```
 
-Nightly task: for each account, recompute `opening balance + Σ transactions` and compare it to the stored balance. In case of a discrepancy, log it and notify (`BALANCE_MISMATCH`). Never silently correct it: a discrepancy signals a bug that needs to be seen.
+Tâche nocturne : pour chaque compte, recalculer `solde d'ouverture + Σ transactions` et comparer au solde stocké. En cas d'écart, journaliser et notifier (`BALANCE_MISMATCH`). Ne jamais corriger silencieusement : un écart signale un bug qu'il faut voir.
 
 ---
 
-## 17. Technical support tables
+## 17. Tables techniques de support
 
-These tables carry no business data but are necessary for the operation described in `05-api.md` and `07-securite-audit.md`. They do not follow the soft-delete convention.
+Ces tables ne portent pas de donnée métier mais sont nécessaires au fonctionnement décrit dans `05-api.md` et `07-securite-audit.md`. Elles ne suivent pas la convention de soft delete.
 
 ```prisma
 model NotificationPreference {
@@ -727,16 +727,16 @@ model DeviceToken {
   id            String       @id @default(uuid())
   userId        String
   platform      DevicePlatform
-  // Web Push: endpoint + browser encryption keys
+  // Web Push : endpoint + clés de chiffrement du navigateur
   endpoint      String       @unique
   p256dhKey     String?
   authKey       String?
-  // Reserved for a possible native client (ADR-0007 § Reexamination)
+  // Réservé à un éventuel client natif (ADR-0007 § Réexamen)
   nativeToken   String?
-  deviceLabel   String?                       // "Chrome on Android"
+  deviceLabel   String?                       // « Chrome sur Android »
   isActive      Boolean      @default(true)
   lastSeenAt    Dt?
-  failureCount  Int          @default(0)      // deactivation after repeated failures
+  failureCount  Int          @default(0)      // désactivation après échecs répétés
   createdAt     Dt           @default(now())
   updatedAt     Dt           @updatedAt
   revokedAt     Dt?
@@ -747,14 +747,14 @@ model DeviceToken {
 enum DevicePlatform { WEB_PUSH  IOS  ANDROID }
 
 model IdempotencyKey {
-  key            String   @id                  // provided by the client
+  key            String   @id                  // fourni par le client
   userId         String
   endpoint       String
-  requestHash    String                        // prevents replaying the key with a different body
+  requestHash    String                        // empêche de rejouer la clé avec un autre corps
   responseStatus Int
   responseBody   Json
   createdAt      Dt       @default(now())
-  expiresAt      Dt                            // creation + 24 h
+  expiresAt      Dt                            // création + 24 h
 
   @@index([userId, expiresAt])
 }
@@ -762,8 +762,8 @@ model IdempotencyKey {
 model PasswordResetToken {
   id         String   @id @default(uuid())
   userId     String
-  tokenHash  String   @unique                  // never the plaintext token
-  expiresAt  Dt                                // creation + 30 min
+  tokenHash  String   @unique                  // jamais le token en clair
+  expiresAt  Dt                                // création + 30 min
   usedAt     Dt?
   createdAt  Dt       @default(now())
 
@@ -782,7 +782,7 @@ model ExportJob {
   errorMessage String?
   startedAt   Dt?
   completedAt Dt?
-  expiresAt   Dt                               // file purged after 7 days
+  expiresAt   Dt                               // fichier purgé après 7 jours
   createdAt   Dt           @default(now())
 
   @@index([userId, createdAt])
@@ -792,19 +792,19 @@ enum ExportKind { TRANSACTIONS  FULL }
 enum JobStatus  { PENDING  RUNNING  COMPLETED  FAILED }
 ```
 
-Notes:
+Notes :
 
-- `IdempotencyKey.requestHash` is essential: replaying the same key with a different body must return a `409` error, not the original response.
-- A daily task purges expired `IdempotencyKey`, `PasswordResetToken`, and `ExportJob` entries.
-- `NotificationPreference` is created on the fly with default values: the absence of a row is equivalent to "in-app enabled, push disabled".
-- `DeviceToken` contains **no financial data**. An `endpoint` that fails 5 times in a row is set to `isActive = false`: browsers silently invalidate subscriptions, and without this counter the table would fill up with dead entries.
-- Logging out of a session revokes the `DeviceToken` entries associated with that device.
+- `IdempotencyKey.requestHash` est indispensable : rejouer la même clé avec un corps différent doit renvoyer une erreur `409`, pas la réponse d'origine.
+- Une tâche quotidienne purge `IdempotencyKey`, `PasswordResetToken` et `ExportJob` expirés.
+- `NotificationPreference` est créée à la volée avec les valeurs par défaut : l'absence de ligne équivaut à « in-app activé, push désactivé ».
+- `DeviceToken` ne contient **aucune donnée financière**. Un `endpoint` qui échoue 5 fois consécutives passe `isActive = false` : les navigateurs invalident silencieusement les abonnements, et sans ce compteur la table se remplit d'entrées mortes.
+- La déconnexion d'une session révoque les `DeviceToken` associés à cet appareil.
 
 ---
 
-## 18. Overview of relationships
+## 18. Vue d'ensemble des relations
 
-All business entities belong directly to `User` via `userId`. Arrows indicate secondary attachments.
+Toutes les entités métier appartiennent directement à `User` via `userId`. Les flèches indiquent les rattachements secondaires.
 
 ```
 User
@@ -817,9 +817,9 @@ User
 │      │  ├─ recurrenceId ──▶ RecurrenceRule
 │      │  ├─ debtPaymentId ──▶ DebtPayment
 │      │  ├─ goalContributionId ──▶ GoalContribution
-│      │  └─ transferGroupId ──▶ (other Transaction)
+│      │  └─ transferGroupId ──▶ (autre Transaction)
 │
-├── Category (self-referencing parentId, 2 levels max)
+├── Category (auto-référencée parentId, 2 niveaux max)
 ├── Budget ─────────── BudgetPeriod
 ├── Debt ─────┬─────── DebtInstallment
 │             └─────── DebtPayment ──▶ Transaction
@@ -837,11 +837,11 @@ User
 └── AuditLog
 ```
 
-## 19. Seed data
+## 19. Données de départ (seed)
 
-- `Currency` table: at minimum XOF (0), EUR (2), USD (2), NGN (2), GHS (2), XAF (0), MAD (2), CAD (2), GBP (2).
-- Fixed parity XOF/EUR = 655.957 as `PEGGED`.
-- Default system categories (`isSystem = true`, `name = null`, non-deletable, renamable). **The seed inserts keys, not labels** — translations live in the language files:
+- Table `Currency` : au minimum XOF (0), EUR (2), USD (2), NGN (2), GHS (2), XAF (0), MAD (2), CAD (2), GBP (2).
+- Parité fixe XOF/EUR = 655,957 en `PEGGED`.
+- Catégories système par défaut (`isSystem = true`, `name = null`, non supprimables, renommables). **Le seed insère des clés, pas des libellés** — les traductions vivent dans les fichiers de langue :
 
 | `i18nKey` | fr | en |
 |---|---|---|
@@ -870,4 +870,4 @@ User
 | `category.reimbursements` | Remboursements reçus | Reimbursements |
 | `category.other_income` | Divers | Other |
 
-The first sixteen are of `kind = EXPENSE`, the following eight of `kind = INCOME`.
+Les seize premières sont de `kind = EXPENSE`, les huit suivantes de `kind = INCOME`.
