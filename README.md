@@ -2,8 +2,6 @@
 
 Personal finance management application: expense tracking, budgets, debts, savings goals and forecasts.
 
-> **Status: Lot 0 (foundations) in progress.** Monorepo, `money` kernel, Prisma schema, NestJS base (audit, errors, i18n) in place. See [docs/09-roadmap.md](docs/09-roadmap.md).
-
 ---
 
 ## In one sentence
