@@ -1,7 +1,7 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { Rubik } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
@@ -12,7 +12,7 @@ import { Toaster } from '@/components/shared/Toaster';
 import type { ReactNode } from 'react';
 import '@/styles/globals.css';
 
-const rubik = Rubik({ subsets: ['latin'], variable: '--font-rubik', display: 'swap' });
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mister-wallet.com';
 
@@ -99,8 +99,13 @@ export default async function LocaleLayout({
   };
 
   return (
-    <html lang={locale} className={rubik.variable}>
+    <html lang={locale} className={jakarta.variable} suppressHydrationWarning>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+          }}
+        />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />

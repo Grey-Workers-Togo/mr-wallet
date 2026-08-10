@@ -2,16 +2,6 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
-const ICON_STYLES = [
-  'bg-primary/10 text-primary',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-sky-100 text-sky-700',
-  'bg-fuchsia-100 text-fuchsia-700',
-  'bg-orange-100 text-orange-700',
-];
 
 export function FeatureCard({
   icon: Icon,
@@ -31,25 +21,21 @@ export function FeatureCard({
       initial={reduce ? false : { opacity: 0, y: 20 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.5 }}
-      transition={{ duration: 0.6, delay: Math.min(index, 5) * 0.1, ease: [0.34, 1.56, 0.64, 1] }}
+      transition={{ duration: 0.6, delay: index * 0.12, ease: [0.34, 1.56, 0.64, 1] }}
       whileHover={reduce ? undefined : { y: -4 }}
-      className="group"
+      className="group h-full"
     >
-      <Card className="h-full items-start gap-3 p-6 text-left transition-shadow group-hover:shadow-lg">
+      <div className="flex h-full flex-col items-start gap-4 rounded-2xl border border-neutral-200 bg-white p-6 text-left shadow-sm transition-all group-hover:border-neutral-300 group-hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] dark:shadow-none dark:group-hover:border-white/20 dark:group-hover:bg-white/[0.05]">
         <motion.div
-          whileHover={reduce ? undefined : { scale: 1.1, rotate: 6 }}
+          whileHover={reduce ? undefined : { scale: 1.08 }}
           transition={{ duration: 0.3 }}
-          className={`flex size-10 items-center justify-center rounded-lg ${ICON_STYLES[index % ICON_STYLES.length]}`}
+          className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-colors dark:bg-white/[0.06] dark:text-neutral-200 dark:ring-white/10 dark:group-hover:bg-primary/15 dark:group-hover:text-primary dark:group-hover:ring-primary/25"
         >
           <Icon aria-hidden className="size-5" />
         </motion.div>
-        <CardHeader className="w-full px-0 text-left">
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="w-full px-0">
-          <CardDescription className="text-base text-neutral-600">{description}</CardDescription>
-        </CardContent>
-      </Card>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h3>
+        <p className="text-[0.95rem] leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
+      </div>
     </motion.div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 export function TimelineStep({
   step,
@@ -40,18 +39,18 @@ export function TimelineStep({
         initial={reduce ? false : { opacity: 0, scale: 0.6 }}
         animate={!reduce && inView ? { opacity: 1, scale: 1 } : undefined}
         transition={{ duration: 0.4 }}
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-base font-semibold text-primary-foreground"
+        className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-base font-semibold text-primary-foreground ring-4 ring-primary/15"
       >
         {count}
       </motion.div>
       {!isLast && (
         <span
           aria-hidden
-          className="absolute top-5 left-1/2 hidden h-px w-full bg-neutral-200 md:block"
+          className="absolute top-5 left-1/2 hidden h-px w-full bg-neutral-200 md:block dark:bg-white/10"
         />
       )}
-      <h3 className="text-lg font-medium text-neutral-900">{title}</h3>
-      <p className={cn('text-base text-neutral-600')}>{description}</p>
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h3>
+      <p className="text-[0.95rem] leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
     </div>
   );
 }
