@@ -215,8 +215,8 @@ export default function BudgetsPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -248,21 +248,21 @@ export default function BudgetsPage() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <Wallet className="size-4" />
                 {t('totalBudget')}
               </div>
-              <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                 {formatMinor(totalAllocatedMinor, displayCurrency, displayMinorUnits)}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 {t('totalSpent', { amount: formatMinor(totalSpentMinor, displayCurrency, displayMinorUnits) })}
               </p>
             </Card>
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 {exceededCount > 0 ? <AlertTriangle className="size-4 text-red-600" /> : <CheckCircle2 className="size-4 text-emerald-600" />}
                 {t('exceededBudgets')}
               </div>
@@ -273,11 +273,11 @@ export default function BudgetsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <Gauge className="size-4" />
                 {t('usageRate')}
               </div>
-              <p className="mt-2 text-2xl font-semibold text-neutral-900">{Math.round(usagePct)}%</p>
+              <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{Math.round(usagePct)}%</p>
               <p className="mt-1 text-xs text-emerald-600">
                 {t('remainingAmount', { amount: formatMinor(totalRemainingMinor, displayCurrency, displayMinorUnits) })}
               </p>
@@ -296,10 +296,10 @@ export default function BudgetsPage() {
           className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_2fr]"
         >
           <Card className="p-5">
-            <h2 className="text-lg font-medium text-neutral-900">{t('overviewTitle')}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{t('overviewSubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('overviewTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('overviewSubtitle')}</p>
             {current.length === 0 ? (
-              <p className="mt-8 text-center text-sm text-neutral-500">{t('overviewEmpty')}</p>
+              <p className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('overviewEmpty')}</p>
             ) : (
               <div className="mt-5 space-y-4">
                 {current.map(({ budget, period: budgetPeriod }) => {
@@ -309,11 +309,11 @@ export default function BudgetsPage() {
                   const exceeded = spent > allocated;
                   return (
                     <div key={budget.id}>
-                      <div className="flex items-center justify-between text-xs text-neutral-600">
+                      <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
                         <span>{budget.name}</span>
                         <span>{Math.round(pct)}%</span>
                       </div>
-                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -331,8 +331,8 @@ export default function BudgetsPage() {
           <Card className="p-5">
             {current.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center py-10 text-center">
-                <h2 className="text-lg font-medium text-neutral-900">{t('listTitle')}</h2>
-                <p className="mt-1 max-w-sm text-sm text-neutral-600">{t('listSubtitle')}</p>
+                <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('listTitle')}</h2>
+                <p className="mt-1 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">{t('listSubtitle')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -349,8 +349,8 @@ export default function BudgetsPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-medium text-neutral-900">{budget.name}</h3>
-                          <p className="text-sm text-neutral-600">{tPeriod(budget.period)}</p>
+                          <h3 className="font-medium text-neutral-900 dark:text-neutral-100">{budget.name}</h3>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">{tPeriod(budget.period)}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button type="button" variant="ghost" size="icon-sm" aria-label={t('edit')} onClick={() => openEditDialog(budget)}>
@@ -367,7 +367,7 @@ export default function BudgetsPage() {
                           </Button>
                         </div>
                       </div>
-                      <p className="mt-3 text-neutral-900">
+                      <p className="mt-3 text-neutral-900 dark:text-neutral-100">
                         {t('spent')}: {formatMinor(budgetPeriod.spentMinor, budget.currency, minorUnitsByCode[budget.currency] ?? 0)} /{' '}
                         {formatMinor(budgetPeriod.allocatedMinor, budget.currency, minorUnitsByCode[budget.currency] ?? 0)}
                       </p>

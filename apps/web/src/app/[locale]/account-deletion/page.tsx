@@ -32,20 +32,20 @@ export default async function AccountDeletionPage({
         <Logo size={32} />
       </Link>
 
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-      <p className="text-neutral-600">{t('intro')}</p>
+      <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+      <p className="text-neutral-600 dark:text-neutral-400">{t('intro')}</p>
 
       <Card className="p-6">
         <CardHeader className="p-0 pb-4">
           <CardTitle>{t('selfServiceTitle')}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 p-0 text-neutral-700">
+        <CardContent className="space-y-3 p-0 text-neutral-700 dark:text-neutral-300">
           <ol className="list-decimal space-y-1 pl-5">
             <li>{t('selfServiceStep1')}</li>
             <li>{t('selfServiceStep2')}</li>
             <li>{t('selfServiceStep3')}</li>
           </ol>
-          <p className="text-sm text-neutral-500">{t('selfServiceNote')}</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('selfServiceNote')}</p>
         </CardContent>
       </Card>
 
@@ -53,7 +53,7 @@ export default async function AccountDeletionPage({
         <CardHeader className="p-0 pb-4">
           <CardTitle>{t('noAccessTitle')}</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 text-neutral-700">
+        <CardContent className="p-0 text-neutral-700 dark:text-neutral-300">
           <p>
             {t('noAccessBody')}{' '}
             <a href="mailto:contact@mister-wallet.com" className="text-primary underline">

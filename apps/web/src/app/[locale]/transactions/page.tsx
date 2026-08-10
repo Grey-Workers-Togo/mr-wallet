@@ -329,8 +329,8 @@ export default function TransactionsPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -371,7 +371,7 @@ export default function TransactionsPage() {
         >
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400 uppercase">
                 <Scale className="size-4" />
                 {t('netBalance')}
               </div>
@@ -390,7 +390,7 @@ export default function TransactionsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400 uppercase">
                 <TrendingUp className="size-4" />
                 {t('totalIncome')}
               </div>
@@ -401,7 +401,7 @@ export default function TransactionsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400 uppercase">
                 <TrendingDown className="size-4" />
                 {t('totalExpense')}
               </div>
@@ -412,14 +412,14 @@ export default function TransactionsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+              <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400 uppercase">
                 <ArrowLeftRight className="size-4" />
                 {t('totalTransfers')}
               </div>
               <p className="mt-2 text-2xl font-semibold text-blue-600">
                 {formatMinor(summary.totalTransferMinor, displayCurrency, displayMinorUnits)}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">{t('transferCount', { count: summary.transferTransactionCount })}</p>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t('transferCount', { count: summary.transferTransactionCount })}</p>
             </Card>
           </motion.div>
         </motion.div>
@@ -429,10 +429,10 @@ export default function TransactionsPage() {
       <Card className="p-0">
         <div className="border-b p-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-medium text-neutral-900">{t('listTitle')}</h2>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('listTitle')}</h2>
             <Badge variant="secondary">{transactions?.length ?? 0}</Badge>
           </div>
-          <p className="mt-1 text-sm text-neutral-600">
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {t('listSubtitle', { visible: transactions?.length ?? 0, total })}
           </p>
         </div>
@@ -453,12 +453,12 @@ export default function TransactionsPage() {
         </div>
 
         {transactions === null && <PageLoader />}
-        {transactions?.length === 0 && <p className="p-5 text-neutral-600">{t('empty')}</p>}
+        {transactions?.length === 0 && <p className="p-5 text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
         {transactions && transactions.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b text-neutral-600">
+                <tr className="border-b text-neutral-600 dark:text-neutral-400">
                   <th className="px-5 py-3 font-medium">{t('columnDate')}</th>
                   <th className="px-5 py-3 font-medium">{t('columnLabel')}</th>
                   <th className="px-5 py-3 font-medium">{t('columnAccount')}</th>
@@ -487,9 +487,9 @@ export default function TransactionsPage() {
                       transition={{ duration: 0.25, delay: index * 0.02 }}
                       className="border-b last:border-0"
                     >
-                      <td className="px-5 py-3 text-neutral-600">{tx.occurredAt.slice(0, 10)}</td>
-                      <td className="px-5 py-3 font-medium text-neutral-900">{tx.description || '-'}</td>
-                      <td className="px-5 py-3 text-neutral-600">{account?.name ?? '-'}</td>
+                      <td className="px-5 py-3 text-neutral-600 dark:text-neutral-400">{tx.occurredAt.slice(0, 10)}</td>
+                      <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{tx.description || '-'}</td>
+                      <td className="px-5 py-3 text-neutral-600 dark:text-neutral-400">{account?.name ?? '-'}</td>
                       <td className="px-5 py-3">
                         {category ? <Badge variant="secondary">{resolveCategoryName(category)}</Badge> : <span className="text-neutral-400">-</span>}
                       </td>
@@ -532,7 +532,7 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t p-4 text-sm text-neutral-600">
+        <div className="flex items-center justify-between border-t p-4 text-sm text-neutral-600 dark:text-neutral-400">
           <span>{t('paginationRange', { from: 1, to: transactions?.length ?? 0, total })}</span>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" disabled={cursorStack.length === 0} onClick={goPrevious}>
@@ -738,7 +738,7 @@ export default function TransactionsPage() {
                 <AmountInput value={filterMin} onValueChange={setFilterMin} placeholder={t('amountMinPlaceholder')} />
                 <AmountInput value={filterMax} onValueChange={setFilterMax} placeholder={t('amountMaxPlaceholder')} />
               </div>
-              <p className="mt-1 text-xs text-neutral-500">{t('amountRangeHint')}</p>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t('amountRangeHint')}</p>
             </div>
           </div>
           <DialogFooter>
