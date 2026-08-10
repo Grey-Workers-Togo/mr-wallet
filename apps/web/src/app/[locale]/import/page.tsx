@@ -125,7 +125,7 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
 
       {error && (
         <Alert variant="destructive">
@@ -201,10 +201,10 @@ export default function ImportPage() {
                 <tbody>
                   {result.toImport.map((row) => (
                     <tr key={row.rowIndex} className="border-b border-border">
-                      <td className="py-2 pr-4 text-neutral-600">{row.candidate.occurredAt.slice(0, 10)}</td>
-                      <td className="py-2 pr-4 text-neutral-900">{row.candidate.description}</td>
-                      <td className="py-2 pr-4 text-neutral-600">{row.candidate.type}</td>
-                      <td className="py-2 text-neutral-900">{row.candidate.amountMinor}</td>
+                      <td className="py-2 pr-4 text-neutral-600 dark:text-neutral-400">{row.candidate.occurredAt.slice(0, 10)}</td>
+                      <td className="py-2 pr-4 text-neutral-900 dark:text-neutral-100">{row.candidate.description}</td>
+                      <td className="py-2 pr-4 text-neutral-600 dark:text-neutral-400">{row.candidate.type}</td>
+                      <td className="py-2 text-neutral-900 dark:text-neutral-100">{row.candidate.amountMinor}</td>
                     </tr>
                   ))}
                 </tbody>

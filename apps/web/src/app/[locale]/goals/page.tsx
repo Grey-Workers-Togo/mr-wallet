@@ -206,8 +206,8 @@ export default function GoalsPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -239,11 +239,11 @@ export default function GoalsPage() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('totalSaved')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('totalSaved')}</div>
               <p className="mt-2 text-2xl font-semibold text-emerald-600">
                 {formatMinor(totalSavedMinor, displayCurrency, displayMinorUnits)}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 {totalTargetMinor > 0n
                   ? t('pctOfTarget', { pct: totalPct, amount: formatMinor(totalTargetMinor, displayCurrency, displayMinorUnits) })
                   : t('noTargetDefined')}
@@ -252,7 +252,7 @@ export default function GoalsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('goalsInProgress')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('goalsInProgress')}</div>
               <p className="mt-2 flex items-center gap-2 text-2xl font-semibold text-blue-600">
                 <Target className="size-5" />
                 {goalsInProgress}
@@ -261,7 +261,7 @@ export default function GoalsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('goalsReached')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('goalsReached')}</div>
               <p className="mt-2 flex items-center gap-2 text-2xl font-semibold text-emerald-600">
                 <CheckCircle2 className="size-5" />
                 {goalsReached}
@@ -276,8 +276,8 @@ export default function GoalsPage() {
       {goals?.length === 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
           <Card className="flex flex-col items-center justify-center gap-1 py-12 text-center">
-            <h2 className="text-lg font-medium text-neutral-900">{t('emptyTitle')}</h2>
-            <p className="text-sm text-neutral-600">{t('emptySubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('emptyTitle')}</h2>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('emptySubtitle')}</p>
           </Card>
         </motion.div>
       )}
@@ -304,16 +304,16 @@ export default function GoalsPage() {
                         <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                           <PiggyBank className="size-4" />
                         </div>
-                        <h3 className="font-medium text-neutral-900">{goal.name}</h3>
+                        <h3 className="font-medium text-neutral-900 dark:text-neutral-100">{goal.name}</h3>
                       </div>
                       <Badge variant="secondary">{tStatus(goal.status)}</Badge>
                     </div>
                     <div className="px-5 pt-4">
-                      <div className="flex items-center justify-between text-sm text-neutral-600">
+                      <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
                         <span>{t('progress')}</span>
                         <span>{Math.round(pct)}%</span>
                       </div>
-                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -321,11 +321,11 @@ export default function GoalsPage() {
                           className={`h-full rounded-full ${goal.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-blue-500'}`}
                         />
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-sm text-neutral-600">
+                      <div className="mt-2 flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
                         <span>{formatMinor(current, goal.currency, minorUnits)}</span>
                         <span>{formatMinor(target, goal.currency, minorUnits)}</span>
                       </div>
-                      <p className="mt-2 text-xs text-neutral-500">
+                      <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                         {goal.targetDate
                           ? t('remainingWithDate', {
                               amount: formatMinor(remaining, goal.currency, minorUnits),

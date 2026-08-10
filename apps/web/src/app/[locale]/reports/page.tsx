@@ -91,7 +91,7 @@ function ChartTooltip({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.12 }}
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs whitespace-nowrap text-neutral-800 shadow-lg"
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#141418] px-2.5 py-1.5 text-xs whitespace-nowrap text-neutral-800 dark:text-neutral-200 shadow-lg"
           style={{ left: `${xPct}%`, top: `${yPct}%`, marginTop: -8 }}
         >
           {children}
@@ -524,7 +524,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }}>
-        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
       </motion.div>
 
       {error && (
@@ -540,7 +540,7 @@ export default function ReportsPage() {
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <Banknote className="size-4 text-emerald-600" />
               {t('totalIncome')}
             </div>
@@ -549,7 +549,7 @@ export default function ReportsPage() {
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <Banknote className="size-4 text-red-600" />
               {t('totalExpense')}
             </div>
@@ -558,7 +558,7 @@ export default function ReportsPage() {
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <PiggyBank className="size-4 text-amber-600" />
               {t('netSavings')}
             </div>
@@ -569,30 +569,30 @@ export default function ReportsPage() {
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <Gauge className="size-4 text-blue-600" />
               {t('avgDailySpend')}
             </div>
-            <p className="mt-2 text-xl font-semibold text-neutral-900">{formatMinor(avgDailySpendMinor, currency, minorUnits)}</p>
+            <p className="mt-2 text-xl font-semibold text-neutral-900 dark:text-neutral-100">{formatMinor(avgDailySpendMinor, currency, minorUnits)}</p>
           </Card>
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <Flame className="size-4 text-orange-600" />
               {t('streakTitle')}
             </div>
-            <p className="mt-2 text-xl font-semibold text-neutral-900">{t('streakCurrent', { days: streak?.current ?? 0 })}</p>
-            <p className="mt-1 text-xs text-neutral-500">{t('streakLongest', { days: streak?.longest ?? 0 })}</p>
+            <p className="mt-2 text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('streakCurrent', { days: streak?.current ?? 0 })}</p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t('streakLongest', { days: streak?.longest ?? 0 })}</p>
           </Card>
         </motion.div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
         <Card className="p-5">
-          <h2 className="text-lg font-medium text-neutral-900">{t('recommendationsTitle')}</h2>
-          <p className="mt-1 text-sm text-neutral-600">{t('recommendationsSubtitle')}</p>
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-neutral-800">
+          <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('recommendationsTitle')}</h2>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('recommendationsSubtitle')}</p>
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-neutral-800 dark:text-neutral-200">
             {topCategory ? (
               <span className="flex items-center gap-2">
                 <TrendingDown className="size-4 text-amber-600" />
@@ -616,8 +616,8 @@ export default function ReportsPage() {
       >
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <h2 className="text-lg font-medium text-neutral-900">{t('incomeVsExpenseTitle')}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{t('incomeVsExpenseSubtitle', { months: monthLabels.length })}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('incomeVsExpenseTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('incomeVsExpenseSubtitle', { months: monthLabels.length })}</p>
             <div className="mt-4">
               <LineChart
                 months={monthLabels}
@@ -629,7 +629,7 @@ export default function ReportsPage() {
                 labelB={t('expenseLabel')}
                 unit={currency}
               />
-              <div className="mt-2 flex items-center justify-center gap-4 text-xs text-neutral-600">
+              <div className="mt-2 flex items-center justify-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
                 <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-green-500" />{t('incomeLabel')}</span>
                 <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" />{t('expenseLabel')}</span>
               </div>
@@ -639,8 +639,8 @@ export default function ReportsPage() {
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <h2 className="text-lg font-medium text-neutral-900">{t('savingsTrendTitle')}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{t('savingsTrendSubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('savingsTrendTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('savingsTrendSubtitle')}</p>
             <div className="mt-4">
               <AreaChart months={monthLabels} values={netValues} color="#0ea5e9" label={t('netSavings')} unit={currency} />
               <p className="mt-1 text-center text-xs text-neutral-400">{t('clickToSeeTransactions')}</p>
@@ -657,10 +657,10 @@ export default function ReportsPage() {
       >
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <h2 className="text-lg font-medium text-neutral-900">{t('categoryBreakdownTitle')}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{t('categoryBreakdownSubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('categoryBreakdownTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('categoryBreakdownSubtitle')}</p>
             {donutItems.length === 0 ? (
-              <p className="mt-8 text-center text-sm text-neutral-500">{t('categoryBreakdownEmpty')}</p>
+              <p className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('categoryBreakdownEmpty')}</p>
             ) : (
               <>
                 <div className="mt-4">
@@ -670,11 +670,11 @@ export default function ReportsPage() {
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   {donutItems.map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 text-neutral-600">
+                      <span className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                         <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                         {item.label}
                       </span>
-                      <span className="font-medium text-neutral-900">{compactMinor(BigInt(Math.round(item.value)), minorUnits)} {currency}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{compactMinor(BigInt(Math.round(item.value)), minorUnits)} {currency}</span>
                     </div>
                   ))}
                 </div>
@@ -684,8 +684,8 @@ export default function ReportsPage() {
         </motion.div>
         <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
           <Card className="p-5">
-            <h2 className="text-lg font-medium text-neutral-900">{t('transactionFrequencyTitle')}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{t('transactionFrequencySubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('transactionFrequencyTitle')}</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('transactionFrequencySubtitle')}</p>
             <div className="mt-4">
               <BarChart labels={weekdayLabels} values={weekdayCounts} color="#38bdf8" unit={t('transactionsUnit')} />
             </div>
@@ -695,10 +695,10 @@ export default function ReportsPage() {
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
         <Card className="p-5">
-          <h2 className="text-lg font-medium text-neutral-900">{t('budgetUsageTitle')}</h2>
-          <p className="mt-1 text-sm text-neutral-600">{t('budgetUsageSubtitle')}</p>
+          <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('budgetUsageTitle')}</h2>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('budgetUsageSubtitle')}</p>
           {!budgets || budgets.length === 0 ? (
-            <p className="mt-8 text-center text-sm text-neutral-500">{t('budgetUsageEmpty')}</p>
+            <p className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('budgetUsageEmpty')}</p>
           ) : (
             <div className="mt-4 space-y-4">
               {budgets.map((b) => {
@@ -708,13 +708,13 @@ export default function ReportsPage() {
                 const exceeded = spent > allocated;
                 return (
                   <div key={b.budgetId}>
-                    <div className="flex items-center justify-between text-sm text-neutral-600">
+                    <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
                       <span>{b.budgetName}</span>
                       <span>
                         {formatMinor(spent, currency, minorUnits)} / {formatMinor(allocated, currency, minorUnits)}
                       </span>
                     </div>
-                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}

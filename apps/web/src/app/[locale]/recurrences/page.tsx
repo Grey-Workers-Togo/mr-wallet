@@ -243,8 +243,8 @@ export default function RecurrencesPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -280,8 +280,8 @@ export default function RecurrencesPage() {
             <div className="flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
               <Repeat className="size-5" />
             </div>
-            <h2 className="text-lg font-medium text-neutral-900">{t('emptyTitle')}</h2>
-            <p className="max-w-sm text-sm text-neutral-600">{t('emptySubtitle')}</p>
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('emptyTitle')}</h2>
+            <p className="max-w-sm text-sm text-neutral-600 dark:text-neutral-400">{t('emptySubtitle')}</p>
             <Button type="button" className="mt-2" onClick={openCreateDialog}>
               {t('createFirst')}
             </Button>
@@ -294,7 +294,7 @@ export default function RecurrencesPage() {
           <Card className="overflow-x-auto p-0">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b text-neutral-600">
+                <tr className="border-b text-neutral-600 dark:text-neutral-400">
                   <th className="px-5 py-3 font-medium">{t('columnName')}</th>
                   <th className="px-5 py-3 font-medium">{t('columnAccount')}</th>
                   <th className="px-5 py-3 font-medium">{t('columnFrequency')}</th>
@@ -318,11 +318,11 @@ export default function RecurrencesPage() {
                         className="border-b last:border-0"
                       >
                         <td className="px-5 py-3">
-                          <div className="font-medium text-neutral-900">{rule.name}</div>
+                          <div className="font-medium text-neutral-900 dark:text-neutral-100">{rule.name}</div>
                           <Badge variant="secondary" className="mt-1">{tType(rule.type)}</Badge>
                         </td>
-                        <td className="px-5 py-3 text-neutral-600">{accountsById[rule.accountId]?.name ?? '-'}</td>
-                        <td className="px-5 py-3 text-neutral-600">{tFrequency(rule.frequency)}</td>
+                        <td className="px-5 py-3 text-neutral-600 dark:text-neutral-400">{accountsById[rule.accountId]?.name ?? '-'}</td>
+                        <td className="px-5 py-3 text-neutral-600 dark:text-neutral-400">{tFrequency(rule.frequency)}</td>
                         <td className={`px-5 py-3 font-semibold ${isNegative ? 'text-red-600' : 'text-emerald-600'}`}>
                           {isNegative ? '-' : '+'}
                           {formatMinor(rule.amountMinor, rule.currency, minorUnits)}
@@ -357,7 +357,7 @@ export default function RecurrencesPage() {
           animate="show"
           className="space-y-2"
         >
-          <h2 className="text-lg font-medium text-neutral-900">{t('upcoming')}</h2>
+          <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('upcoming')}</h2>
           <Card className="divide-y p-0">
             {upcoming.map((item) => (
               <motion.div
@@ -366,7 +366,7 @@ export default function RecurrencesPage() {
                 transition={{ duration: 0.25 }}
                 className="flex items-center justify-between gap-2 p-4"
               >
-                <p className="text-neutral-900">
+                <p className="text-neutral-900 dark:text-neutral-100">
                   {item.name} — {item.occurrenceDate.slice(0, 10)}
                 </p>
                 <Button

@@ -266,8 +266,8 @@ export default function DebtsPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -299,7 +299,7 @@ export default function DebtsPage() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('owedToMe')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('owedToMe')}</div>
               <p className="mt-2 text-2xl font-semibold text-emerald-600">
                 +{formatMinor(owedToMeMinor, displayCurrency, displayMinorUnits)}
               </p>
@@ -307,7 +307,7 @@ export default function DebtsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('owedByMe')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('owedByMe')}</div>
               <p className="mt-2 text-2xl font-semibold text-red-600">
                 -{formatMinor(owedByMeMinor, displayCurrency, displayMinorUnits)}
               </p>
@@ -315,7 +315,7 @@ export default function DebtsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="text-sm text-neutral-600">{t('netBalance')}</div>
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">{t('netBalance')}</div>
               <p className={`mt-2 text-2xl font-semibold ${netMinor < 0n ? 'text-red-600' : 'text-emerald-600'}`}>
                 {netMinor < 0n ? '-' : '+'}
                 {formatMinor(netMinor < 0n ? -netMinor : netMinor, displayCurrency, displayMinorUnits)}
@@ -326,7 +326,7 @@ export default function DebtsPage() {
       )}
 
       {debts === null && <PageLoader />}
-      {debts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
+      {debts?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
       {debts && debts.length > 0 && (
         <motion.div
           variants={staggerContainer}
@@ -345,7 +345,7 @@ export default function DebtsPage() {
             >
             <Card className="p-5">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="text-lg font-medium text-neutral-900">{debt.name}</h3>
+                <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{debt.name}</h3>
                 <div className="flex gap-2">
                   <Button type="button" variant="secondary" size="sm" onClick={() => openEditDialog(debt)}>
                     <Pencil className="size-3.5" />
@@ -361,8 +361,8 @@ export default function DebtsPage() {
                   </Button>
                 </div>
               </div>
-              <p className="mt-1 text-sm text-neutral-600">{tDirection(debt.direction)}</p>
-              <p className="mt-3 text-neutral-900">
+              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{tDirection(debt.direction)}</p>
+              <p className="mt-3 text-neutral-900 dark:text-neutral-100">
                 {t('outstanding')}: {debt.outstandingPrincipalMinor} {debt.currency}
               </p>
               <Button

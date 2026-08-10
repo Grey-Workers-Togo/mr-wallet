@@ -35,8 +35,8 @@ export default function ForecastPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-      <p className="text-neutral-600">{t('disclaimer')}</p>
+      <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+      <p className="text-neutral-600 dark:text-neutral-400">{t('disclaimer')}</p>
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{tError(error as never)}</AlertDescription>
@@ -57,8 +57,8 @@ export default function ForecastPage() {
             <div className="space-y-2">
               {forecast.months.map((m) => (
                 <div key={m.month} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0">
-                  <span className="text-neutral-900">{m.month}</span>
-                  <span className="text-neutral-900">
+                  <span className="text-neutral-900 dark:text-neutral-100">{m.month}</span>
+                  <span className="text-neutral-900 dark:text-neutral-100">
                     {m.balanceMinor} {forecast.currency}
                     {m.cashWarning && <strong className="ml-2 text-warning">— {t('cashWarning')}</strong>}
                   </span>

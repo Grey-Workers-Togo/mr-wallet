@@ -26,6 +26,8 @@ import { apiClient } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/shared/Logo';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { UserMenu } from '@/components/shared/UserMenu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,7 +89,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-current={active ? 'page' : undefined}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-            active ? 'bg-primary text-white' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
+            active
+              ? 'bg-primary text-white'
+              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white',
           )}
         >
           <Icon size={20} aria-hidden="true" />
@@ -104,21 +108,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-bg-secondary md:flex">
+    <div className="min-h-screen bg-neutral-50 md:flex dark:bg-[#0a0a0d]">
       {/* Desktop sidebar */}
       <aside
         aria-label={t('sidebar')}
-        className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-white"
+        className="hidden bg-white md:flex md:w-64 md:flex-col md:border-r md:border-border dark:bg-[#0a0a0d]"
       >
         <div className="flex h-16 items-center gap-2 px-6">
-          <Logo />
+          <Logo textClassName="text-neutral-900 dark:text-white" />
         </div>
         {navList}
         <div className="p-3">
           <button
             type="button"
             onClick={() => setLogoutConfirmOpen(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
           >
             <LogOut size={20} aria-hidden="true" />
             {t('logout')}
@@ -126,13 +130,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="flex h-16 items-center border-b border-border bg-white px-4 md:hidden">
-        <Logo />
-      </header>
-
       {mobileOpen && (
-        <div className="fixed inset-x-0 bottom-16 z-40 flex max-h-[70vh] flex-col overflow-y-auto border-t border-border bg-white pb-3 shadow-lg md:hidden">
+        <div className="fixed inset-x-0 bottom-16 z-40 flex max-h-[70vh] flex-col overflow-y-auto border-t border-border bg-white pb-3 shadow-lg md:hidden dark:bg-[#0a0a0d]">
           <nav aria-label={t('mainNavigation')} className="flex-1 space-y-1 px-3 pt-3">
             {renderNavItems(SECONDARY_NAV_ITEMS)}
           </nav>
@@ -140,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setLogoutConfirmOpen(true)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               <LogOut size={20} aria-hidden="true" />
               {t('logout')}
@@ -152,7 +151,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile bottom tab bar */}
       <nav
         aria-label={t('mainNavigation')}
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-white md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-white md:hidden dark:bg-[#0a0a0d]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {PRIMARY_NAV_ITEMS.map(({ href, icon: Icon, key }) => {
@@ -165,7 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
-                active ? 'text-primary' : 'text-neutral-500',
+                active ? 'text-primary' : 'text-neutral-500 dark:text-neutral-400',
               )}
             >
               <Icon size={22} aria-hidden="true" />
@@ -178,17 +177,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           onClick={() => setMobileOpen((v) => !v)}
           aria-expanded={mobileOpen}
           aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
-          className={cn('flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium', mobileOpen ? 'text-primary' : 'text-neutral-500')}
+          className={cn(
+            'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
+            mobileOpen ? 'text-primary' : 'text-neutral-500 dark:text-neutral-400',
+          )}
         >
           {mobileOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           {t('more')}
         </button>
       </nav>
 
-      <div className="flex-1">
-        <main className="mx-auto max-w-5xl px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8">
-          {children}
-        </main>
+      <div className="flex flex-1 flex-col">
+        {/* Top header */}
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-white/80 px-4 backdrop-blur-md md:justify-end md:px-8 dark:bg-[#0a0a0d]/80">
+          <div className="md:hidden">
+            <Logo textClassName="text-neutral-900 dark:text-white" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <UserMenu onLogout={() => setLogoutConfirmOpen(true)} />
+          </div>
+        </header>
+
+        <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8">{children}</main>
       </div>
 
       <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>

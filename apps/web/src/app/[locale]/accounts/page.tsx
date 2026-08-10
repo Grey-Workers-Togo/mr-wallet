@@ -183,8 +183,8 @@ export default function AccountsPage() {
         className="flex items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
         </div>
         <Button type="button" onClick={openCreateDialog} className="hidden md:inline-flex">
           <Plus className="size-4" />
@@ -225,19 +225,19 @@ export default function AccountsPage() {
         >
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <Wallet className="size-4" />
                 {t('totalBalance')}
               </div>
               <p className="mt-2 text-2xl font-semibold text-emerald-600">
                 {formatMinor(totalBalanceMinor.toString(), displayCurrency, displayMinorUnits)}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">{t('accountsCount', { count: accounts.length })}</p>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t('accountsCount', { count: accounts.length })}</p>
             </Card>
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <TrendingUp className="size-4" />
                 {t('totalEntries')}
               </div>
@@ -248,7 +248,7 @@ export default function AccountsPage() {
           </motion.div>
           <motion.div variants={fadeUp} transition={{ duration: 0.3 }}>
             <Card className="p-5">
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <TrendingDown className="size-4" />
                 {t('totalExits')}
               </div>
@@ -261,13 +261,13 @@ export default function AccountsPage() {
       )}
 
       {accounts === null && <PageLoader />}
-      {accounts?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
+      {accounts?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
       {accounts && accounts.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
           <Card className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b text-neutral-600">
+              <tr className="border-b text-neutral-600 dark:text-neutral-400">
                 <th className="px-5 py-3 font-medium">{t('columnName')}</th>
                 <th className="px-5 py-3 font-medium">{t('columnType')}</th>
                 <th className="px-5 py-3 font-medium">{t('columnCurrency')}</th>
@@ -292,15 +292,15 @@ export default function AccountsPage() {
                     className="border-b last:border-0"
                   >
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-2 font-medium text-neutral-900">
-                        <Wallet className="size-4 text-neutral-500" />
+                      <div className="flex items-center gap-2 font-medium text-neutral-900 dark:text-neutral-100">
+                        <Wallet className="size-4 text-neutral-500 dark:text-neutral-400" />
                         {account.name}
                       </div>
                     </td>
                     <td className="px-5 py-3">
                       <Badge variant="secondary">{tType(account.type)}</Badge>
                     </td>
-                    <td className="px-5 py-3 text-neutral-600">{account.currency}</td>
+                    <td className="px-5 py-3 text-neutral-600 dark:text-neutral-400">{account.currency}</td>
                     <td className="px-5 py-3 text-emerald-600">
                       +{formatMinor(account.entriesMinor ?? '0', account.currency, minorUnits)}
                     </td>
