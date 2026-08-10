@@ -2,11 +2,13 @@ import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/
 
 export function FAQItem({ value, question, answer }: { value: string; question: string; answer: string }) {
   return (
-    <AccordionItem value={value} className="px-1">
-      <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">
+    <AccordionItem value={value} className="border-neutral-200 px-1 dark:border-white/10">
+      <AccordionTrigger className="py-4 text-base font-medium text-neutral-900 hover:no-underline dark:text-neutral-100">
         {question}
       </AccordionTrigger>
-      <AccordionContent className="text-base text-neutral-600">{answer}</AccordionContent>
+      <AccordionContent className="text-[0.95rem] leading-relaxed text-neutral-600 dark:text-neutral-400">
+        {answer}
+      </AccordionContent>
     </AccordionItem>
   );
 }

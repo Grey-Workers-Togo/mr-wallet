@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -44,52 +44,63 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg-secondary px-4">
-      <Card className="w-full max-w-sm p-8 space-y-6">
-        <CardHeader className="p-0 space-y-2">
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('subtitle')}</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email" required>{t('emailLabel')}</Label>
-              <Input
-                id="email"
-                type="email"
-                pattern={EMAIL_PATTERN}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="password" required>{t('passwordLabel')}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{tError(error as never)}</AlertDescription>
-              </Alert>
-            )}
-            <Button type="submit" className="w-full" loading={submitting}>
-              {submitting ? t('submitting') : t('submit')}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-neutral-600">
-            {t('noAccount')}{' '}
-            <Link href="/register" className="font-medium text-primary hover:underline">
-              {t('registerLink')}
+    <AuthLayout>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{t('title')}</h1>
+        <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" required>
+            {t('emailLabel')}
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            className="h-11"
+            pattern={EMAIL_PATTERN}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="password" required>
+              {t('passwordLabel')}
+            </Label>
+            <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              {t('forgotPassword')}
             </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            className="h-11"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{tError(error as never)}</AlertDescription>
+          </Alert>
+        )}
+        <Button type="submit" size="lg" className="h-11 w-full" loading={submitting}>
+          {submitting ? t('submitting') : t('submit')}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400">
+        {t('noAccount')}{' '}
+        <Link href="/register" className="font-medium text-primary hover:underline">
+          {t('registerLink')}
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

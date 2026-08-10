@@ -6,6 +6,7 @@
     "submit": "Submit",
     "loading": "Loading...",
     "switchLanguage": "Switch language",
+    "switchTheme": "Switch theme",
     "createSuccessTitle": "Created successfully",
     "updateSuccessTitle": "Updated successfully",
     "deleteSuccessTitle": "Deleted successfully",
@@ -20,6 +21,14 @@
   "home": {
     "login": "Log in",
     "register": "Sign up",
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
     "seo": {
       "title": "Mr Wallet — Personal Budget & Expense Tracker",
       "description": "Track accounts, budgets, expenses, debts, goals and recurring payments in one simple app. Multi-currency support (FCFA, EUR, USD). Free to start."
@@ -180,7 +189,8 @@
     },
     "footer": {
       "description": "Personal finance, kept simple.",
-      "linksTitle": "Links",
+      "productTitle": "Product",
+      "linksTitle": "Resources",
       "docs": "Docs",
       "github": "GitHub",
       "contact": "Contact",
@@ -232,7 +242,14 @@
       "submit": "Sign up",
       "submitting": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
-      "loginLink": "Log in"
+      "loginLink": "Log in",
+      "passwordStrength": {
+        "label": "Strength",
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      }
     },
     "login": {
       "title": "Log in",
@@ -242,7 +259,18 @@
       "submit": "Log in",
       "submitting": "Logging in...",
       "noAccount": "No account yet?",
-      "registerLink": "Sign up"
+      "registerLink": "Sign up",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email to receive a reset link.",
+      "emailLabel": "Email address",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "backToLogin": "Back to login",
+      "successTitle": "Check your inbox",
+      "successBody": "If an account exists for this address, you'll receive a reset link within a few minutes."
     }
   },
   "accounts": {

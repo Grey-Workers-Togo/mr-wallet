@@ -23,7 +23,7 @@ export function ScreenshotsGallery({ alt }: { alt: string }) {
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
           whileHover={reduce ? undefined : { y: -6 }}
-          className="w-40 shrink-0 snap-center overflow-hidden rounded-3xl border-4 border-neutral-900 shadow-xl md:w-48"
+          className="w-40 shrink-0 snap-center overflow-hidden rounded-[2rem] bg-neutral-50 shadow-xl ring-1 ring-neutral-200 md:w-48 dark:bg-white/[0.03] dark:shadow-2xl dark:ring-white/10"
         >
           <Image
             src={shot.src}
