@@ -1,93 +1,91 @@
 # Budget Manager
 
-Application de gestion de finances personnelles : suivi des dépenses, budgets, dettes, objectifs d'épargne et prévisions.
-
-> **Statut : Lot 0 (fondations) en cours d'implémentation.** Monorepo, kernel `money`, schéma Prisma, socle NestJS (audit, erreurs, i18n) posés. Voir [docs/09-roadmap.md](docs/09-roadmap.md).
+Personal finance management application: expense tracking, budgets, debts, savings goals and forecasts.
 
 ---
 
-## En une phrase
+## In one sentence
 
-Une application web permettant à un particulier de centraliser ses comptes, d'importer ses relevés (CSV/Excel), de piloter ses budgets et ses dettes, de projeter sa situation financière future, et d'exporter ses données — le tout avec un journal d'audit horodaté de toutes les actions.
+A web application allowing an individual to centralize their accounts, import their statements (CSV/Excel), manage their budgets and debts, project their future financial situation, and export their data — all with a timestamped audit log of every action.
 
-## Principes directeurs
+## Guiding principles
 
-| Principe | Ce que ça implique |
+| Principle | What it implies |
 |---|---|
-| **Modularité** | Le back-end est un monolithe modulaire. Chaque domaine métier (comptes, transactions, budgets, dettes…) est un module isolé, avec ses entités, ses règles et son API. |
-| **Pas de connecteurs tiers en V1** | Les données entrent par import CSV/Excel ou saisie manuelle. Aucune dépendance à des API externes (Gozem, Deliveroo, banques) qui nécessiteraient des partenariats commerciaux. |
-| **Traçabilité totale** | Toute action utilisateur ou système est horodatée et journalisée dans un journal d'audit immuable. |
-| **Pas d'offline-first** | Application connectée classique (client/serveur). Pas de moteur de synchronisation ni de résolution de conflits. Un cache de **consultation** hors ligne, en lecture seule, est prévu — l'écriture exige toujours le réseau. |
-| **Un seul front, web et mobile** | PWA installable et responsive-first plutôt qu'une application native. L'API reste agnostique du client. |
-| **Bilingue de bout en bout** | Français et anglais dès le MVP. La base et l'API ne contiennent aucun texte lisible par un humain : uniquement des identifiants stables et des paramètres. |
-| **Devises découplées** | La conversion multi-devises est un module autonome, avec des taux saisissables manuellement. Aucun abonnement à une API payante n'est requis pour faire tourner l'application. |
-| **Exactitude monétaire** | Aucun montant n'est jamais stocké ou calculé en nombre flottant. |
+| **Modularity** | The back-end is a modular monolith. Each business domain (accounts, transactions, budgets, debts…) is an isolated module, with its own entities, rules and API. |
+| **No third-party connectors in V1** | Data enters via CSV/Excel import or manual entry. No dependency on external APIs (Gozem, Deliveroo, banks) that would require commercial partnerships. |
+| **Full traceability** | Every user or system action is timestamped and logged in an immutable audit log. |
+| **No offline-first** | Classic connected application (client/server). No synchronization engine or conflict resolution. A read-only offline **consultation** cache is planned — writing always requires the network. |
+| **A single front-end, web and mobile** | Installable, responsive-first PWA rather than a native application. The API remains client-agnostic. |
+| **Bilingual end to end** | French and English from the MVP onward. The database and API contain no human-readable text: only stable identifiers and parameters. |
+| **Decoupled currencies** | Multi-currency conversion is a standalone module, with manually enterable rates. No subscription to a paid API is required to run the application. |
+| **Monetary accuracy** | No amount is ever stored or calculated as a floating-point number. |
 
 ## Documentation
 
-Lire dans cet ordre :
+Read in this order:
 
-| # | Document | Contenu |
+| # | Document | Content |
 |---|---|---|
-| 00 | [Glossaire](docs/00-glossaire.md) | Vocabulaire métier commun |
-| 01 | [Vision & périmètre](docs/01-vision-perimetre.md) | Objectifs, non-objectifs, personas, cas d'usage |
-| 02 | [Architecture](docs/02-architecture.md) | Stack, découpage modulaire, règles de dépendance, événements |
-| 03 | [Modèle de données](docs/03-modele-donnees.md) | Schéma complet, entités, relations, contraintes |
-| 04 | [Specs par module](docs/04-modules.md) | Règles métier détaillées de chaque module |
-| 05 | [API REST](docs/05-api.md) | Endpoints, conventions, erreurs, pagination |
-| 06 | [Import & export](docs/06-import-export.md) | Pipeline d'import CSV/Excel, mapping, dédoublonnage, exports |
-| 07 | [Sécurité & audit](docs/07-securite-audit.md) | Authentification, chiffrement, journal d'audit, données personnelles |
-| 08 | [Devises](docs/08-devises.md) | Modèle multi-devises et stratégie de taux de change |
-| 09 | [Roadmap](docs/09-roadmap.md) | Découpage MVP / V2 / V3, ordre d'implémentation |
-| 10 | [Conventions de dev](docs/10-conventions-dev.md) | Style de code, tests, arborescence, CI, definition of done |
+| 00 | [Glossary](docs/00-glossaire.md) | Common business vocabulary |
+| 01 | [Vision & scope](docs/01-vision-perimetre.md) | Objectives, non-objectives, personas, use cases |
+| 02 | [Architecture](docs/02-architecture.md) | Stack, modular breakdown, dependency rules, events |
+| 03 | [Data model](docs/03-modele-donnees.md) | Full schema, entities, relations, constraints |
+| 04 | [Specs by module](docs/04-modules.md) | Detailed business rules for each module |
+| 05 | [REST API](docs/05-api.md) | Endpoints, conventions, errors, pagination |
+| 06 | [Import & export](docs/06-import-export.md) | CSV/Excel import pipeline, mapping, deduplication, exports |
+| 07 | [Security & audit](docs/07-securite-audit.md) | Authentication, encryption, audit log, personal data |
+| 08 | [Currencies](docs/08-devises.md) | Multi-currency model and exchange rate strategy |
+| 09 | [Roadmap](docs/09-roadmap.md) | MVP / V2 / V3 breakdown, implementation order |
+| 10 | [Dev conventions](docs/10-conventions-dev.md) | Code style, tests, folder structure, CI, definition of done |
 
-Les décisions d'architecture déjà tranchées sont consignées dans [docs/adr/](docs/adr/) :
+The architecture decisions already made are recorded in [docs/adr/](docs/adr/):
 
-| ADR | Décision |
+| ADR | Decision |
 |---|---|
-| [0001](docs/adr/0001-monolithe-modulaire.md) | Monolithe modulaire plutôt que microservices |
-| [0002](docs/adr/0002-montants-en-unites-mineures.md) | Montants en entiers d'unités mineures |
-| [0003](docs/adr/0003-solde-stocke.md) | Solde de compte stocké, avec réconciliation |
-| [0004](docs/adr/0004-abandon-offline-first.md) | Abandon de l'offline-first |
-| [0005](docs/adr/0005-pas-de-connecteurs-tiers.md) | Ingestion par import de fichier, pas par connecteurs tiers |
-| [0006](docs/adr/0006-devises-sans-api-externe.md) | Multi-devises sans dépendance à une API de taux |
-| [0007](docs/adr/0007-strategie-mobile-pwa.md) | Mobile par PWA installable, pas d'application native |
-| [0008](docs/adr/0008-cache-lecture-seule.md) | Cache de consultation hors ligne, en lecture seule |
-| [0009](docs/adr/0009-internationalisation.md) | Français et anglais dès le MVP, aucune chaîne rendue en base |
+| [0001](docs/adr/0001-monolithe-modulaire.md) | Modular monolith rather than microservices |
+| [0002](docs/adr/0002-montants-en-unites-mineures.md) | Amounts as integers in minor units |
+| [0003](docs/adr/0003-solde-stocke.md) | Stored account balance, with reconciliation |
+| [0004](docs/adr/0004-abandon-offline-first.md) | Abandoning offline-first |
+| [0005](docs/adr/0005-pas-de-connecteurs-tiers.md) | Ingestion by file import, not third-party connectors |
+| [0006](docs/adr/0006-devises-sans-api-externe.md) | Multi-currency without dependency on a rate API |
+| [0007](docs/adr/0007-strategie-mobile-pwa.md) | Mobile via installable PWA, no native application |
+| [0008](docs/adr/0008-cache-lecture-seule.md) | Read-only offline consultation cache |
+| [0009](docs/adr/0009-internationalisation.md) | French and English from the MVP onward, no string rendered in the database |
 
-`CLAUDE.md` contient les instructions destinées à l'agent d'implémentation.
+`CLAUDE.md` contains the instructions intended for the implementation agent.
 
-## Stack retenue
+## Stack chosen
 
-- **Back-end** : NestJS (TypeScript), PostgreSQL 16, Prisma ORM
-- **Front-end** : Next.js (App Router), TypeScript, TailwindCSS, TanStack Query — responsive-first, installable en PWA
-- **Auth** : access token JWT en mémoire, refresh token rotatif en cookie `HttpOnly`, Argon2id
-- **Push** : Web Push API (VAPID), sans service tiers propriétaire
-- **Tests** : Vitest (unitaire), Supertest (API), Playwright (e2e)
+- **Back-end**: NestJS (TypeScript), PostgreSQL 16, Prisma ORM
+- **Front-end**: Next.js (App Router), TypeScript, TailwindCSS, TanStack Query — responsive-first, installable as a PWA
+- **Auth**: JWT access token in memory, rotating refresh token in an `HttpOnly` cookie, Argon2id
+- **Push**: Web Push API (VAPID), without a proprietary third-party service
+- **Tests**: Vitest (unit), Supertest (API), Playwright (e2e)
 
-Les justifications de ces choix sont dans [docs/02-architecture.md](docs/02-architecture.md).
+The justifications for these choices are in [docs/02-architecture.md](docs/02-architecture.md).
 
-## Portée fonctionnelle du MVP
+## MVP functional scope
 
-Comptes multiples · Transactions & catégories · Transactions récurrentes · Budgets avec alertes · Dettes avec échéancier · Objectifs d'épargne · Import CSV/Excel avec dédoublonnage · Export CSV/Excel · Tableau de bord patrimoine net · Prévisions de trésorerie · Rapports & graphiques · Journal d'audit.
+Multiple accounts · Transactions & categories · Recurring transactions · Budgets with alerts · Debts with repayment schedule · Savings goals · CSV/Excel import with deduplication · CSV/Excel export · Net worth dashboard · Cash flow forecasts · Reports & charts · Audit log.
 
-Le détail du séquencement est dans [docs/09-roadmap.md](docs/09-roadmap.md).
+The sequencing details are in [docs/09-roadmap.md](docs/09-roadmap.md).
 
-## Démarrage local
+## Local startup
 
 ```bash
 npm install
 docker compose up -d postgres
-cp apps/api/.env.example apps/api/.env   # ajuster JWT_SECRET / IP_HASH_SALT
+cp apps/api/.env.example apps/api/.env   # adjust JWT_SECRET / IP_HASH_SALT
 
-# Première migration (génère apps/api/prisma/migrations/) :
+# First migration (generates apps/api/prisma/migrations/):
 npm run prisma:migrate -w apps/api -- --name init
-# Puis, une fois seulement, ajouter le trigger d'immuabilité de AuditLog :
+# Then, once only, add the AuditLog immutability trigger:
 # npm run prisma:migrate -w apps/api -- --create-only --name add_audit_log_immutability
-# et coller le contenu de apps/api/prisma/sql/audit_log_immutable.sql dans le migration.sql généré.
+# and paste the content of apps/api/prisma/sql/audit_log_immutable.sql into the generated migration.sql.
 
-npm run dev:api   # NestJS sur :3000
-npm run dev:web   # Next.js sur :3000 (adapter les ports en local)
-npm run test       # money kernel + tests unitaires
+npm run dev:api   # NestJS on :3000
+npm run dev:web   # Next.js on :3000 (adjust ports locally)
+npm run test       # money kernel + unit tests
 npm run lint && npm run typecheck
 ```

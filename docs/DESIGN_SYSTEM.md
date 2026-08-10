@@ -1,30 +1,30 @@
 # Mr Wallet — Design System
 
-Guide pour Claude Code. Toutes les interfaces suivent ces normes.
+Guide for Claude Code. All interfaces follow these standards.
 
 ---
 
-## 1. Palette de couleurs
+## 1. Color palette
 
 ```css
-/* Brand — accent principal */
+/* Brand — main accent */
 --color-primary: #0F766E        /* teal-800 */
 --color-primary-light: #14B8A6  /* teal-500 */
 --color-primary-dark: #0D4F47   /* teal-900 */
 
-/* Neutrals — texte, arrière-plans */
---color-neutral-50: #F9FAFB    /* gris très clair, backgrounds */
---color-neutral-100: #F3F4F6   /* gris clair, borders */
+/* Neutrals — text, backgrounds */
+--color-neutral-50: #F9FAFB    /* very light gray, backgrounds */
+--color-neutral-100: #F3F4F6   /* light gray, borders */
 --color-neutral-200: #E5E7EB
 --color-neutral-400: #9CA3AF
---color-neutral-600: #4B5563   /* texte secondaire */
---color-neutral-900: #111827   /* texte principal */
+--color-neutral-600: #4B5563   /* secondary text */
+--color-neutral-900: #111827   /* primary text */
 
-/* Sémantiques */
---color-success: #10B981  /* vert */
+/* Semantics */
+--color-success: #10B981  /* green */
 --color-warning: #F59E0B  /* orange */
---color-error: #EF4444   /* rouge */
---color-info: #3B82F6    /* bleu */
+--color-error: #EF4444   /* red */
+--color-info: #3B82F6    /* blue */
 
 /* Surfaces */
 --color-bg-primary: #FFFFFF
@@ -32,11 +32,11 @@ Guide pour Claude Code. Toutes les interfaces suivent ces normes.
 --color-border: #E5E7EB
 ```
 
-**Rationale** : Teal pour la confiance financière, neutral gris pour la lisibilité, contrastes WCAG AA.
+**Rationale**: Teal for financial trust, gray neutrals for readability, WCAG AA contrasts.
 
 ---
 
-## 2. Typographie
+## 2. Typography
 
 ```css
 /* Font stack */
@@ -63,75 +63,75 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 --leading-relaxed: 1.625;
 ```
 
-**Heading hierarchy** :
-- `h1` : text-3xl / semibold (titres pages)
-- `h2` : text-2xl / semibold (sections)
-- `h3` : text-lg / medium (sous-sections)
-- `body` : text-base / normal
-- `caption` : text-sm / normal (labels, aides)
+**Heading hierarchy**:
+- `h1`: text-3xl / semibold (page titles)
+- `h2`: text-2xl / semibold (sections)
+- `h3`: text-lg / medium (subsections)
+- `body`: text-base / normal
+- `caption`: text-sm / normal (labels, helper text)
 
 ---
 
-## 3. Espacements (scale 4px)
+## 3. Spacing (4px scale)
 
 ```
 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px
 ```
 
-**Utilisation** :
-- Padding interne des composants : 12px ou 16px
-- Margin entre composants : 16px ou 24px
-- Gap dans les grilles : 16px
-- Espaces verticaux (section) : 24px ou 32px
+**Usage**:
+- Internal component padding: 12px or 16px
+- Margin between components: 16px or 24px
+- Gap in grids: 16px
+- Vertical spacing (section): 24px or 32px
 
 ---
 
-## 4. Composants shadcn/ui à créer
+## 4. shadcn/ui components to create
 
-**Priorité 1 (foundation)** :
+**Priority 1 (foundation)**:
 - [ ] `Button` (primary, secondary, ghost, size variants)
-- [ ] `Input` (text, number, avec labels et helper text)
+- [ ] `Input` (text, number, with labels and helper text)
 - [ ] `Select` (dropdown)
-- [ ] `Card` (container basique avec padding)
-- [ ] `Badge` (pour tags, status)
+- [ ] `Card` (basic container with padding)
+- [ ] `Badge` (for tags, status)
 
-**Priorité 2 (formulaires)** :
+**Priority 2 (forms)**:
 - [ ] `Form` (wrapper + context)
 - [ ] `Checkbox`
 - [ ] `Radio`
 - [ ] `Textarea`
 - [ ] `DatePicker`
 
-**Priorité 3 (navigation & layout)** :
-- [ ] `Navigation` (top bar avec logo, user menu)
-- [ ] `Sidebar` (menu latéral, Lot 7)
+**Priority 3 (navigation & layout)**:
+- [ ] `Navigation` (top bar with logo, user menu)
+- [ ] `Sidebar` (side menu, Lot 7)
 - [ ] `Breadcrumb`
 
-**Priorité 4 (données)** :
-- [ ] `Table` (pagination, tri)
+**Priority 4 (data)**:
+- [ ] `Table` (pagination, sorting)
 - [ ] `Dialog` (modals)
 - [ ] `Toast` (notifications)
-- [ ] `Tabs` (onglets)
+- [ ] `Tabs`
 
-**Priorité 5 (données avancées)** :
-- [ ] `Sheet` (drawer latéral)
+**Priority 5 (advanced data)**:
+- [ ] `Sheet` (side drawer)
 - [ ] `Popover`
 - [ ] `Tooltip`
 
 ---
 
-## 5. Conventions de nommage
+## 5. Naming conventions
 
-### Dossiers
+### Folders
 
 ```
 apps/web/
 ├── app/                    # App Router pages
-│   ├── (auth)/            # Group non-authentifiée
+│   ├── (auth)/            # Unauthenticated group
 │   │   ├── login/
 │   │   ├── register/
 │   │   └── layout.tsx
-│   ├── (authenticated)/   # Group authentifiée (middleware)
+│   ├── (authenticated)/   # Authenticated group (middleware)
 │   │   ├── dashboard/
 │   │   ├── accounts/
 │   │   ├── transactions/
@@ -143,44 +143,44 @@ apps/web/
 │   │   └── layout.tsx     # ProtectedLayout + Sidebar
 │   └── layout.tsx         # Root
 ├── components/
-│   ├── ui/                # shadcn/ui customisés
+│   ├── ui/                # Customized shadcn/ui
 │   │   ├── button.tsx
 │   │   ├── input.tsx
 │   │   ├── card.tsx
 │   │   └── ...
-│   ├── forms/             # Formulaires métier (Login, CreateTransaction, etc.)
+│   ├── forms/             # Business forms (Login, CreateTransaction, etc.)
 │   ├── layouts/           # Layouts (Navigation, Sidebar)
-│   └── shared/            # Réutilisables (Logo, Avatar, etc.)
+│   └── shared/            # Reusable (Logo, Avatar, etc.)
 ├── lib/
-│   ├── api.ts             # Client API (TanStack Query)
+│   ├── api.ts             # API client (TanStack Query)
 │   ├── money.ts           # Money formatting
 │   ├── dates.ts           # Date formatting (Intl)
 │   └── cn.ts              # classNamess utility
 ├── hooks/                 # Custom hooks (useAuth, useBudget, etc.)
 ├── messages/              # i18n (fr.json, en.json)
 └── styles/
-    ├── globals.css        # Reset + variables CSS
-    └── theme.css          # Couleurs, typo
+    ├── globals.css        # Reset + CSS variables
+    └── theme.css           # Colors, typography
 ```
 
-### Fichiers de composants
+### Component files
 
 ```
-components/ui/button.tsx          (shadcn/ui généré)
-components/forms/LoginForm.tsx     (form métier)
-components/TransactionCard.tsx     (composant réutilisable)
+components/ui/button.tsx          (generated shadcn/ui)
+components/forms/LoginForm.tsx     (business form)
+components/TransactionCard.tsx     (reusable component)
 ```
 
-**Noms** :
-- Composants métier : PascalCase (ex: `TransactionTable.tsx`)
-- Composants UI : kebab-case en imports, PascalCase en définition (convention shadcn)
-- Hooks : camelCase (ex: `useAuth.ts`)
-- Utilitaires : camelCase (ex: `formatMoney.ts`)
+**Names**:
+- Business components: PascalCase (e.g. `TransactionTable.tsx`)
+- UI components: kebab-case in imports, PascalCase in definition (shadcn convention)
+- Hooks: camelCase (e.g. `useAuth.ts`)
+- Utilities: camelCase (e.g. `formatMoney.ts`)
 
-### Classes Tailwind
+### Tailwind classes
 
 ```tsx
-// ✅ Bon : semantic classes via cn()
+// ✅ Good: semantic classes via cn()
 <button className={cn(
   "inline-flex items-center justify-center",
   "px-4 py-2 rounded-lg",
@@ -191,73 +191,73 @@ components/TransactionCard.tsx     (composant réutilisable)
   Click
 </button>
 
-// ❌ Mauvais : classes arbitraires
+// ❌ Bad: arbitrary classes
 <button className="w-[100px] bg-[#0F766E]">
 ```
 
-**Principe** : Classes Tailwind standard + variables CSS pour les couleurs.
+**Principle**: Standard Tailwind classes + CSS variables for colors.
 
 ---
 
-## 6. Ordre d'implémentation des écrans
+## 6. Screen implementation order
 
-### Lot 1 (Identité)
+### Lot 1 (Identity)
 
-1. **`/auth/register`** — formulaire : email, password, baseCurrency, timezone
-2. **`/auth/login`** — formulaire : email, password
-3. **`/me`** — profil : affichage, édition, logout
-4. **`/accounts`** — liste + création de comptes
+1. **`/auth/register`** — form: email, password, baseCurrency, timezone
+2. **`/auth/login`** — form: email, password
+3. **`/me`** — profile: display, edit, logout
+4. **`/accounts`** — list + account creation
 
-**Composants créés** : Button, Input, Card, Form, Select, Navigation
+**Components created**: Button, Input, Card, Form, Select, Navigation
 
 ### Lot 2 (Transactions)
 
-5. **`/transactions`** — liste paginée, filtres, saisie rapide
-6. **`/transactions/:id`** — détail + édition
-7. **Sidebar** — menu latéral permanent
+5. **`/transactions`** — paginated list, filters, quick entry
+6. **`/transactions/:id`** — detail + edit
+7. **Sidebar** — permanent side menu
 
-**Composants créés** : Table, DatePicker, Badge, Sidebar
+**Components created**: Table, DatePicker, Badge, Sidebar
 
 ### Lot 3 (Import/Export)
 
-8. **`/import`** — assistant 4 étapes
-9. **Menu export** — bouton dans les pages de données
+8. **`/import`** — 4-step wizard
+9. **Export menu** — button on data pages
 
-**Composants créés** : Tabs, Dialog, Progress
+**Components created**: Tabs, Dialog, Progress
 
 ### Lot 4 (Budgets)
 
-10. **`/budgets`** — jauges, liste, création
-11. **`/recurrences`** — liste, création
+10. **`/budgets`** — gauges, list, creation
+11. **`/recurrences`** — list, creation
 
-**Composants créés** : ProgressBar, Toast (notifications)
+**Components created**: ProgressBar, Toast (notifications)
 
-### Lot 5 (Dettes)
+### Lot 5 (Debts)
 
-12. **`/debts`** — liste, détail, échéancier, paiement
+12. **`/debts`** — list, detail, schedule, payment
 
-**Composants créés** : Accordion (pour écheancier déroulable)
+**Components created**: Accordion (for collapsible schedule)
 
-### Lot 6 (Rapports)
+### Lot 6 (Reports)
 
-13. **`/dashboard`** — vue d'ensemble (patrimoine net, cashflow)
-14. **`/reports`** — rapports détaillés avec graphiques
-15. **`/forecast`** — prévisions de trésorerie
+13. **`/dashboard`** — overview (net worth, cashflow)
+14. **`/reports`** — detailed reports with charts
+15. **`/forecast`** — cash flow forecasts
 
-**Composants créés** : Recharts intégré, Tooltip
+**Components created**: Recharts integrated, Tooltip
 
-### Lot 7 (Finition)
+### Lot 7 (Polish)
 
-16. **`/settings`** — préférences complètes
-17. **Audit log** — frise chronologique (voir détail entité)
+16. **`/settings`** — full preferences
+17. **Audit log** — timeline (see entity detail)
 18. **PWA** — manifest, service worker
-19. **Dark mode** (optionnel V2)
+19. **Dark mode** (optional V2)
 
 ---
 
 ## 7. Responsive design
 
-**Breakpoints Tailwind** (défaut Next.js + Tailwind) :
+**Tailwind breakpoints** (Next.js + Tailwind default):
 
 ```
 sm: 640px
@@ -267,36 +267,36 @@ xl: 1280px
 2xl: 1536px
 ```
 
-**Stratégie mobile-first** :
+**Mobile-first strategy**:
 
 ```tsx
-// ✅ Bon : mobile par défaut, tablette+
+// ✅ Good: mobile by default, tablet+
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
   {items.map(item => (...))}
 </div>
 
-// ❌ Mauvais : desktop par défaut, shrink sur mobile
+// ❌ Bad: desktop by default, shrink on mobile
 <div className="flex flex-col-reverse md:flex-row">
 ```
 
-**Cibles tactiles** : ≥ 44px × 44px sur mobile.
+**Touch targets**: ≥ 44px × 44px on mobile.
 
 ---
 
-## 8. Accessibilité minimale
+## 8. Minimal accessibility
 
-Chaque écran doit passer `axe` DevTools sans erreurs critiques :
+Every screen must pass `axe` DevTools with no critical errors:
 
-- Labels explicites sur tous les inputs (`htmlFor` sur `<label>`)
-- Images ont `alt`
-- Boutons ont du texte ou `aria-label`
-- Contrastes WCAG AA
-- Navigation au clavier (Tab, Enter, Esc)
-- Landmarks : `<main>`, `<nav>`, `<aside>`
+- Explicit labels on all inputs (`htmlFor` on `<label>`)
+- Images have `alt`
+- Buttons have text or `aria-label`
+- WCAG AA contrasts
+- Keyboard navigation (Tab, Enter, Esc)
+- Landmarks: `<main>`, `<nav>`, `<aside>`
 
 ---
 
-## 9. Exemple : écran de connexion
+## 9. Example: login screen
 
 ```tsx
 // apps/web/app/(auth)/login/page.tsx
@@ -338,7 +338,7 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Appel API via TanStack Query
+    // API call via TanStack Query
     // ...
   };
 
@@ -371,24 +371,24 @@ export function LoginForm() {
 
 ---
 
-## 10. Checklist par écran
+## 10. Per-screen checklist
 
-Avant de clore un écran :
+Before closing a screen:
 
 - [ ] Responsive (mobile, tablet, desktop)
-- [ ] Traductions (FR + EN)
-- [ ] Accessibilité (axe clean, clavier naviguable)
-- [ ] États de chargement et d'erreur
-- [ ] Formulaires validés côté client (Zod)
-- [ ] Tests e2e (Playwright, happy path)
+- [ ] Translations (FR + EN)
+- [ ] Accessibility (axe clean, keyboard navigable)
+- [ ] Loading and error states
+- [ ] Client-side validated forms (Zod)
+- [ ] E2E tests (Playwright, happy path)
 
 ---
 
-## Ressources
+## Resources
 
-- **Tailwind** : https://tailwindcss.com/docs
-- **shadcn/ui** : https://ui.shadcn.com
-- **Next.js** : https://nextjs.org/docs
-- **next-intl** : https://next-intl-docs.vercel.app
-- **TanStack Query** : https://tanstack.com/query/latest
-- **Recharts** : https://recharts.org
+- **Tailwind**: https://tailwindcss.com/docs
+- **shadcn/ui**: https://ui.shadcn.com
+- **Next.js**: https://nextjs.org/docs
+- **next-intl**: https://next-intl-docs.vercel.app
+- **TanStack Query**: https://tanstack.com/query/latest
+- **Recharts**: https://recharts.org

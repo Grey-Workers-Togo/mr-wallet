@@ -1,32 +1,32 @@
-# 05 — API REST
+# 05 — REST API
 
-Base : `/api/v1`. Format : JSON. Authentification : `Authorization: Bearer <access_token>` sur tous les endpoints, à la seule exception de `/auth/refresh` qui s'appuie sur un cookie `HttpOnly` (voir `07-securite-audit.md § 2`).
+Base: `/api/v1`. Format: JSON. Authentication: `Authorization: Bearer <access_token>` on all endpoints, with the sole exception of `/auth/refresh`, which relies on an `HttpOnly` cookie (see `07-securite-audit.md § 2`).
 
 ---
 
-## 1. Conventions générales
+## 1. General conventions
 
-### Montants
+### Amounts
 
-Un montant est toujours transporté sous forme d'objet, jamais de nombre nu :
+An amount is always carried as an object, never a bare number:
 
 ```json
 { "amountMinor": "125000", "currency": "XOF" }
 ```
 
-`amountMinor` est une **chaîne** en JSON (les `BigInt` dépassent `Number.MAX_SAFE_INTEGER` et JSON n'a pas d'entier arbitraire). Le client le convertit en `BigInt`.
+`amountMinor` is a **string** in JSON (`BigInt` values exceed `Number.MAX_SAFE_INTEGER` and JSON has no arbitrary-precision integer type). The client converts it to `BigInt`.
 
 ### Dates
 
-ISO 8601 avec fuseau : `2026-07-28T00:00:00+01:00`. Les dates métier (`occurredAt`) acceptent aussi une date seule (`2026-07-28`), interprétée à minuit dans le fuseau de l'utilisateur.
+ISO 8601 with timezone: `2026-07-28T00:00:00+01:00`. Business dates (`occurredAt`) also accept a date-only value (`2026-07-28`), interpreted as midnight in the user's timezone.
 
-### Nommage
+### Naming
 
-`camelCase` pour les champs, `kebab-case` pour les segments d'URL, pluriel pour les collections.
+`camelCase` for fields, `kebab-case` for URL segments, plural for collections.
 
 ### Pagination
 
-Curseur (pas d'offset — l'offset dérive quand des lignes sont insérées entre deux pages) :
+Cursor-based (no offset — offset drifts when rows are inserted between two pages):
 
 ```
 GET /transactions?limit=50&cursor=eyJpZCI6...
@@ -40,29 +40,29 @@ GET /transactions?limit=50&cursor=eyJpZCI6...
 }
 ```
 
-`totalCount` n'est renvoyé que si `?withCount=true` (le comptage coûte cher sur les grandes tables).
+`totalCount` is only returned if `?withCount=true` (counting is expensive on large tables).
 
-### Tri et filtres
+### Sorting and filters
 
 ```
-?sort=-occurredAt,amountMinor          # - = descendant
+?sort=-occurredAt,amountMinor          # - = descending
 ?occurredAt[gte]=2026-01-01&occurredAt[lt]=2026-02-01
-?accountId=<uuid>&accountId=<uuid>     # répétition = OU
+?accountId=<uuid>&accountId=<uuid>     # repetition = OR
 ?type=EXPENSE&categoryId=<uuid>
-?q=texte libre                         # recherche sur description + payee
+?q=free text                           # search on description + payee
 ```
 
-### Idempotence
+### Idempotency
 
-Les `POST` de création acceptent `Idempotency-Key: <uuid>`. Une clé rejouée dans les 24 h renvoie la réponse d'origine (même code HTTP, même corps) sans réexécuter.
+Creation `POST` requests accept `Idempotency-Key: <uuid>`. A key replayed within 24 h returns the original response (same HTTP code, same body) without re-executing.
 
-### Langue
+### Language
 
-L'API ne renvoie **aucun texte destiné à être lu par un humain** (ADR-0009). Elle transporte des codes stables et des paramètres ; la traduction est faite par le client.
+The API returns **no text intended for human reading** (ADR-0009). It carries stable codes and parameters; translation is done by the client.
 
-L'en-tête `Accept-Language` n'est donc utilisé que dans deux cas : l'envoi d'une notification push (rendue serveur, RG-N10) et les emails transactionnels (V2). Quand il est présent, il prime sur `user.locale` pour la requête en cours — cela permet à un utilisateur de changer de langue avant d'avoir enregistré sa préférence. Valeurs reconnues : `fr`, `en`. Toute autre valeur retombe sur `user.locale`, puis sur `fr`.
+The `Accept-Language` header is therefore only used in two cases: sending a push notification (rendered server-side, RG-N10) and transactional emails (V2). When present, it takes precedence over `user.locale` for the current request — this lets a user change language before their preference has been saved. Recognized values: `fr`, `en`. Any other value falls back to `user.locale`, then to `fr`.
 
-### Erreurs
+### Errors
 
 ```json
 {
@@ -75,112 +75,112 @@ L'en-tête `Accept-Language` n'est donc utilisé que dans deux cas : l'envoi d'u
 }
 ```
 
-| Champ | Rôle |
+| Field | Role |
 |---|---|
-| `code` | Identifiant stable, en anglais, `SCREAMING_SNAKE_CASE`. C'est le contrat : il ne change pas sans version d'API. |
-| `params` | Valeurs à interpoler dans le message traduit. Jamais de phrase, uniquement des données. |
-| `details` | Erreurs par champ, chacune avec son propre `code`. Utilisé pour l'affichage au niveau du formulaire. |
-| `requestId` | Corrélation avec `AuditLog.requestId` et les logs applicatifs. |
+| `code` | Stable identifier, in English, `SCREAMING_SNAKE_CASE`. This is the contract: it does not change without an API version bump. |
+| `params` | Values to interpolate into the translated message. Never a sentence, only data. |
+| `details` | Per-field errors, each with its own `code`. Used for form-level display. |
+| `requestId` | Correlation with `AuditLog.requestId` and application logs. |
 
-Le client possède un dictionnaire `code → message` par langue. Un `code` inconnu (client non à jour) affiche un message générique accompagné du `requestId`, jamais une chaîne vide ni le code brut.
+The client holds a `code → message` dictionary per language. An unknown `code` (outdated client) displays a generic message along with the `requestId`, never an empty string nor the raw code.
 
-> **Pourquoi pas de `message` serveur** : au-delà de l'i18n, une erreur identifiée par un code est testable et interprétable par un client, ce qu'une phrase en langue naturelle n'est pas. Un message serveur finit toujours par être comparé par sous-chaîne quelque part.
+> **Why no server-side `message`**: beyond i18n, an error identified by a code is testable and interpretable by a client, which a natural-language sentence is not. A server message always ends up being compared by substring somewhere.
 
-| Code HTTP | Usage |
+| HTTP Code | Usage |
 |---|---|
-| 400 | Corps invalide, règle métier violée |
-| 401 | Token absent, expiré ou invalide |
-| 403 | Ressource appartenant à un autre utilisateur (**renvoyer 404 en réalité**, voir note) |
-| 404 | Ressource inexistante |
-| 409 | Conflit (doublon, budget chevauchant, version obsolète) |
-| 422 | Validation de schéma échouée |
-| 429 | Quota dépassé |
-| 500 | Erreur serveur (jamais de détail technique dans la réponse) |
+| 400 | Invalid body, business rule violated |
+| 401 | Token missing, expired, or invalid |
+| 403 | Resource belonging to another user (**actually returns 404**, see note) |
+| 404 | Resource does not exist |
+| 409 | Conflict (duplicate, overlapping budget, stale version) |
+| 422 | Schema validation failed |
+| 429 | Quota exceeded |
+| 500 | Server error (never technical detail in the response) |
 
-> **Note de sécurité** : une ressource appartenant à un autre utilisateur renvoie **404**, pas 403. Un 403 confirmerait l'existence de l'identifiant et permettrait l'énumération.
+> **Security note**: a resource belonging to another user returns **404**, not 403. A 403 would confirm the identifier's existence and enable enumeration.
 
-### En-têtes de réponse standard
+### Standard response headers
 
-`X-Request-Id` (corrélation avec l'audit), `RateLimit-*`.
-
----
-
-## 2. Authentification
-
-| Méthode | Chemin | Description |
-|---|---|---|
-| POST | `/auth/register` | Inscription. Corps : email, password, baseCurrency, timezone. |
-| POST | `/auth/login` | Retourne `accessToken` (15 min) dans le corps. Le refresh token (30 j) est posé en cookie `HttpOnly; Secure; SameSite=Strict`, scopé sur `/api/v1/auth/refresh` — il n'apparaît jamais dans le corps de la réponse. |
-| POST | `/auth/refresh` | Rotation du refresh token. L'ancien est immédiatement révoqué. Seul endpoint acceptant le cookie ; exige un en-tête anti-CSRF. |
-| POST | `/auth/logout` | Révoque la session courante. |
-| POST | `/auth/logout-all` | Révoque toutes les sessions. |
-| GET | `/auth/sessions` | Liste des sessions actives (appareil, dernière utilisation). |
-| DELETE | `/auth/sessions/:id` | Révoque une session précise. |
-| POST | `/auth/password/forgot` | Envoi d'un lien de réinitialisation. Réponse toujours 204, même si l'email n'existe pas. |
-| POST | `/auth/password/reset` | Réinitialisation par token. Révoque toutes les sessions. |
-| POST | `/auth/password/change` | Changement avec mot de passe actuel. |
+`X-Request-Id` (correlation with audit), `RateLimit-*`.
 
 ---
 
-## 3. Utilisateur
+## 2. Authentication
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/me` | Profil et préférences |
-| PATCH | `/me` | Modifier displayName, locale, timezone, weekStartsOn, monthStartDay |
-| PATCH | `/me/base-currency` | Changer la devise de référence (opération lourde : recalcule les rapports en cache) |
-| DELETE | `/me` | Suppression du compte (soft delete + purge planifiée à J+30) |
-| GET | `/me/export` | Déclenche un export intégral |
+| POST | `/auth/register` | Registration. Body: email, password, baseCurrency, timezone. |
+| POST | `/auth/login` | Returns `accessToken` (15 min) in the body. The refresh token (30 d) is set as an `HttpOnly; Secure; SameSite=Strict` cookie, scoped to `/api/v1/auth/refresh` — it never appears in the response body. |
+| POST | `/auth/refresh` | Refresh token rotation. The old one is immediately revoked. The only endpoint accepting the cookie; requires an anti-CSRF header. |
+| POST | `/auth/logout` | Revokes the current session. |
+| POST | `/auth/logout-all` | Revokes all sessions. |
+| GET | `/auth/sessions` | List of active sessions (device, last used). |
+| DELETE | `/auth/sessions/:id` | Revokes a specific session. |
+| POST | `/auth/password/forgot` | Sends a reset link. Response is always 204, even if the email doesn't exist. |
+| POST | `/auth/password/reset` | Reset via token. Revokes all sessions. |
+| POST | `/auth/password/change` | Change with current password. |
 
 ---
 
-## 4. Comptes
+## 3. User
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/accounts` | Liste. `?includeArchived=true` |
-| POST | `/accounts` | Création |
-| GET | `/accounts/:id` | Détail avec solde courant |
-| PATCH | `/accounts/:id` | Modification (devise refusée si transactions existantes) |
-| DELETE | `/accounts/:id` | Soft delete, refusé si transactions |
-| POST | `/accounts/:id/archive` | Archivage |
-| POST | `/accounts/:id/unarchive` | Désarchivage |
-| GET | `/accounts/:id/balance-history` | Série temporelle du solde. `?from&to&granularity=day\|week\|month` |
-| POST | `/accounts/:id/reconcile` | Compare solde stocké et solde calculé, retourne l'écart |
+| GET | `/me` | Profile and preferences |
+| PATCH | `/me` | Modify displayName, locale, timezone, weekStartsOn, monthStartDay |
+| PATCH | `/me/base-currency` | Change the reference currency (heavy operation: recomputes cached reports) |
+| DELETE | `/me` | Account deletion (soft delete + scheduled purge at D+30) |
+| GET | `/me/export` | Triggers a full export |
 
 ---
 
-## 5. Catégories et tags
+## 4. Accounts
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/categories` | Arbre complet. `?kind=EXPENSE`. Chaque nœud renvoie `i18nKey` **et** `name` ; le client résout l'affichage (RG-C6) |
-| POST | `/categories` | Création |
+| GET | `/accounts` | List. `?includeArchived=true` |
+| POST | `/accounts` | Creation |
+| GET | `/accounts/:id` | Detail with current balance |
+| PATCH | `/accounts/:id` | Modification (currency change refused if transactions exist) |
+| DELETE | `/accounts/:id` | Soft delete, refused if transactions exist |
+| POST | `/accounts/:id/archive` | Archiving |
+| POST | `/accounts/:id/unarchive` | Unarchiving |
+| GET | `/accounts/:id/balance-history` | Balance time series. `?from&to&granularity=day\|week\|month` |
+| POST | `/accounts/:id/reconcile` | Compares stored balance and computed balance, returns the discrepancy |
+
+---
+
+## 5. Categories and tags
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/categories` | Full tree. `?kind=EXPENSE`. Each node returns `i18nKey` **and** `name`; the client resolves the display (RG-C6) |
+| POST | `/categories` | Creation |
 | PATCH | `/categories/:id` | Modification |
-| DELETE | `/categories/:id?reassignTo=<uuid>` | Suppression avec réaffectation obligatoire si utilisée |
-| POST | `/categories/reorder` | Réordonnancement en lot |
-| GET / POST | `/tags` | Liste / création |
-| PATCH / DELETE | `/tags/:id` | Modification / suppression |
+| DELETE | `/categories/:id?reassignTo=<uuid>` | Deletion with mandatory reassignment if in use |
+| POST | `/categories/reorder` | Bulk reordering |
+| GET / POST | `/tags` | List / creation |
+| PATCH / DELETE | `/tags/:id` | Modification / deletion |
 
 ---
 
 ## 6. Transactions
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/transactions` | Liste paginée et filtrée (voir § filtres) |
-| POST | `/transactions` | Création d'une dépense ou d'un revenu |
-| POST | `/transactions/transfer` | Création d'un transfert (crée les deux jambes) |
-| GET | `/transactions/:id` | Détail |
+| GET | `/transactions` | Paginated, filtered list (see § filters) |
+| POST | `/transactions` | Creation of an expense or income |
+| POST | `/transactions/transfer` | Creation of a transfer (creates both legs) |
+| GET | `/transactions/:id` | Detail |
 | PATCH | `/transactions/:id` | Modification |
 | DELETE | `/transactions/:id` | Soft delete |
-| POST | `/transactions/bulk` | Création en lot (max 500) |
-| PATCH | `/transactions/bulk` | Modification en lot (recatégorisation, ajout de tags) |
-| DELETE | `/transactions/bulk` | Suppression en lot |
-| GET | `/transactions/search` | Recherche avancée (corps de filtres complexe en query ou POST) |
-| GET | `/transactions/summary` | Agrégats sur le filtre courant : total, moyenne, nombre, par catégorie |
+| POST | `/transactions/bulk` | Bulk creation (max 500) |
+| PATCH | `/transactions/bulk` | Bulk modification (recategorization, adding tags) |
+| DELETE | `/transactions/bulk` | Bulk deletion |
+| GET | `/transactions/search` | Advanced search (complex filter body as query or POST) |
+| GET | `/transactions/summary` | Aggregates on the current filter: total, average, count, by category |
 
-### Exemple — création
+### Example — creation
 
 ```http
 POST /api/v1/transactions
@@ -200,7 +200,7 @@ Idempotency-Key: 9f1c...
 }
 ```
 
-### Exemple — transfert
+### Example — transfer
 
 ```http
 POST /api/v1/transactions/transfer
@@ -215,36 +215,36 @@ POST /api/v1/transactions/transfer
 }
 ```
 
-Devises différentes : ajouter `toAmountMinor` et `toCurrency`.
+Different currencies: add `toAmountMinor` and `toCurrency`.
 
 ---
 
-## 7. Récurrences
+## 7. Recurrences
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET / POST | `/recurrences` | Liste / création |
-| GET / PATCH / DELETE | `/recurrences/:id` | Détail / modification / suppression |
-| GET | `/recurrences/:id/occurrences?until=` | Occurrences projetées |
-| POST | `/recurrences/:id/skip` | Ignorer la prochaine occurrence. Corps : `{ "occurrenceDate": "..." }` |
-| POST | `/recurrences/:id/materialize` | Créer maintenant la transaction de l'occurrence en attente |
-| GET | `/recurrences/suggestions` | Récurrences détectées dans l'historique, non encore créées |
-| GET | `/recurrences/upcoming?days=30` | Toutes les échéances à venir, tous types confondus |
+| GET / POST | `/recurrences` | List / creation |
+| GET / PATCH / DELETE | `/recurrences/:id` | Detail / modification / deletion |
+| GET | `/recurrences/:id/occurrences?until=` | Projected occurrences |
+| POST | `/recurrences/:id/skip` | Skip the next occurrence. Body: `{ "occurrenceDate": "..." }` |
+| POST | `/recurrences/:id/materialize` | Create the pending occurrence's transaction now |
+| GET | `/recurrences/suggestions` | Recurrences detected in the history, not yet created |
+| GET | `/recurrences/upcoming?days=30` | All upcoming due dates, across all types |
 
 ---
 
 ## 8. Budgets
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET / POST | `/budgets` | Liste / création |
-| GET / PATCH / DELETE | `/budgets/:id` | Détail / modification / suppression |
-| GET | `/budgets/current` | Période en cours de tous les budgets, avec consommation et reste |
-| GET | `/budgets/:id/periods` | Historique des périodes |
-| GET | `/budgets/:id/periods/:periodId` | Détail d'une période avec les transactions qui la composent |
-| POST | `/budgets/from-template` | Création depuis un modèle. Corps : `{ "template": "FIFTY_THIRTY_TWENTY", "monthlyIncomeMinor": "..." }` |
+| GET / POST | `/budgets` | List / creation |
+| GET / PATCH / DELETE | `/budgets/:id` | Detail / modification / deletion |
+| GET | `/budgets/current` | Current period of all budgets, with consumption and remainder |
+| GET | `/budgets/:id/periods` | Period history |
+| GET | `/budgets/:id/periods/:periodId` | Detail of a period with its constituent transactions |
+| POST | `/budgets/from-template` | Creation from a template. Body: `{ "template": "FIFTY_THIRTY_TWENTY", "monthlyIncomeMinor": "..." }` |
 
-Réponse type de `/budgets/current` :
+Sample response for `/budgets/current`:
 
 ```json
 {
@@ -267,26 +267,26 @@ Réponse type de `/budgets/current` :
 }
 ```
 
-`status` ∈ `ON_TRACK` | `AT_RISK` (rythme de dépense menant au dépassement) | `EXCEEDED`.
+`status` ∈ `ON_TRACK` | `AT_RISK` (spending pace leading to overrun) | `EXCEEDED`.
 
 ---
 
-## 9. Dettes
+## 9. Debts
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET / POST | `/debts` | Liste / création |
-| GET / PATCH / DELETE | `/debts/:id` | Détail / modification / suppression |
-| GET | `/debts/:id/schedule` | Échéancier complet |
-| POST | `/debts/:id/schedule/regenerate` | Régénère les échéances futures |
-| GET | `/debts/:id/payments` | Historique des paiements |
-| POST | `/debts/:id/payments` | Enregistrer un paiement |
-| DELETE | `/debts/:id/payments/:paymentId` | Annuler un paiement (supprime la transaction liée) |
-| POST | `/debts/:id/simulate-payoff` | Simule un remboursement anticipé. Corps : `{ "extraAmountMinor": "...", "strategy": "REDUCE_TERM" \| "REDUCE_INSTALLMENT" }` |
-| GET | `/debts/summary` | Capital total dû, intérêts payés cumulés, prochaine échéance, date de sortie de dette |
-| GET | `/debts/payoff-strategies` | (V2) Comparaison avalanche vs boule de neige |
+| GET / POST | `/debts` | List / creation |
+| GET / PATCH / DELETE | `/debts/:id` | Detail / modification / deletion |
+| GET | `/debts/:id/schedule` | Full repayment schedule |
+| POST | `/debts/:id/schedule/regenerate` | Regenerates future installments |
+| GET | `/debts/:id/payments` | Payment history |
+| POST | `/debts/:id/payments` | Record a payment |
+| DELETE | `/debts/:id/payments/:paymentId` | Cancel a payment (deletes the linked transaction) |
+| POST | `/debts/:id/simulate-payoff` | Simulates an early repayment. Body: `{ "extraAmountMinor": "...", "strategy": "REDUCE_TERM" \| "REDUCE_INSTALLMENT" }` |
+| GET | `/debts/summary` | Total principal owed, cumulative interest paid, next due date, debt-free date |
+| GET | `/debts/payoff-strategies` | (V2) Avalanche vs. snowball comparison |
 
-Réponse type de `simulate-payoff` :
+Sample response for `simulate-payoff`:
 
 ```json
 {
@@ -301,25 +301,25 @@ Réponse type de `simulate-payoff` :
 
 ---
 
-## 10. Objectifs
+## 10. Goals
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET / POST | `/goals` | Liste / création |
-| GET / PATCH / DELETE | `/goals/:id` | Détail / modification / suppression |
-| POST | `/goals/:id/contributions` | Ajouter une contribution |
-| DELETE | `/goals/:id/contributions/:contributionId` | Retirer une contribution |
-| GET | `/goals/:id/progress` | Progression, épargne mensuelle requise, projection d'atteinte |
+| GET / POST | `/goals` | List / creation |
+| GET / PATCH / DELETE | `/goals/:id` | Detail / modification / deletion |
+| POST | `/goals/:id/contributions` | Add a contribution |
+| DELETE | `/goals/:id/contributions/:contributionId` | Remove a contribution |
+| GET | `/goals/:id/progress` | Progress, required monthly savings, projected completion |
 
 ---
 
-## 11. Prévisions
+## 11. Forecasts
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/forecast/cashflow?months=6` | Projection de trésorerie mensuelle |
-| GET | `/forecast/net-worth?months=12` | Projection du patrimoine net |
-| POST | `/forecast/scenario` | (V2) Projection sous hypothèses |
+| GET | `/forecast/cashflow?months=6` | Monthly cash flow projection |
+| GET | `/forecast/net-worth?months=12` | Net worth projection |
+| POST | `/forecast/scenario` | (V2) Projection under assumptions |
 
 ```json
 // POST /forecast/scenario
@@ -335,74 +335,74 @@ Réponse type de `simulate-payoff` :
 
 ---
 
-## 12. Rapports
+## 12. Reports
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
 | GET | `/reports/spending-by-category` | `?from&to&accountId&depth=1\|2` |
-| GET | `/reports/monthly-summary` | `?months=12` — revenus, dépenses, net par mois |
+| GET | `/reports/monthly-summary` | `?months=12` — income, expenses, net per month |
 | GET | `/reports/net-worth` | `?from&to&granularity=month` |
-| GET | `/reports/cashflow` | Entrées/sorties/net |
+| GET | `/reports/cashflow` | Inflows/outflows/net |
 | GET | `/reports/comparison` | `?periodA=2026-07&periodB=2026-06` |
 | GET | `/reports/top-transactions` | `?from&to&limit=10` |
 | GET | `/reports/budget-vs-actual` | `?period=2026-07` |
-| GET | `/reports/dashboard` | Agrégat unique pour l'écran d'accueil (évite 8 requêtes) |
+| GET | `/reports/dashboard` | Single aggregate for the home screen (avoids 8 requests) |
 
 ---
 
 ## 13. Import
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET / POST | `/import/sources` | Configurations de mapping |
+| GET / POST | `/import/sources` | Mapping configurations |
 | PATCH / DELETE | `/import/sources/:id` | |
-| POST | `/import/upload` | `multipart/form-data`. Retourne `batchId` + aperçu des 20 premières lignes brutes et colonnes détectées |
-| POST | `/import/batches/:id/mapping` | Soumettre le mapping colonnes → champs |
-| GET | `/import/batches/:id/preview` | Lignes parsées, catégorisées, avec marquage des doublons |
-| POST | `/import/batches/:id/commit` | Valide l'import. Corps : lignes à exclure, corrections manuelles |
-| GET | `/import/batches` | Historique des lots |
-| GET | `/import/batches/:id` | Détail, y compris erreurs par ligne |
-| POST | `/import/batches/:id/revert` | Annule le lot entier |
+| POST | `/import/upload` | `multipart/form-data`. Returns `batchId` + preview of the first 20 raw rows and detected columns |
+| POST | `/import/batches/:id/mapping` | Submit the columns → fields mapping |
+| GET | `/import/batches/:id/preview` | Parsed, categorized rows, with duplicate flagging |
+| POST | `/import/batches/:id/commit` | Validates the import. Body: rows to exclude, manual corrections |
+| GET | `/import/batches` | Batch history |
+| GET | `/import/batches/:id` | Detail, including per-row errors |
+| POST | `/import/batches/:id/revert` | Cancels the entire batch |
 
 ---
 
 ## 14. Export
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| POST | `/export/transactions` | `{ format: "CSV"\|"XLSX", filters: {...} }` → fichier |
-| POST | `/export/full` | Archive complète de toutes les entités |
-| GET | `/export/jobs/:id` | Statut d'un export asynchrone (au-delà de 10 000 lignes) |
+| POST | `/export/transactions` | `{ format: "CSV"\|"XLSX", filters: {...} }` → file |
+| POST | `/export/full` | Complete archive of all entities |
+| GET | `/export/jobs/:id` | Status of an asynchronous export (beyond 10,000 rows) |
 
 ---
 
-## 15. Devises
+## 15. Currencies
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/currencies` | Devises supportées avec `minorUnits` |
-| GET | `/currencies/rates?from&to&at=` | Taux applicable à une date |
-| POST | `/currencies/rates` | Saisie manuelle d'un taux |
+| GET | `/currencies` | Supported currencies with `minorUnits` |
+| GET | `/currencies/rates?from&to&at=` | Rate applicable on a given date |
+| POST | `/currencies/rates` | Manual entry of a rate |
 | DELETE | `/currencies/rates/:id` | |
 | POST | `/currencies/convert` | `{ amountMinor, from, to, at }` |
 
 ---
 
-## 16. Notifications et audit
+## 16. Notifications and audit
 
-| Méthode | Chemin | Description |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/notifications?unreadOnly=true` | Liste. Renvoie `type` + `params`, jamais de texte rendu (RG-N9) |
-| POST | `/notifications/:id/read` | Marquer comme lue |
-| POST | `/notifications/read-all` | Tout marquer comme lu |
-| GET | `/notifications/preferences` | Préférences par type et par canal |
+| GET | `/notifications?unreadOnly=true` | List. Returns `type` + `params`, never rendered text (RG-N9) |
+| POST | `/notifications/:id/read` | Mark as read |
+| POST | `/notifications/read-all` | Mark all as read |
+| GET | `/notifications/preferences` | Preferences by type and channel |
 | PATCH | `/notifications/preferences` | |
-| GET | `/notifications/push/public-key` | Clé publique VAPID, nécessaire à l'abonnement navigateur |
-| POST | `/notifications/push/subscribe` | Enregistre un abonnement push |
-| DELETE | `/notifications/push/subscribe` | Désabonne l'appareil courant |
-| GET | `/notifications/push/devices` | Appareils abonnés (libellé, dernière activité) |
-| DELETE | `/notifications/push/devices/:id` | Révoque un appareil |
-| POST | `/notifications/push/test` | Envoie une notification de test à l'appareil courant |
+| GET | `/notifications/push/public-key` | VAPID public key, needed for browser subscription |
+| POST | `/notifications/push/subscribe` | Registers a push subscription |
+| DELETE | `/notifications/push/subscribe` | Unsubscribes the current device |
+| GET | `/notifications/push/devices` | Subscribed devices (label, last activity) |
+| DELETE | `/notifications/push/devices/:id` | Revokes a device |
+| POST | `/notifications/push/test` | Sends a test notification to the current device |
 
 ```http
 POST /api/v1/notifications/push/subscribe
@@ -415,19 +415,19 @@ POST /api/v1/notifications/push/subscribe
 }
 ```
 
-Un `endpoint` déjà enregistré est mis à jour (`lastSeenAt`, `failureCount = 0`) plutôt que dupliqué.
-| GET | `/audit-log` | Journal de l'utilisateur. `?entityType&entityId&action&from&to` |
-| GET | `/audit-log/:entityType/:entityId` | Historique complet d'une entité |
+An `endpoint` already registered is updated (`lastSeenAt`, `failureCount = 0`) rather than duplicated.
+| GET | `/audit-log` | User's log. `?entityType&entityId&action&from&to` |
+| GET | `/audit-log/:entityType/:entityId` | Full history of an entity |
 
-Le journal d'audit est **en lecture seule** : aucun endpoint d'écriture ou de suppression n'est exposé.
+The audit log is **read-only**: no write or delete endpoint is exposed.
 
 ---
 
-## 17. Limitation de débit
+## 17. Rate limiting
 
-| Périmètre | Limite |
+| Scope | Limit |
 |---|---|
-| `/auth/login`, `/auth/password/*` | 5 requêtes / 15 min / IP |
-| `/import/upload` | 20 / heure / utilisateur |
-| `/export/*` | 10 / heure / utilisateur |
-| Reste de l'API | 300 / min / utilisateur |
+| `/auth/login`, `/auth/password/*` | 5 requests / 15 min / IP |
+| `/import/upload` | 20 / hour / user |
+| `/export/*` | 10 / hour / user |
+| Rest of the API | 300 / min / user |

@@ -10,7 +10,15 @@ import { AUDIT_METADATA_KEY, AuditMetadata } from './audit.decorator';
 const SENSITIVE_FIELDS = new Set(['passwordHash', 'refreshTokenHash', 'tokenHash', 'token', 'accessToken', 'refreshToken']);
 
 function redact(value: unknown): unknown {
+  if (typeof value === 'bigint') return value.toString();
   if (value === null || typeof value !== 'object') return value;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof (value as { toJSON?: unknown }).toJSON === 'function') {
+    return (value as { toJSON: () => unknown }).toJSON();
+  }
+  if (typeof (value as { toString?: unknown }).toString === 'function' && (value as object).constructor?.name !== 'Object') {
+    return value.toString();
+  }
   if (Array.isArray(value)) return value.map(redact);
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)

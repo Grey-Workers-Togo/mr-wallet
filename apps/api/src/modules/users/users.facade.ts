@@ -45,4 +45,8 @@ export class UsersFacade {
   updatePasswordHash(id: string, passwordHash: string): Promise<User> {
     return this.prisma.user.update({ where: { id }, data: { passwordHash } });
   }
+
+  markEmailVerified(id: string): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data: { emailVerifiedAt: new Date() } });
+  }
 }

@@ -36,6 +36,7 @@
     "hero": {
       "title": "Mr Wallet",
       "badge": "Personal finance management",
+      "producthuntBadge": "Featured on Product Hunt",
       "tagline": "Pilot your cash, budgets and projects.",
       "description": "Mr Wallet brings your accounts, expenses, debts, goals and recurrences into one simple, actionable experience.",
       "ctaPrimary": "Create my space",
@@ -63,34 +64,134 @@
       }
     },
     "features": {
-      "title": "Business content centered on this month's decisions",
-      "subtitle": "Each module answers a simple question: how much do I have, where does the money go, how much can I still spend, and what needs to be repaid.",
+      "title": "All your financial steering, in one place",
+      "subtitle": "A modular architecture where each business domain is isolated, with its own entities, rules and API.",
       "items": [
         {
-          "title": "Clear view of the month",
-          "description": "Available balance, income, expenses, savings and net worth in a single read."
+          "title": "Multiple accounts",
+          "description": "Centralize all your accounts in a single view, with consolidated balances and history."
         },
         {
-          "title": "Cash, bank, mobile money",
-          "description": "Log your day-to-day operations with source and destination accounts."
+          "title": "Transactions & categories",
+          "description": "Classify every operation, track your spending by category and spot your trends."
         },
         {
-          "title": "Budgets that tell the truth",
-          "description": "Set limits by category and see how much you have left to spend, stress-free."
+          "title": "Recurring transactions",
+          "description": "Automate repetitive operations: rent, salary, subscriptions."
+        },
+        {
+          "title": "Budgets with alerts",
+          "description": "Set caps per category and get alerted before you exceed them."
+        },
+        {
+          "title": "Debts & repayment schedule",
+          "description": "Plan your debt repayments with a clear, forward-looking schedule."
         },
         {
           "title": "Savings goals",
-          "description": "Prepare a big purchase or an emergency fund with visible progress."
+          "description": "Set targets, track your progress and stay motivated until the finish line."
         },
         {
-          "title": "Automatic recurrences",
-          "description": "Plan the income, expenses and transfers that repeat every month."
+          "title": "CSV/Excel import & export",
+          "description": "Import your statements with automatic deduplication, export your data any time."
         },
         {
-          "title": "Debts & loans",
-          "description": "Keep a clear record of what you're owed and what you owe back."
+          "title": "Cash flow forecasts",
+          "description": "Project your future financial situation from your income and expenses."
+        },
+        {
+          "title": "Net worth dashboard",
+          "description": "A synthetic view of your net worth, real-time and easy to read."
         }
       ]
+    },
+    "principles": {
+      "title": "Designed for trust",
+      "subtitle": "Architectural choices that guarantee accuracy, independence and transparency.",
+      "items": [
+        {
+          "title": "Modularity",
+          "description": "Each business domain is an isolated module with its own entities, rules and API."
+        },
+        {
+          "title": "No third-party connectors in V1",
+          "description": "Data comes in via CSV/Excel import or manual entry. No external dependency."
+        },
+        {
+          "title": "Full traceability",
+          "description": "Every action is timestamped and logged in an immutable audit trail."
+        },
+        {
+          "title": "Offline browsing",
+          "description": "A read-only cache. Writing always requires the network."
+        },
+        {
+          "title": "One front, web and mobile",
+          "description": "Installable, responsive-first PWA, rather than a native app."
+        },
+        {
+          "title": "Bilingual end to end",
+          "description": "French and English from the MVP. No human text stored in the database, only stable identifiers."
+        },
+        {
+          "title": "Decoupled currencies",
+          "description": "Multi-currency conversion with manually entered rates. No paid subscription required."
+        },
+        {
+          "title": "Monetary accuracy",
+          "description": "No amount is ever stored or computed as a floating-point number."
+        }
+      ]
+    },
+    "security": {
+      "badge": "Security & traceability",
+      "title": "Your data stays yours",
+      "description": "No data is ever sent to a third party. Every action — create, update, delete — is timestamped and kept in an immutable audit trail. You export whenever you want, you leave whenever you want.",
+      "items": [
+        {
+          "title": "No external dependency",
+          "description": "Your statements come in via import. Nothing goes out."
+        },
+        {
+          "title": "Import with deduplication",
+          "description": "Your CSV/Excel statements are cleaned up automatically."
+        },
+        {
+          "title": "Export any time",
+          "description": "Get your data back in CSV/Excel, no lock-in."
+        }
+      ],
+      "log": {
+        "label": "Audit log",
+        "sublabel": "Timestamped · immutable",
+        "lines": [
+          {
+            "time": "08:42:11",
+            "action": "CREATE",
+            "target": "transaction"
+          },
+          {
+            "time": "08:41:03",
+            "action": "UPDATE",
+            "target": "budget:groceries"
+          },
+          {
+            "time": "08:39:50",
+            "action": "IMPORT",
+            "target": "statement_2026-08.csv"
+          },
+          {
+            "time": "08:38:22",
+            "action": "CREATE",
+            "target": "debt:car_loan"
+          },
+          {
+            "time": "08:36:01",
+            "action": "DELETE",
+            "target": "transaction #482"
+          }
+        ]
+      }
     },
     "screenshots": {
       "title": "See it in action",
@@ -148,6 +249,17 @@
         }
       ]
     },
+    "controlCta": {
+      "title": "Take back control of your finances",
+      "description": "Start for free. Import your statements, set up your budgets and project your financial future today.",
+      "primary": "Create an account",
+      "secondary": "Learn more",
+      "points": [
+        "No credit card",
+        "Bilingual FR · EN",
+        "Export any time"
+      ]
+    },
     "designedFor": {
       "title": "Designed for West Africa",
       "description": "The app starts from the ground: cash, mobile money, variable income, family support, informal debts and very concrete savings goals.",
@@ -163,22 +275,55 @@
     "howItWorks": {
       "title": "Get started in 4 steps",
       "steps": [
-        { "title": "Sign up", "description": "Email and password. 30 seconds." },
-        { "title": "Import or enter", "description": "CSV/Excel import or manual entry." },
-        { "title": "Set your budgets", "description": "Templates or fully custom." },
-        { "title": "Watch it grow", "description": "Dashboards and reports." }
+        {
+          "title": "Sign up",
+          "description": "Email and password. 30 seconds."
+        },
+        {
+          "title": "Import or enter",
+          "description": "CSV/Excel import or manual entry."
+        },
+        {
+          "title": "Set your budgets",
+          "description": "Templates or fully custom."
+        },
+        {
+          "title": "Watch it grow",
+          "description": "Dashboards and reports."
+        }
       ]
     },
     "faq": {
       "title": "Frequently asked questions",
       "items": [
-        { "question": "How much does it cost?", "answer": "Free, no ads." },
-        { "question": "Is my data protected?", "answer": "Encryption and a full audit log." },
-        { "question": "Can I import from my bank?", "answer": "CSV/Excel today, direct connectors are planned." },
-        { "question": "Does it work on mobile?", "answer": "Yes, it's an installable PWA." },
-        { "question": "How do I get my data back?", "answer": "Full export at any time." },
-        { "question": "Is there a transaction limit?", "answer": "No." },
-        { "question": "What happens if I delete my account?", "answer": "Soft delete, then permanent deletion after 30 days." }
+        {
+          "question": "How much does it cost?",
+          "answer": "Free, no ads."
+        },
+        {
+          "question": "Is my data protected?",
+          "answer": "Encryption and a full audit log."
+        },
+        {
+          "question": "Can I import from my bank?",
+          "answer": "CSV/Excel today, direct connectors are planned."
+        },
+        {
+          "question": "Does it work on mobile?",
+          "answer": "Yes, it's an installable PWA."
+        },
+        {
+          "question": "How do I get my data back?",
+          "answer": "Full export at any time."
+        },
+        {
+          "question": "Is there a transaction limit?",
+          "answer": "No."
+        },
+        {
+          "question": "What happens if I delete my account?",
+          "answer": "Soft delete, then permanent deletion after 30 days."
+        }
       ]
     },
     "ctaFinal": {
@@ -228,6 +373,10 @@
     "notifications": "Notifications",
     "preferences": "Settings",
     "logout": "Log out",
+    "logoutConfirmTitle": "Log out?",
+    "logoutConfirmDescription": "You will need to sign in again to access your account.",
+    "logoutConfirmAction": "Log out",
+    "logoutConfirmCancel": "Cancel",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "more": "More"
@@ -238,6 +387,7 @@
       "subtitle": "Start tracking your money in minutes",
       "emailLabel": "Email address",
       "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
       "baseCurrencyLabel": "Base currency",
       "submit": "Sign up",
       "submitting": "Creating account...",
@@ -256,6 +406,7 @@
       "subtitle": "Manage your finances with confidence",
       "emailLabel": "Email address",
       "passwordLabel": "Password",
+      "forgotPasswordLink": "Forgot password?",
       "submit": "Log in",
       "submitting": "Logging in...",
       "noAccount": "No account yet?",
@@ -373,6 +524,7 @@
     "add": "Add",
     "create": "New transaction",
     "createDescription": "Add an income, an expense or a transfer between accounts.",
+    "editDescription": "Edit this transaction's details.",
     "empty": "No transactions yet.",
     "typeLabel": "Type",
     "accountLabel": "Account",
@@ -730,6 +882,10 @@
     "INVALID_CREDENTIALS": "Incorrect email or password.",
     "EMAIL_ALREADY_REGISTERED": "This email address is already in use.",
     "PASSWORD_TOO_WEAK": "Password must be at least 12 characters long.",
+    "INVALID_RESET_TOKEN": "This reset link is invalid or has expired.",
+    "PASSWORDS_DO_NOT_MATCH": "Passwords do not match.",
+    "EMAIL_NOT_VERIFIED": "Confirm your email address before logging in.",
+    "INVALID_VERIFICATION_TOKEN": "This confirmation link is invalid or has expired.",
     "CURRENCY_UNKNOWN": "Unknown currency.",
     "LOGIN_LOCKED": "Too many attempts, try again later.",
     "CATEGORY_NOT_FOUND": "Category not found.",

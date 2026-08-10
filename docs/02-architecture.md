@@ -1,10 +1,10 @@
-# 02 — Architecture technique
+# 02 — Technical architecture
 
-## 1. Forme générale : monolithe modulaire
+## 1. General form: modular monolith
 
-Le back-end est **un seul déploiement**, découpé en modules à frontières strictes.
+The back-end is **a single deployment**, split into modules with strict boundaries.
 
-Pourquoi pas des microservices : un utilisateur unique consulte ses propres données, les volumes sont faibles (quelques milliers de transactions par utilisateur), et les transactions métier traversent plusieurs domaines (enregistrer un remboursement touche `debts` et `transactions` de façon atomique). Des microservices imposeraient de la cohérence distribuée pour aucun gain. Le découpage modulaire strict préserve néanmoins la possibilité d'extraire un module plus tard s'il le fallait.
+Why not microservices: a single user consults their own data, volumes are low (a few thousand transactions per user), and business transactions span several domains (recording a repayment touches `debts` and `transactions` atomically). Microservices would impose distributed consistency for no gain. Strict modular decomposition nonetheless preserves the possibility of extracting a module later if needed.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -14,13 +14,13 @@ Pourquoi pas des microservices : un utilisateur unique consulte ses propres donn
 ┌──────────────────────────▼──────────────────────────┐
 │                    API (NestJS)                     │
 │  ┌───────────────────────────────────────────────┐  │
-│  │ Modules métier                                │  │
+│  │ Business modules                              │  │
 │  │ accounts · transactions · categories ·        │  │
 │  │ budgets · debts · goals · recurrence ·        │  │
 │  │ forecasting · reporting · import · export     │  │
 │  └───────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────┐  │
-│  │ Modules transverses                           │  │
+│  │ Cross-cutting modules                         │  │
 │  │ auth · users · currency · audit ·             │  │
 │  │ notifications · money (kernel)                │  │
 │  └───────────────────────────────────────────────┘  │
@@ -31,70 +31,70 @@ Pourquoi pas des microservices : un utilisateur unique consulte ses propres donn
 └─────────────────────────────────────────────────────┘
 ```
 
-## 2. Stack et justifications
+## 2. Stack and rationale
 
-| Couche | Choix | Pourquoi |
+| Layer | Choice | Why |
 |---|---|---|
-| Langage | TypeScript (back + front) | Un seul langage, types partagés entre API et client via un package `contracts`. |
-| Framework API | **NestJS** | Le système de modules de Nest correspond exactement au découpage voulu : injection de dépendances, modules encapsulés avec exports explicites, intercepteurs globaux (indispensables pour l'audit automatique). |
-| Base de données | **PostgreSQL 16** | Transactions ACID (obligatoire pour les mouvements d'argent), `numeric`/`bigint` exacts, triggers (pour rendre `audit_log` append-only), `jsonb` pour les diffs d'audit, bonnes fonctions de date. |
-| ORM | **Prisma** | Migrations versionnées et lisibles, typage fort généré. Les requêtes analytiques lourdes (rapports, prévisions) se font en SQL brut via `$queryRaw`, pas via l'ORM. |
-| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first et installable (PWA)** | Rendu serveur pour les écrans de consultation, bon comportement sur connexion lente. Un seul front sert le web et le mobile (ADR-0007). |
-| Service worker | Workbox | Cache de consultation hors ligne en lecture seule (ADR-0008) et réception du push web. |
-| Push | Web Push API (VAPID) | Aucun service tiers propriétaire requis. Voir `04-modules.md § K`. |
-| État serveur (front) | **TanStack Query** | Cache, invalidation, retry — suffisant sans Redux. |
-| i18n | **next-intl** (ICU) | Deux locales `fr` et `en` dès le MVP (ADR-0009). Format ICU pour la pluralisation. |
-| Graphiques | **Recharts** | Léger, suffisant pour barres/lignes/camemberts. |
-| Auth | JWT access (15 min) + refresh (30 j, rotatif, stocké haché) | Voir `07-securite-audit.md`. |
+| Language | TypeScript (back + front) | A single language, types shared between API and client via a `contracts` package. |
+| API framework | **NestJS** | Nest's module system matches exactly the intended decomposition: dependency injection, encapsulated modules with explicit exports, global interceptors (essential for automatic auditing). |
+| Database | **PostgreSQL 16** | ACID transactions (mandatory for money movements), exact `numeric`/`bigint`, triggers (to make `audit_log` append-only), `jsonb` for audit diffs, good date functions. |
+| ORM | **Prisma** | Versioned, readable migrations, strongly-typed generated client. Heavy analytical queries (reports, forecasts) are done in raw SQL via `$queryRaw`, not through the ORM. |
+| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first and installable (PWA)** | Server rendering for consultation screens, good behavior on slow connections. A single front serves both web and mobile (ADR-0007). |
+| Service worker | Workbox | Read-only offline consultation cache (ADR-0008) and web push reception. |
+| Push | Web Push API (VAPID) | No proprietary third-party service required. See `04-modules.md § K`. |
+| Server state (front) | **TanStack Query** | Cache, invalidation, retry — sufficient without Redux. |
+| i18n | **next-intl** (ICU) | Two locales `fr` and `en` from the MVP (ADR-0009). ICU format for pluralization. |
+| Charts | **Recharts** | Lightweight, sufficient for bars/lines/pie charts. |
+| Auth | JWT access (15 min) + refresh (30 days, rotating, stored hashed) | See `07-securite-audit.md`. |
 | Tests | Vitest + Supertest + Playwright | |
-| Fichiers | Papaparse (CSV), SheetJS/ExcelJS (XLSX) — **côté serveur** | Le parsing serveur permet de valider et de journaliser l'import. |
+| Files | Papaparse (CSV), SheetJS/ExcelJS (XLSX) — **server-side** | Server-side parsing allows validating and logging the import. |
 
-### Point d'attention : parsing serveur
+### Point of attention: server-side parsing
 
-Les fichiers importés sont parsés côté serveur, pas dans le navigateur. Raisons : validation homogène, journalisation d'audit, et possibilité de rejouer un import. Contrainte associée : limiter la taille de fichier (10 Mo) et traiter l'import en tâche asynchrone au-delà de 1 000 lignes.
+Imported files are parsed server-side, not in the browser. Reasons: consistent validation, audit logging, and the ability to replay an import. Associated constraint: limit file size (10 MB) and process the import as an asynchronous task beyond 1,000 lines.
 
-## 3. Découpage en modules
+## 3. Module decomposition
 
-### 3.1 Modules métier
+### 3.1 Business modules
 
-| Module | Responsabilité | Ne fait pas |
+| Module | Responsibility | Does not do |
 |---|---|---|
-| `accounts` | Comptes, soldes, soldes d'ouverture, archivage | Ne calcule pas les budgets |
-| `transactions` | Transactions, transferts, catégorisation, tags, recherche | Ne génère pas les récurrences |
-| `categories` | Arbre des catégories, catégories système par défaut | |
-| `recurrence` | Modèles de récurrence, matérialisation des occurrences à venir, détection de récurrences dans l'historique | Ne crée pas directement de transaction passée |
-| `budgets` | Budgets, périodes budgétaires, consommation, alertes, report | Ne lit pas les transactions directement (passe par la façade `transactions`) |
-| `debts` | Dettes, créances, échéanciers, amortissement, remboursements | Ne crée pas la transaction de paiement elle-même (émet un événement) |
-| `goals` | Objectifs d'épargne, contributions, progression | |
-| `forecasting` | Projection de trésorerie et de patrimoine net, scénarios | Ne persiste rien (calcul à la volée + cache) |
-| `reporting` | Agrégats, séries temporelles, patrimoine net, comparaisons | Ne contient aucune règle métier propre |
-| `import` | Sources d'import, mapping, parsing, dédoublonnage, lots | N'écrit pas en base directement : appelle la façade `transactions` |
-| `export` | Génération CSV/XLSX, export intégral | |
+| `accounts` | Accounts, balances, opening balances, archiving | Does not compute budgets |
+| `transactions` | Transactions, transfers, categorization, tags, search | Does not generate recurrences |
+| `categories` | Category tree, default system categories | |
+| `recurrence` | Recurrence templates, materialization of upcoming occurrences, detection of recurrences in history | Does not directly create a past transaction |
+| `budgets` | Budgets, budget periods, consumption, alerts, rollover | Does not read transactions directly (goes through the `transactions` facade) |
+| `debts` | Debts, receivables, schedules, amortization, repayments | Does not create the payment transaction itself (emits an event) |
+| `goals` | Savings goals, contributions, progress | |
+| `forecasting` | Cash flow and net worth projection, scenarios | Persists nothing (on-the-fly computation + cache) |
+| `reporting` | Aggregates, time series, net worth, comparisons | Contains no business rules of its own |
+| `import` | Import sources, mapping, parsing, deduplication, batches | Does not write to the database directly: calls the `transactions` facade |
+| `export` | CSV/XLSX generation, full export | |
 
-### 3.2 Modules transverses
+### 3.2 Cross-cutting modules
 
-| Module | Responsabilité |
+| Module | Responsibility |
 |---|---|
-| `money` (kernel) | Type `Money`, arithmétique en unités mineures, arrondis, formatage. **Aucune dépendance.** |
-| `auth` | Inscription, connexion, tokens, sessions, verrouillage PIN |
-| `users` | Profil, préférences, devise de référence, fuseau horaire |
-| `currency` | Devises supportées, taux de change, conversion |
-| `audit` | Journal append-only, intercepteur global, consultation |
-| `notifications` | Alertes budget, échéances de dette proches, objectifs atteints |
+| `money` (kernel) | `Money` type, arithmetic in minor units, rounding, formatting. **No dependency.** |
+| `auth` | Registration, login, tokens, sessions, PIN lock |
+| `users` | Profile, preferences, reference currency, timezone |
+| `currency` | Supported currencies, exchange rates, conversion |
+| `audit` | Append-only log, global interceptor, consultation |
+| `notifications` | Budget alerts, upcoming debt due dates, goals reached |
 
-## 4. Règles de dépendance entre modules
+## 4. Module dependency rules
 
-**Règle 1** — Un module n'importe jamais le `Service` d'un autre module. Il importe uniquement sa **façade** (`<module>.facade.ts`), qui expose un contrat explicite et stable.
+**Rule 1** — A module never imports another module's `Service`. It only imports its **facade** (`<module>.facade.ts`), which exposes an explicit, stable contract.
 
-**Règle 2** — Le graphe de dépendances est acyclique. Voici les dépendances autorisées :
+**Rule 2** — The dependency graph is acyclic. Here are the allowed dependencies:
 
 ```
-money        → (aucune)
+money        → (none)
 currency     → money
-users        → (aucune)
+users        → (none)
 auth         → users
-audit        → (aucune)
-categories   → (aucune)
+audit        → (none)
+categories   → (none)
 accounts     → money, currency
 transactions → money, accounts, categories
 recurrence   → transactions
@@ -108,31 +108,31 @@ forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
 ```
 
-Toute dépendance absente de cette liste doit être ajoutée ici avant d'être codée, et vérifiée acyclique.
+Any dependency absent from this list must be added here before being coded, and verified to be acyclic.
 
-**Règle 3** — Quand une dépendance créerait un cycle, on passe par un **événement**.
+**Rule 3** — When a dependency would create a cycle, an **event** is used instead.
 
-Exemple concret : `debts` a besoin qu'une transaction de dépense soit créée quand on enregistre un remboursement. Comme `transactions` ne dépend jamais de `debts`, il n'y a pas de cycle : `debts` appelle directement `TransactionsFacade.createFromDebtPayment` (même pattern que `recurrence` → `transactions`), ce qui donne l'`id` de la transaction créée nécessaire pour le lien bidirectionnel `DebtPayment.transactionId` / `Transaction.debtPaymentId`. `debts` émet en plus `DebtPaidOff` (événement, pas d'écriture) pour que `notifications` puisse alerter sans que `debts` ait besoin de connaître `notifications`.
+Concrete example: `debts` needs an expense transaction to be created when a repayment is recorded. Since `transactions` never depends on `debts`, there is no cycle: `debts` directly calls `TransactionsFacade.createFromDebtPayment` (same pattern as `recurrence` → `transactions`), which returns the `id` of the created transaction needed for the bidirectional link `DebtPayment.transactionId` / `Transaction.debtPaymentId`. `debts` additionally emits `DebtPaidOff` (event, not a write) so that `notifications` can alert without `debts` needing to know about `notifications`.
 
-## 5. Événements de domaine
+## 5. Domain events
 
-Bus interne synchrone (`@nestjs/event-emitter`) en V1. Aucun broker externe : les volumes ne le justifient pas, et l'ajout d'un broker rendrait la cohérence plus difficile.
+Synchronous internal bus (`@nestjs/event-emitter`) in V1. No external broker: volumes do not justify it, and adding a broker would make consistency harder.
 
-| Événement | Émetteur | Écouteurs | Effet |
+| Event | Emitter | Listeners | Effect |
 |---|---|---|---|
-| `TransactionCreated` | transactions | budgets, goals, notifications | Recalcul consommation, progression objectif, évaluation alertes |
-| `TransactionUpdated` | transactions | budgets, goals, notifications | Idem, avec ancienne et nouvelle valeur |
-| `TransactionDeleted` | transactions | budgets, goals | Décrément |
-| `BudgetThresholdCrossed` | budgets | notifications | Alerte 80 % / 100 % / dépassement |
+| `TransactionCreated` | transactions | budgets, goals, notifications | Recompute consumption, goal progress, alert evaluation |
+| `TransactionUpdated` | transactions | budgets, goals, notifications | Same, with old and new value |
+| `TransactionDeleted` | transactions | budgets, goals | Decrement |
+| `BudgetThresholdCrossed` | budgets | notifications | 80% / 100% / overrun alert |
 | `GoalReached` | goals | notifications | Notification |
-| `ImportBatchCompleted` | import | notifications, audit | Résumé du lot |
-| `RecurrenceDue` | recurrence | notifications | Rappel d'échéance à venir |
-| `DebtPaidOff` | debts | notifications | Dette soldée (RG-D8) |
-| `DebtInstallmentOverdue` / `DebtInstallmentDueSoon` | debts | notifications | Échéance en retard / à venir (RG-D7) |
+| `ImportBatchCompleted` | import | notifications, audit | Batch summary |
+| `RecurrenceDue` | recurrence | notifications | Upcoming due date reminder |
+| `DebtPaidOff` | debts | notifications | Debt paid off (RG-D8) |
+| `DebtInstallmentOverdue` / `DebtInstallmentDueSoon` | debts | notifications | Installment overdue / upcoming (RG-D7) |
 
-**Contrainte de transactionnalité** : les listeners qui écrivent en base s'exécutent dans la même transaction PostgreSQL que l'émetteur. Si un listener échoue, l'opération entière est annulée. Ne pas utiliser d'émission asynchrone « fire and forget » pour un effet qui modifie des données financières.
+**Transactionality constraint**: listeners that write to the database run in the same PostgreSQL transaction as the emitter. If a listener fails, the entire operation is rolled back. Do not use "fire and forget" asynchronous emission for an effect that modifies financial data.
 
-## 6. Arborescence cible
+## 6. Target tree structure
 
 ```
 budget-manager/
@@ -145,8 +145,8 @@ budget-manager/
 │   │   └── src/
 │   │       ├── main.ts
 │   │       ├── app.module.ts
-│   │       ├── common/          # filtres, pipes, intercepteurs, décorateurs
-│   │       │   ├── audit/       # intercepteur d'audit global
+│   │       ├── common/          # filters, pipes, interceptors, decorators
+│   │       │   ├── audit/       # global audit interceptor
 │   │       │   ├── errors/
 │   │       │   └── pagination/
 │   │       ├── kernel/
@@ -156,7 +156,7 @@ budget-manager/
 │   │           │   ├── accounts.module.ts
 │   │           │   ├── accounts.controller.ts
 │   │           │   ├── accounts.service.ts
-│   │           │   ├── accounts.facade.ts     # interface publique
+│   │           │   ├── accounts.facade.ts     # public interface
 │   │           │   ├── dto/
 │   │           │   └── __tests__/
 │   │           ├── transactions/
@@ -165,38 +165,39 @@ budget-manager/
 │       ├── app/
 │       ├── components/
 │       ├── lib/
-│       └── features/            # miroir des modules back
+│       └── features/            # mirrors the back-end modules
 ├── packages/
-│   └── contracts/               # types partagés API ↔ front
+│   └── contracts/               # types shared API ↔ front
 ├── docs/
 ├── CLAUDE.md
 └── README.md
 ```
 
-## 7. Points d'attention transversaux
+## 7. Cross-cutting points of attention
 
-### Cohérence des soldes
+### Balance consistency
 
-Le solde d'un compte peut être calculé (somme des transactions + solde d'ouverture) ou stocké. **Décision : stocké et maintenu de façon incrémentale**, avec une procédure de recalcul complet exposée en interne et exécutée en tâche de fond nocturne pour détecter toute dérive. Le calcul à la volée devient trop lent au-delà de quelques milliers de transactions, mais un solde stocké dérive silencieusement si une écriture échoue partiellement — d'où le contrôle de réconciliation obligatoire.
+An account's balance can be computed (sum of transactions + opening balance) or stored. **Decision: stored and maintained incrementally**, with a full recalculation procedure exposed internally and run as a nightly background task to detect any drift. On-the-fly computation becomes too slow beyond a few thousand transactions, but a stored balance silently drifts if a write partially fails — hence the mandatory reconciliation check.
 
-### Fuseaux horaires
+### Time zones
 
-Tout est stocké en UTC. Le fuseau de l'utilisateur (`users.timezone`) est appliqué **uniquement** au calcul des bornes de période (un « mois de juillet » n'a pas les mêmes bornes UTC selon le fuseau). Ne jamais utiliser le fuseau du serveur.
+Everything is stored in UTC. The user's timezone (`users.timezone`) is applied **only** to the computation of period boundaries (a "month of July" does not have the same UTC boundaries depending on the timezone). Never use the server's timezone.
 
-### Idempotence
+### Idempotency
 
-Les endpoints de création acceptent un en-tête `Idempotency-Key`. Une clé déjà vue renvoie la réponse d'origine sans recréer. Indispensable sur connexion instable, où un utilisateur peut soumettre deux fois.
+Creation endpoints accept an `Idempotency-Key` header. A key already seen returns the original response without recreating. Essential on an unstable connection, where a user might submit twice.
 
-### Clients et compatibilité
+### Clients and compatibility
 
-L'API est agnostique du client : elle n'utilise ni session serveur, ni rendu HTML, ni dépendance à l'origine de la requête (à l'exception du cookie de refresh, restreint à un seul endpoint). Un client natif pourrait la consommer sans modification si l'ADR-0007 était réexaminée.
+The API is client-agnostic: it uses no server session, no HTML rendering, no dependency on the origin of the request (except for the refresh cookie, restricted to a single endpoint). A native client could consume it without modification if ADR-0007 were reconsidered.
 
-Corollaire à respecter dès maintenant : **toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans un composant React.** C'est ce qui garde le coût d'une éventuelle application native limité à la couche de présentation.
+Corollary to respect from now on: **any reusable business logic lives in `packages/contracts` or in `domain/` folders, never in a React component.** This is what keeps the cost of a possible native application limited to the presentation layer.
 
-Second corollaire, de même nature : **l'API ne renvoie aucun texte lisible par un humain** (ADR-0009), uniquement des codes et des paramètres. Un client dans une autre langue, ou un client non-web, consomme le même contrat sans adaptation.
+Second corollary, of the same nature: **the API never returns human-readable text** (ADR-0009), only codes and parameters. A client in another language, or a non-web client, consumes the same contract without adaptation.
 
 ### Performance
 
-- Index obligatoires : `(userId, occurredAt)`, `(userId, accountId, occurredAt)`, `(userId, categoryId, occurredAt)`, `(userId, fingerprint)` sur `transactions`.
-- Les rapports et prévisions passent par des requêtes SQL agrégées, jamais par un chargement en mémoire des transactions.
-- Cache applicatif (in-memory, TTL court) sur les prévisions, invalidé par les événements de transaction.
+- Mandatory indexes: `(userId, occurredAt)`, `(userId, accountId, occurredAt)`, `(userId, categoryId, occurredAt)`, `(userId, fingerprint)` on `transactions`.
+- Reports and forecasts go through aggregated SQL queries, never through in-memory loading of transactions.
+- Application cache (in-memory, short TTL) on forecasts, invalidated by transaction events.
+</content>

@@ -1,139 +1,139 @@
-# 04 — Spécifications fonctionnelles par module
+# 04 — Functional specifications by module
 
-Chaque section décrit : le rôle du module, ses règles métier, et les cas limites à traiter. Les règles numérotées (`RG-xx`) sont contraignantes et doivent être couvertes par des tests.
+Each section describes: the module's role, its business rules, and the edge cases to handle. Numbered rules (`RG-xx`) are binding and must be covered by tests.
 
 ---
 
 ## A. Kernel `money`
 
-Aucune dépendance. Toute arithmétique monétaire de l'application passe par ici.
+No dependencies. All monetary arithmetic in the application goes through here.
 
 ```ts
 type Money = { amountMinor: bigint; currency: string };
 ```
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-M1 | Toute opération entre deux `Money` de devises différentes lève une erreur. La conversion doit être explicite via le module `currency`. |
-| RG-M2 | `add`, `subtract`, `multiply(scalar)`, `negate`, `compare`, `isZero`, `abs` opèrent sur `bigint` uniquement. |
-| RG-M3 | La division et l'application d'un pourcentage utilisent un arrondi **banker's rounding** (au pair le plus proche) et retournent le reste, pour permettre une répartition sans perte de centimes. |
-| RG-M4 | `allocate(money, ratios[])` répartit un montant en respectant `Σ parts = montant exact`. Les unités mineures restantes sont distribuées une par une aux premières parts. |
-| RG-M5 | Le formatage lit `minorUnits` depuis la table `Currency`. Jamais de constante `100` dans le code. |
+| RG-M1 | Any operation between two `Money` values of different currencies throws an error. Conversion must be explicit via the `currency` module. |
+| RG-M2 | `add`, `subtract`, `multiply(scalar)`, `negate`, `compare`, `isZero`, `abs` operate on `bigint` only. |
+| RG-M3 | Division and percentage application use **banker's rounding** (round half to even) and return the remainder, to allow distribution without losing cents. |
+| RG-M4 | `allocate(money, ratios[])` distributes an amount while ensuring `Σ parts = exact amount`. Remaining minor units are distributed one by one to the first parts. |
+| RG-M5 | Formatting reads `minorUnits` from the `Currency` table. Never a hardcoded `100` constant in the code. |
 
-**Cas limites :** montant nul, montants négatifs (autorisés en interne pour les soldes, jamais sur `Transaction.amountMinor`), très grands montants (le `bigint` couvre au-delà des besoins réels).
+**Edge cases:** zero amount, negative amounts (allowed internally for balances, never on `Transaction.amountMinor`), very large amounts (the `bigint` covers well beyond real-world needs).
 
 ---
 
 ## B. Module `accounts`
 
-### Rôle
-Gérer les comptes et maintenir leur solde.
+### Role
+Manage accounts and maintain their balance.
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-A1 | La devise d'un compte est **immuable** après création si le compte porte au moins une transaction. |
-| RG-A2 | Le solde d'ouverture est daté (`openingBalanceAt`). Toute transaction antérieure à cette date est refusée avec un message explicite. |
-| RG-A3 | `currentBalanceMinor` est mis à jour dans la **même transaction SQL** que la création/modification/suppression d'une transaction. Jamais après coup. |
-| RG-A4 | Un compte ne peut pas être supprimé s'il porte des transactions non supprimées. L'API propose l'archivage à la place. |
-| RG-A5 | Archiver un compte le retire des sélecteurs de saisie mais conserve son historique et son poids dans les rapports historiques. |
-| RG-A6 | Pour un `CREDIT_CARD`, le solde est négatif quand de l'argent est dû. `creditLimitMinor` sert à afficher le crédit disponible, sans blocage. |
-| RG-A7 | `includeInNetWorth = false` exclut le compte du patrimoine net mais pas des budgets ni des rapports de dépenses. |
+| RG-A1 | An account's currency is **immutable** after creation once the account holds at least one transaction. |
+| RG-A2 | The opening balance is dated (`openingBalanceAt`). Any transaction prior to this date is rejected with an explicit message. |
+| RG-A3 | `currentBalanceMinor` is updated in the **same SQL transaction** as the creation/modification/deletion of a transaction. Never after the fact. |
+| RG-A4 | An account cannot be deleted if it holds non-deleted transactions. The API offers archiving instead. |
+| RG-A5 | Archiving an account removes it from entry selectors but preserves its history and its weight in historical reports. |
+| RG-A6 | For a `CREDIT_CARD`, the balance is negative when money is owed. `creditLimitMinor` is used to display available credit, without any blocking. |
+| RG-A7 | `includeInNetWorth = false` excludes the account from net worth but not from budgets or expense reports. |
 
-### Cas limites
-Suppression d'une transaction ancienne (le solde doit être recalculé, pas seulement décrémenté si des ajustements ont eu lieu) ; compte à solde d'ouverture négatif ; réconciliation détectant un écart (voir `BalanceCheck`).
+### Edge cases
+Deleting an old transaction (the balance must be recalculated, not merely decremented, if adjustments have occurred); account with a negative opening balance; reconciliation detecting a discrepancy (see `BalanceCheck`).
 
 ---
 
 ## C. Module `categories`
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-C1 | Profondeur maximale : 2 niveaux. Une sous-catégorie ne peut pas avoir d'enfant. |
-| RG-C2 | Une catégorie et son parent ont forcément le même `kind`. |
-| RG-C3 | Une catégorie `isSystem` peut être renommée, recolorée ou archivée, jamais supprimée. |
-| RG-C6 | Le nom affiché est `name` s'il est renseigné, sinon la traduction de `i18nKey` dans la langue courante. `i18nKey` est conservé après renommage, ce qui permet de revenir au libellé par défaut. |
-| RG-C7 | L'unicité du nom est vérifiée sur le **nom résolu**, dans la langue de l'utilisateur, au sein d'un même parent. Elle ne peut pas être une contrainte SQL puisque le libellé système n'est pas en base. |
-| RG-C8 | Renommer une catégorie système ne change pas `isSystem` : elle reste non supprimable. |
-| RG-C4 | Supprimer une catégorie utilisée exige une catégorie de réaffectation. L'opération est atomique et journalisée comme une seule action d'audit avec le nombre de transactions déplacées. |
-| RG-C5 | Un budget sur une catégorie parente englobe les dépenses de ses sous-catégories. |
+| RG-C1 | Maximum depth: 2 levels. A subcategory cannot have a child. |
+| RG-C2 | A category and its parent necessarily share the same `kind`. |
+| RG-C3 | An `isSystem` category can be renamed, recolored, or archived, but never deleted. |
+| RG-C6 | The displayed name is `name` if set, otherwise the translation of `i18nKey` in the current language. `i18nKey` is kept after renaming, which allows reverting to the default label. |
+| RG-C7 | Name uniqueness is checked on the **resolved name**, in the user's language, within the same parent. It cannot be an SQL constraint since the system label is not stored in the database. |
+| RG-C8 | Renaming a system category does not change `isSystem`: it remains non-deletable. |
+| RG-C4 | Deleting a category in use requires a reassignment category. The operation is atomic and logged as a single audit action with the number of transactions moved. |
+| RG-C5 | A budget on a parent category encompasses the expenses of its subcategories. |
 
 ---
 
 ## D. Module `transactions`
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-T1 | `amountMinor > 0` toujours. Un montant nul ou négatif est rejeté. |
-| RG-T2 | `currency` doit être égale à la devise du compte. |
-| RG-T3 | `occurredAt` ne peut pas être antérieure à `account.openingBalanceAt`, ni postérieure à J+1 an (garde-fou contre les fautes de frappe de date). |
-| RG-T4 | Un transfert crée exactement deux lignes partageant un `transferGroupId`. Modifier ou supprimer l'une agit sur les deux. |
-| RG-T5 | Les transferts sont exclus : des totaux de dépenses, des totaux de revenus, des budgets, et du calcul du patrimoine net. |
-| RG-T6 | `normalizedLabel` = description en minuscules, sans accents, sans ponctuation, espaces normalisés, chiffres de plus de 4 caractères remplacés par `#` (masque les numéros de référence variables). |
-| RG-T7 | `fingerprint` = SHA-256 de `accountId|occurredAt(date)|type|amountMinor|normalizedLabel`. |
-| RG-T8 | À la création, les `CategorizationRule` actives sont évaluées par priorité décroissante ; **la première qui correspond gagne**. Si l'utilisateur a fourni une `categoryId`, aucune règle ne s'applique. |
-| RG-T9 | La modification d'une transaction émet `TransactionUpdated` avec l'état avant et après, pour que `budgets` puisse décrémenter l'ancienne période et incrémenter la nouvelle (cas d'un changement de date ou de catégorie). |
-| RG-T10 | Une transaction issue d'un remboursement de dette (`source = DEBT_PAYMENT`) ne peut pas être supprimée directement : il faut supprimer le `DebtPayment`, qui supprime la transaction en cascade. |
+| RG-T1 | `amountMinor > 0` always. A zero or negative amount is rejected. |
+| RG-T2 | `currency` must equal the account's currency. |
+| RG-T3 | `occurredAt` cannot be earlier than `account.openingBalanceAt`, nor later than today+1 year (safeguard against date typos). |
+| RG-T4 | A transfer creates exactly two lines sharing a `transferGroupId`. Modifying or deleting one acts on both. |
+| RG-T5 | Transfers are excluded from: expense totals, income totals, budgets, and net worth calculation. |
+| RG-T6 | `normalizedLabel` = description in lowercase, without accents, without punctuation, normalized spaces, digit sequences longer than 4 characters replaced with `#` (masks variable reference numbers). |
+| RG-T7 | `fingerprint` = SHA-256 of `accountId|occurredAt(date)|type|amountMinor|normalizedLabel`. |
+| RG-T8 | On creation, active `CategorizationRule` entries are evaluated in descending priority order; **the first match wins**. If the user provided a `categoryId`, no rule applies. |
+| RG-T9 | Modifying a transaction emits `TransactionUpdated` with the before and after state, so that `budgets` can decrement the old period and increment the new one (case of a date or category change). |
+| RG-T10 | A transaction resulting from a debt payment (`source = DEBT_PAYMENT`) cannot be deleted directly: the `DebtPayment` must be deleted, which cascades to delete the transaction. |
 
-### Cas limites
-Changement de compte d'une transaction (impacte deux soldes) ; changement de date franchissant une frontière de mois (impacte deux périodes budgétaires) ; transaction dans une devise différente du compte (rejet) ; suppression d'une jambe de transfert seule (interdite).
+### Edge cases
+Changing a transaction's account (impacts two balances); changing the date across a month boundary (impacts two budget periods); transaction in a currency different from the account's (rejected); deleting a single leg of a transfer (forbidden).
 
 ---
 
 ## E. Module `recurrence`
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-R1 | Le calcul de la prochaine occurrence tient compte du fuseau de l'utilisateur. |
-| RG-R2 | Récurrence mensuelle au jour N > nombre de jours du mois → dernier jour du mois. Jamais de report au mois suivant. |
-| RG-R3 | `autoCreate = false` par défaut : l'occurrence est projetée et notifiée, mais aucune transaction n'est créée sans action de l'utilisateur. |
-| RG-R4 | `autoCreate = true` : une tâche quotidienne crée les occurrences échues du jour, en marquant `source = RECURRENCE`. Elle est **idempotente** : `lastGeneratedAt` empêche la double génération si la tâche tourne deux fois. |
-| RG-R5 | Modifier une règle n'affecte jamais les transactions déjà créées. |
-| RG-R6 | Une occurrence peut être ignorée ponctuellement (« skip ») sans désactiver la règle. |
+| RG-R1 | Computing the next occurrence takes the user's timezone into account. |
+| RG-R2 | Monthly recurrence on day N > number of days in the month → last day of the month. Never rolled over to the following month. |
+| RG-R3 | `autoCreate = false` by default: the occurrence is projected and notified, but no transaction is created without user action. |
+| RG-R4 | `autoCreate = true`: a daily job creates the day's due occurrences, marking `source = RECURRENCE`. It is **idempotent**: `lastGeneratedAt` prevents double generation if the job runs twice. |
+| RG-R5 | Modifying a rule never affects transactions already created. |
+| RG-R6 | An occurrence can be skipped one-off ("skip") without disabling the rule. |
 
-### Détection automatique de récurrences
+### Automatic recurrence detection
 
-Analyse de l'historique pour proposer des règles : regrouper les transactions par (compte, `normalizedLabel`, montant à ±10 %) et détecter un intervalle régulier sur au moins 3 occurrences (tolérance ±3 jours). Le résultat est une **suggestion** présentée à l'utilisateur, jamais une création automatique.
+Analysis of history to suggest rules: group transactions by (account, `normalizedLabel`, amount within ±10%) and detect a regular interval over at least 3 occurrences (tolerance ±3 days). The result is a **suggestion** presented to the user, never an automatic creation.
 
 ---
 
 ## F. Module `budgets`
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-B1 | Les bornes de période sont calculées dans le fuseau de l'utilisateur, en tenant compte de `user.monthStartDay`. Un `monthStartDay = 25` donne des périodes du 25 au 24. |
-| RG-B2 | Un budget sur une catégorie parente compte les dépenses de toutes ses sous-catégories. |
-| RG-B3 | Seules les transactions `EXPENSE` non supprimées, sur la période, dans la catégorie visée, alimentent `spentMinor`. Les transferts et les revenus sont exclus. |
-| RG-B4 | Deux budgets actifs ne peuvent pas viser la même catégorie sur des périodes qui se chevauchent. |
-| RG-B5 | `rollover = true` : `allocatedMinor(n) = amountMinor + (allocatedMinor(n-1) − spentMinor(n-1))`. Le report peut être négatif (le dépassement se reporte). |
-| RG-B6 | Les alertes se déclenchent au **franchissement** d'un seuil, une seule fois par période et par seuil (`lastAlertPct`). Repasser sous le seuil puis le refranchir ne re-notifie pas dans la même période. |
-| RG-B7 | Un budget en devise différente d'une transaction convertit au taux à la date de la transaction (`occurredAt`), pas au taux du jour. |
-| RG-B8 | Les périodes budgétaires sont générées d'avance sur 12 mois glissants par une tâche quotidienne. |
+| RG-B1 | Period boundaries are computed in the user's timezone, taking `user.monthStartDay` into account. A `monthStartDay = 25` gives periods from the 25th to the 24th. |
+| RG-B2 | A budget on a parent category counts the expenses of all its subcategories. |
+| RG-B3 | Only non-deleted `EXPENSE` transactions, within the period, in the targeted category, feed `spentMinor`. Transfers and income are excluded. |
+| RG-B4 | Two active budgets cannot target the same category over overlapping periods. |
+| RG-B5 | `rollover = true`: `allocatedMinor(n) = amountMinor + (allocatedMinor(n-1) − spentMinor(n-1))`. The carryover can be negative (overspending carries forward). |
+| RG-B6 | Alerts trigger on **crossing** a threshold, only once per period and per threshold (`lastAlertPct`). Dropping back below the threshold and crossing it again does not re-notify within the same period. |
+| RG-B7 | A budget in a currency different from a transaction converts at the rate on the transaction's date (`occurredAt`), not at the current day's rate. |
+| RG-B8 | Budget periods are generated in advance over a rolling 12 months by a daily job. |
 
-### Modèles de budget proposés à la création
+### Budget templates offered at creation
 
-- **50/30/20** : 50 % besoins, 30 % envies, 20 % épargne et remboursement de dettes. Répartition des catégories système pré-affectée.
-- **Base zéro** : chaque unité de revenu prévu est affectée à une catégorie ; l'écran affiche « reste à affecter » et vise zéro.
-- **Personnalisé** : montants libres par catégorie.
+- **50/30/20**: 50% needs, 30% wants, 20% savings and debt repayment. Pre-assigned distribution of system categories.
+- **Zero-based**: every unit of expected income is assigned to a category; the screen displays "left to assign" and targets zero.
+- **Custom**: free-form amounts per category.
 
-Ces modèles ne sont qu'un point de départ : ils génèrent des `Budget` normaux, modifiables ensuite.
+These templates are only a starting point: they generate regular `Budget` records, which can be modified afterward.
 
 ---
 
 ## G. Module `debts`
 
-Le module le plus délicat. Toutes les formules ci-dessous doivent être testées avec des jeux de valeurs de référence.
+The most delicate module. All the formulas below must be tested with reference value sets.
 
-### Génération de l'échéancier
+### Schedule generation
 
-**Prêt amortissable à mensualité constante** — mensualité :
+**Amortizing loan with constant installment** — installment:
 
 ```
 i = annualRatePct / 100 / périodes_par_an
@@ -141,7 +141,7 @@ M = P × i / (1 − (1 + i)^(−n))      si i > 0
 M = P / n                            si i = 0
 ```
 
-Pour chaque échéance k :
+For each installment k:
 
 ```
 intérêts_k  = capital_restant_{k−1} × i
@@ -149,48 +149,48 @@ capital_k   = M − intérêts_k
 capital_restant_k = capital_restant_{k−1} − capital_k
 ```
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-D1 | Tous les calculs se font en unités mineures entières. L'arrondi de chaque échéance se fait à l'unité mineure ; **l'écart cumulé d'arrondi est absorbé par la dernière échéance**, de sorte que `Σ capital_k = principal` exactement. |
-| RG-D2 | `balanceAfterMinor` de la dernière échéance vaut exactement 0. C'est un test obligatoire. |
-| RG-D3 | Une dette à taux 0 (`RateType.ZERO`) ou informelle sans échéancier reste valide : `installments` peut être vide, seul `outstandingPrincipalMinor` est suivi. |
-| RG-D4 | Un remboursement anticipé (`isExtraPayment`) s'impute **intégralement au capital** et déclenche la régénération de l'échéancier restant. L'utilisateur choisit : réduire la mensualité, ou réduire la durée (défaut : réduire la durée, plus avantageux). |
-| RG-D5 | La régénération d'un échéancier ne modifie **jamais** les échéances déjà payées. Elle ne touche que les échéances `SCHEDULED` futures. |
-| RG-D6 | Un paiement partiel s'impute d'abord aux frais, puis aux intérêts, puis au capital. L'échéance passe en `PARTIAL`. |
-| RG-D7 | Une échéance `SCHEDULED` dont `dueOn < aujourd'hui` passe en `LATE` par tâche quotidienne, et déclenche une notification. |
-| RG-D8 | Quand `outstandingPrincipalMinor` atteint 0, la dette passe en `PAID_OFF`, `closedAt` est renseigné, et `DebtPaidOff` est notifié. |
-| RG-D9 | Enregistrer un `DebtPayment` avec un `linkedAccountId` émet `DebtPaymentRecorded`, qui crée une transaction `EXPENSE` (ou `INCOME` si `OWED_TO_ME`) sur ce compte. Supprimer le paiement supprime la transaction. |
-| RG-D10 | Une dette `OWED_TO_ME` (créance) compte comme **actif** dans le patrimoine net ; une dette `OWED_BY_ME` comme **passif**. |
+| RG-D1 | All calculations are done in integer minor units. Each installment is rounded to the minor unit; **the cumulative rounding gap is absorbed by the last installment**, so that `Σ capital_k = principal` exactly. |
+| RG-D2 | `balanceAfterMinor` of the last installment is exactly 0. This is a mandatory test. |
+| RG-D3 | A zero-rate (`RateType.ZERO`) or informal debt without a schedule remains valid: `installments` may be empty, only `outstandingPrincipalMinor` is tracked. |
+| RG-D4 | An early repayment (`isExtraPayment`) is applied **entirely to principal** and triggers regeneration of the remaining schedule. The user chooses: reduce the installment amount, or reduce the duration (default: reduce the duration, more advantageous). |
+| RG-D5 | Regenerating a schedule **never** modifies installments already paid. It only touches future `SCHEDULED` installments. |
+| RG-D6 | A partial payment is applied first to fees, then to interest, then to principal. The installment moves to `PARTIAL`. |
+| RG-D7 | A `SCHEDULED` installment whose `dueOn < today` moves to `LATE` via a daily job, and triggers a notification. |
+| RG-D8 | When `outstandingPrincipalMinor` reaches 0, the debt moves to `PAID_OFF`, `closedAt` is set, and `DebtPaidOff` is notified. |
+| RG-D9 | Recording a `DebtPayment` with a `linkedAccountId` emits `DebtPaymentRecorded`, which creates an `EXPENSE` transaction (or `INCOME` if `OWED_TO_ME`) on that account. Deleting the payment deletes the transaction. |
+| RG-D10 | A debt of type `OWED_TO_ME` (receivable) counts as an **asset** in net worth; a debt of type `OWED_BY_ME` as a **liability**. |
 
-### Vues à fournir
+### Views to provide
 
-- Échéancier complet avec décomposition capital/intérêts par ligne.
-- Coût total du crédit : `Σ intérêts` sur toute la durée.
-- Impact d'un remboursement anticipé : intérêts économisés, nouvelle date de fin.
-- Stratégies de désendettement (V2) : ordre « avalanche » (taux le plus élevé d'abord) et « boule de neige » (plus petit solde d'abord), avec comparaison du coût total.
+- Full schedule with principal/interest breakdown per line.
+- Total cost of credit: `Σ interest` over the entire duration.
+- Impact of an early repayment: interest saved, new end date.
+- Debt payoff strategies (V2): "avalanche" order (highest rate first) and "snowball" order (smallest balance first), with total cost comparison.
 
-### Cas limites
-Taux variable (V2 : on stocke un historique de taux et on régénère à chaque changement) ; échéance sautée ; dette en devise étrangère ; dette sans date de fin ; remboursement supérieur au capital restant (rejet ou solde de la dette avec surplus signalé).
+### Edge cases
+Variable rate (V2: a rate history is stored and the schedule is regenerated on each change); skipped installment; debt in a foreign currency; debt without an end date; payment exceeding the remaining principal (rejection or settling the debt with the surplus flagged).
 
 ---
 
 ## H. Module `goals`
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-G1 | `currentMinor` = Σ des contributions non supprimées. Recalculé, jamais dérivé d'un compteur seul. |
-| RG-G2 | Si `linkedAccountId` est renseigné, l'objectif peut suivre le solde du compte plutôt que des contributions explicites. Le mode est un choix à la création et n'est pas modifiable ensuite. |
-| RG-G3 | L'épargne mensuelle requise = `(targetMinor − currentMinor) / mois restants`, arrondie au supérieur. Si `targetDate` est dépassée et l'objectif non atteint, afficher le retard, pas une valeur négative. |
-| RG-G4 | Atteindre la cible passe le statut en `COMPLETED` et émet `GoalReached`. Une contribution ultérieure est acceptée (dépassement autorisé). |
-| RG-G5 | Une contribution peut générer un transfert réel vers un compte d'épargne, ou rester un simple marquage. Le comportement est explicite à la saisie. |
+| RG-G1 | `currentMinor` = Σ of non-deleted contributions. Recalculated, never derived from a counter alone. |
+| RG-G2 | If `linkedAccountId` is set, the goal can track the account balance instead of explicit contributions. The mode is a choice made at creation and cannot be changed afterward. |
+| RG-G3 | Required monthly savings = `(targetMinor − currentMinor) / remaining months`, rounded up. If `targetDate` has passed and the goal is not reached, display the delay, not a negative value. |
+| RG-G4 | Reaching the target moves the status to `COMPLETED` and emits `GoalReached`. A later contribution is accepted (overshoot allowed). |
+| RG-G5 | A contribution can generate an actual transfer to a savings account, or remain a simple marking. The behavior is explicit at entry time. |
 
 ---
 
 ## I. Module `forecasting`
 
-### Méthode de projection (V1)
+### Projection method (V1)
 
-Pour chaque mois futur du mois M+1 à M+N (N = 6 par défaut, 24 max) :
+For each future month from M+1 to M+N (N = 6 by default, 24 max):
 
 ```
 solde_projeté(m) = solde_projeté(m−1)
@@ -201,88 +201,88 @@ solde_projeté(m) = solde_projeté(m−1)
                  + contributions_objectifs_planifiées(m)
 ```
 
-`dépenses_non_récurrentes_estimées` = moyenne des 3 derniers mois complets des dépenses non rattachées à une récurrence, par catégorie. Une médiane sur 6 mois est utilisée si la variance est forte (écart-type > 40 % de la moyenne), pour limiter l'effet des mois atypiques.
+`dépenses_non_récurrentes_estimées` = average of the last 3 complete months of expenses not attached to a recurrence, per category. A 6-month median is used if variance is high (standard deviation > 40% of the mean), to limit the effect of atypical months.
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-F1 | La projection ne persiste rien. Résultat mis en cache (TTL 1 h), invalidé par tout événement de transaction, budget ou dette. |
-| RG-F2 | Chaque point de projection expose sa **composition** (part récurrente, part estimée, part dette) pour que l'utilisateur comprenne d'où vient le chiffre. |
-| RG-F3 | Avec moins de 2 mois d'historique, la partie « estimée » n'est pas calculée ; l'application affiche explicitement que la projection est incomplète plutôt que d'extrapoler sur des données insuffisantes. |
-| RG-F4 | La projection signale les mois où le solde projeté passe sous zéro (alerte de trésorerie). |
-| RG-F5 | Les projections sont des estimations basées sur l'historique. L'interface ne doit pas les présenter comme des prédictions certaines ni en tirer de recommandation financière. |
+| RG-F1 | The projection persists nothing. Result cached (TTL 1h), invalidated by any transaction, budget, or debt event. |
+| RG-F2 | Each projection point exposes its **composition** (recurring share, estimated share, debt share) so the user understands where the figure comes from. |
+| RG-F3 | With less than 2 months of history, the "estimated" part is not computed; the application explicitly shows that the projection is incomplete rather than extrapolating from insufficient data. |
+| RG-F4 | The projection flags months where the projected balance goes below zero (cash-flow alert). |
+| RG-F5 | Projections are estimates based on history. The interface must not present them as certain predictions nor draw financial recommendations from them. |
 
-### Scénarios (V2)
-Paramètres applicables sans persistance : variation en % d'une catégorie, ajout/suppression d'une récurrence hypothétique, remboursement anticipé d'une dette, changement de revenu. Résultat : deux courbes superposées (référence vs scénario) et le delta à l'horizon.
+### Scenarios (V2)
+Parameters applicable without persistence: percentage change of a category, addition/removal of a hypothetical recurrence, early repayment of a debt, income change. Result: two overlaid curves (reference vs scenario) and the delta at the horizon.
 
 ---
 
 ## J. Module `reporting`
 
-Rapports à fournir (tous filtrables par période, comptes, catégories, tags) :
+Reports to provide (all filterable by period, accounts, categories, tags):
 
-1. **Dépenses par catégorie** — camembert + tableau, avec % du total et évolution vs période précédente.
-2. **Évolution mensuelle** — barres revenus/dépenses, ligne du solde net.
-3. **Patrimoine net dans le temps** — courbe sur 12/24/60 mois, décomposée actifs/passifs.
-4. **Flux de trésorerie** — entrées, sorties, net, par mois.
-5. **Comparaison de périodes** — mois vs mois−1, mois vs même mois année−1.
-6. **Top dépenses** — plus grosses transactions de la période.
-7. **Budget vs réel** — écart par catégorie.
-8. **Dettes** — capital restant total, intérêts payés cumulés, date de sortie de dette projetée.
+1. **Expenses by category** — pie chart + table, with % of total and change vs previous period.
+2. **Monthly trend** — income/expense bars, net balance line.
+3. **Net worth over time** — curve over 12/24/60 months, broken down into assets/liabilities.
+4. **Cash flow** — inflows, outflows, net, per month.
+5. **Period comparison** — month vs month−1, month vs same month year−1.
+6. **Top expenses** — largest transactions of the period.
+7. **Budget vs actual** — variance per category.
+8. **Debts** — total remaining principal, cumulative interest paid, projected debt-free date.
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-RP1 | Tous les agrégats sont calculés en SQL, jamais par chargement en mémoire. |
-| RG-RP2 | La conversion multi-devises utilise le taux à la date de chaque transaction, pas le taux du jour. Le rapport indique la devise de consolidation et la méthode. |
-| RG-RP3 | Le patrimoine net = Σ(soldes des comptes avec `includeInNetWorth`) + Σ(créances `OWED_TO_ME`) − Σ(capital restant dû `OWED_BY_ME`). |
-| RG-RP4 | Le patrimoine net historique est reconstruit à partir des transactions, pas d'un instantané stocké — sinon toute correction rétroactive fausserait l'historique. |
+| RG-RP1 | All aggregates are computed in SQL, never by loading into memory. |
+| RG-RP2 | Multi-currency conversion uses the rate on the date of each transaction, not the current day's rate. The report indicates the consolidation currency and the method. |
+| RG-RP3 | Net worth = Σ(account balances with `includeInNetWorth`) + Σ(receivables `OWED_TO_ME`) − Σ(remaining principal owed `OWED_BY_ME`). |
+| RG-RP4 | Historical net worth is rebuilt from transactions, not from a stored snapshot — otherwise any retroactive correction would distort history. |
 
 ---
 
 ## K. Module `notifications`
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-N1 | Une notification est créée une seule fois par (type, entité, période). Pas de doublon si la tâche tourne plusieurs fois. |
-| RG-N2 | Deux canaux en V1 : **in-app** (toujours) et **push web** (opt-in). L'email est V2. |
-| RG-N3 | L'utilisateur peut activer ou désactiver chaque canal pour chaque type de notification. |
+| RG-N1 | A notification is created only once per (type, entity, period). No duplicate if the job runs multiple times. |
+| RG-N2 | Two channels in V1: **in-app** (always) and **web push** (opt-in). Email is V2. |
+| RG-N3 | The user can enable or disable each channel for each notification type. |
 
-### Push web
+### Web push
 
-Le push repose sur la Web Push API et la table `DeviceToken` (voir `03-modele-donnees.md § 17`). Il complète le canal in-app, il ne le remplace pas : une notification est **toujours** créée en base, le push n'est qu'une tentative de livraison immédiate.
+Push relies on the Web Push API and the `DeviceToken` table (see `03-modele-donnees.md § 17`). It complements the in-app channel, it does not replace it: a notification is **always** created in the database, push is only an immediate delivery attempt.
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-N4 | L'échec d'un envoi push ne fait jamais échouer l'opération métier qui l'a déclenché. L'envoi est asynchrone et hors transaction SQL. |
-| RG-N5 | Le contenu d'un push ne contient **ni montant, ni libellé de transaction, ni nom de bénéficiaire**. Une notification de dépassement dit « Budget Alimentation dépassé », pas « Budget Alimentation dépassé de 12 500 XOF ». Un push transite par un service tiers et peut s'afficher sur un écran verrouillé. |
-| RG-N6 | Un `endpoint` renvoyant une erreur définitive (410 Gone, 404) est immédiatement désactivé. Une erreur transitoire incrémente `failureCount` ; à 5, l'abonnement est désactivé. |
-| RG-N7 | La demande d'autorisation de notification n'est jamais présentée au premier lancement, mais au moment où l'utilisateur crée son premier budget ou sa première dette — c'est-à-dire quand l'intérêt est explicite. Une demande prématurée est refusée, et un refus navigateur est difficilement réversible. |
-| RG-N8 | Le push est **désactivé par défaut** pour tous les types. C'est un opt-in explicite, par type. |
-| RG-N9 | Une notification stocke `type` + `params`, **jamais de texte rendu** (ADR-0009). Le rendu se fait à l'affichage, dans la langue courante ; l'historique se traduit donc avec le changement de langue. |
-| RG-N10 | Le contenu d'un push est rendu **côté serveur** au moment de l'envoi, dans la langue de l'utilisateur (`user.locale`) — un service worker inactif ne peut pas traduire. C'est la seule exception au principe « pas de rendu serveur », et elle ne stocke rien. |
-| RG-N11 | Un `type` inconnu du client (version antérieure) affiche un libellé de repli générique, jamais une ligne vide. |
+| RG-N4 | A push send failure never fails the business operation that triggered it. Sending is asynchronous and outside the SQL transaction. |
+| RG-N5 | The content of a push contains **neither amount, nor transaction label, nor payee name**. An overspend notification says "Groceries budget exceeded", not "Groceries budget exceeded by 12,500 XOF". A push goes through a third-party service and can be displayed on a locked screen. |
+| RG-N6 | An `endpoint` returning a definitive error (410 Gone, 404) is immediately disabled. A transient error increments `failureCount`; at 5, the subscription is disabled. |
+| RG-N7 | The notification permission prompt is never presented on first launch, but at the moment the user creates their first budget or their first debt — that is, when interest is explicit. A premature request gets refused, and a browser refusal is hard to reverse. |
+| RG-N8 | Push is **disabled by default** for all types. It is an explicit opt-in, per type. |
+| RG-N9 | A notification stores `type` + `params`, **never rendered text** (ADR-0009). Rendering happens at display time, in the current language; history is therefore translated as the language changes. |
+| RG-N10 | The content of a push is rendered **server-side** at send time, in the user's language (`user.locale`) — an inactive service worker cannot translate. This is the only exception to the "no server-side rendering" principle, and it stores nothing. |
+| RG-N11 | A `type` unknown to the client (older version) displays a generic fallback label, never an empty line. |
 
-**Limite iOS assumée** : le support du Web Push sur iOS impose que la PWA soit installée sur l'écran d'accueil et reste plus restreint qu'un push natif. Aucune fonctionnalité critique ne doit dépendre du push — il reste un confort, jamais le seul moyen d'apprendre une information. L'état exact du support est à vérifier au moment d'implémenter le lot 7.
+**Accepted iOS limitation**: Web Push support on iOS requires the PWA to be installed on the home screen and remains more restricted than native push. No critical feature should depend on push — it remains a convenience, never the sole means of learning information. The exact state of support is to be verified when implementing lot 7.
 
 ---
 
 ## L. Module `import`
 
-Voir le détail complet dans `06-import-export.md`. Règles clés :
+See full detail in `06-import-export.md`. Key rules:
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-I1 | Aucun import n'écrit en base sans une étape de **prévisualisation validée** par l'utilisateur. |
-| RG-I2 | Les lignes en doublon probable sont présentées à part, pré-cochées comme « à ignorer », mais l'utilisateur peut forcer l'import. |
-| RG-I3 | Un lot d'import est annulable en bloc tant qu'aucune transaction du lot n'a été modifiée manuellement. |
-| RG-I4 | Une ligne en erreur n'interrompt pas l'import : elle est collectée dans `errors` avec son numéro de ligne et le motif. |
+| RG-I1 | No import writes to the database without a **preview step validated** by the user. |
+| RG-I2 | Probable duplicate lines are presented separately, pre-checked as "to ignore", but the user can force the import. |
+| RG-I3 | An import batch can be cancelled as a whole as long as no transaction in the batch has been manually modified. |
+| RG-I4 | A line in error does not interrupt the import: it is collected in `errors` with its line number and the reason. |
 
 ---
 
 ## M. Module `export`
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-E1 | L'export intégral (« toutes mes données ») produit une archive contenant un fichier par entité, en CSV UTF-8 avec BOM, plus un `manifest.json` indiquant la date d'export, les versions de schéma et le nombre de lignes par fichier. |
-| RG-E2 | Les montants exportés le sont à la fois en unité mineure (colonne exacte) et en valeur décimale formatée (colonne lisible), pour éviter toute ambiguïté. |
-| RG-E3 | L'export est journalisé dans l'audit (qui, quand, quel périmètre). |
-| RG-E4 | Un export ne contient jamais de `passwordHash`, de token ni de session. |
+| RG-E1 | The full export ("all my data") produces an archive containing one file per entity, in UTF-8 CSV with BOM, plus a `manifest.json` indicating the export date, schema versions, and the number of rows per file. |
+| RG-E2 | Exported amounts are provided both in minor units (exact column) and as formatted decimal value (readable column), to avoid any ambiguity. |
+| RG-E3 | The export is logged in the audit (who, when, what scope). |
+| RG-E4 | An export never contains `passwordHash`, tokens, or sessions. |

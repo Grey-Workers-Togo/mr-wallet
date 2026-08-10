@@ -1,64 +1,64 @@
 # Mr Wallet — Logo & Branding
 
-Logos minimalistes, sans illustration. Trois options proposées.
+Minimalist logos, no illustration. Three options proposed.
 
 ---
 
-## 1. Wordmark (Option recommandée)
+## 1. Wordmark (Recommended option)
 
-**Nom** : Mr Wallet  
-**Typographie** : Segoe UI / System stack, semibold  
-**Taille titre** : text-2xl (24px)  
-**Couleur** : Teal-800 (#0F766E)
+**Name**: Mr Wallet  
+**Typography**: Segoe UI / System stack, semibold  
+**Title size**: text-2xl (24px)  
+**Color**: Teal-800 (#0F766E)
 
 ```
 Mr Wallet
 ```
 
-Simple, lisible, scalable. À utiliser en haut à gauche du header.
+Simple, readable, scalable. To be used at the top left of the header.
 
-**Avantages** :
-- Pas d'ambiguïté sur le nom du produit
-- Facile à reconnaître
-- Fonctionne à toutes les tailles (favicon, header, export)
+**Advantages**:
+- No ambiguity about the product name
+- Easy to recognize
+- Works at all sizes (favicon, header, export)
 
 ---
 
 ## 2. Symbol + Wordmark (Compact)
 
-**Symbol** : Carré arrondi avec motif
+**Symbol**: Rounded square with pattern
 
 ```
 ┌─────┐
-│  {}  │  ← accolades = finances/conteneur
+│  {}  │  ← braces = finances/container
 └─────┘
 Mr Wallet
 ```
 
-Ou plus épuré : juste les crochets/chevrons :
+Or more stripped down: just the brackets/chevrons:
 
 ```
 < >
 Mr Wallet
 ```
 
-Les chevrons/accolades évoquent l'ordre, la structure, le conteneur (portefeuille conceptuel).
+The chevrons/braces evoke order, structure, the container (conceptual wallet).
 
-**Couleurs** :
-- Symbol : Teal-800
-- Text : Neutral-900
+**Colors**:
+- Symbol: Teal-800
+- Text: Neutral-900
 
-**Tailles** :
+**Sizes**:
 - 24px × 24px symbol + 16px text (header)
 - 64px × 64px symbol + 24px text (auth page)
 - 192px × 192px symbol (favicon, app icon)
 
 ---
 
-## 3. Monogramme (Option minimaliste)
+## 3. Monogram (Minimalist option)
 
-**Initiales** : MW  
-**Forme** : Carré arrondi
+**Initials**: MW  
+**Shape**: Rounded square
 
 ```
 ┌─────┐
@@ -66,18 +66,18 @@ Les chevrons/accolades évoquent l'ordre, la structure, le conteneur (portefeuil
 └─────┘
 ```
 
-Compact, fonctionne bien en favicon et app icon. Moins idéal pour le branding à la première visite.
+Compact, works well as favicon and app icon. Less ideal for branding on first visit.
 
 ---
 
-## Recommandation finale
+## Final recommendation
 
-**Utilise l'Option 1 + Option 2** :
+**Use Option 1 + Option 2**:
 
-- **Header** : Symbol teal-800 24×24 + "Mr Wallet" (wordmark)
-- **Favicon** : Symbol seul, 192×192
-- **Splash screen PWA** : Symbol 512×512 sur fond teal-50
-- **Logo email** : Symbol + "Mr Wallet"
+- **Header**: Symbol teal-800 24×24 + "Mr Wallet" (wordmark)
+- **Favicon**: Symbol alone, 192×192
+- **PWA splash screen**: Symbol 512×512 on teal-50 background
+- **Email logo**: Symbol + "Mr Wallet"
 
 ```
 ┌──────┐
@@ -87,25 +87,25 @@ Compact, fonctionne bien en favicon et app icon. Moins idéal pour le branding �
 
 ---
 
-## Implémentation SVG (à créer)
+## SVG implementation (to be created)
 
 ```svg
 <!-- apps/web/public/logo-symbol.svg -->
 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <!-- Carré arrondi -->
+  <!-- Rounded square -->
   <rect x="8" y="8" width="48" height="48" rx="8" fill="#0F766E" opacity="0.1" stroke="#0F766E" stroke-width="2"/>
   
-  <!-- Symbole : accolades stylistiques -->
+  <!-- Symbol: stylistic braces -->
   <path d="M 24 20 Q 20 20 20 24 L 20 40 Q 20 44 24 44" 
         stroke="#0F766E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
   <path d="M 40 20 Q 44 20 44 24 L 44 40 Q 44 44 40 44" 
         stroke="#0F766E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
   
-  <!-- Tiret central (trait d'égalité) -->
+  <!-- Central dash (equals-like stroke) -->
   <line x1="28" y1="32" x2="36" y2="32" stroke="#0F766E" stroke-width="1.5" opacity="0.6"/>
 </svg>
 
-<!-- Usage en composant Next.js -->
+<!-- Usage in a Next.js component -->
 <!-- components/shared/Logo.tsx -->
 import Image from "next/image";
 
@@ -140,19 +140,19 @@ export function LogoSymbolOnly({ size = 24 }: { size?: number }) {
 
 ---
 
-## Fichiers à créer
+## Files to create
 
 ```
 public/
-├── logo-symbol.svg          (symbol seul)
-├── logo-full.svg            (symbol + texte)
+├── logo-symbol.svg          (symbol alone)
+├── logo-full.svg            (symbol + text)
 ├── favicon.ico              (32×32, symbol)
 ├── icon-192x192.png         (PWA)
 ├── icon-512x512.png         (PWA splash)
 └── apple-touch-icon.png     (iOS)
 ```
 
-**Génération PNG depuis SVG** :
+**PNG generation from SVG**:
 
 ```bash
 # Via sharp (Node.js)
@@ -175,35 +175,34 @@ sharp('logo-symbol.svg')
 
 ---
 
-## Palette de couleurs du logo
+## Logo color palette
 
-| Contexte | Couleur | Code |
+| Context | Color | Code |
 |---|---|---|
-| Symbol primaire | Teal-800 | #0F766E |
-| Background symbol | Teal-50 (opt.) | #F0FDFA |
+| Primary symbol | Teal-800 | #0F766E |
+| Symbol background | Teal-50 (opt.) | #F0FDFA |
 | Neutral (alt.) | Neutral-900 | #111827 |
-| Fond inverse (dark mode) | Teal-500 | #14B8A6 |
+| Inverse background (dark mode) | Teal-500 | #14B8A6 |
 
 ---
 
-## Cas d'usage
+## Use cases
 
-| Lieu | Taille | Format | Couleur |
+| Location | Size | Format | Color |
 |---|---|---|---|
 | Header | 24×24 | SVG | Teal |
 | Favicon | 32×32 | PNG | Teal |
 | PWA manifest | 192×192, 512×512 | PNG | Teal |
 | Email signature | 64×64 | PNG | Teal |
-| Social media | 400×400 | PNG | Teal + fond blanc |
+| Social media | 400×400 | PNG | Teal + white background |
 | Print (opt.) | 1000×1000 | PDF vector | Teal |
 
 ---
 
-## À faire côté Claude Code
+## To do on the Claude Code side
 
-1. Créer le fichier SVG `public/logo-symbol.svg`
-2. Générer les PNG (192×192, 512×512)
-3. Créer le composant `Logo` et `LogoSymbolOnly`
-4. Ajouter au manifest PWA (`next.config.js`)
-5. Intégrer dans `components/layouts/Navigation.tsx`
-
+1. Create the SVG file `public/logo-symbol.svg`
+2. Generate the PNGs (192×192, 512×512)
+3. Create the `Logo` and `LogoSymbolOnly` components
+4. Add to the PWA manifest (`next.config.js`)
+5. Integrate into `components/layouts/Navigation.tsx`

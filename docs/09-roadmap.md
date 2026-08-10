@@ -1,160 +1,162 @@
-# 09 — Roadmap et ordre d'implémentation
+# 09 — Roadmap and implementation order
 
-Les lots sont **séquentiels**. Chacun se termine par une version fonctionnelle et testée. Ne pas commencer un lot tant que le précédent n'est pas terminé au sens de la definition of done (`10-conventions-dev.md`).
+Lots are **sequential**. Each one ends with a functional, tested version. Do not start a lot until the previous one is complete per the definition of done (`10-conventions-dev.md`).
 
-Les estimations sont indicatives, pour un développeur à temps plein.
-
----
-
-## Lot 0 — Fondations (≈ 1 semaine)
-
-Rien de fonctionnel, mais tout le reste en dépend.
-
-- Monorepo (`apps/api`, `apps/web`, `packages/contracts`), TypeScript strict, ESLint, Prettier.
-- NestJS + Prisma + PostgreSQL en local (Docker Compose).
-- **Kernel `money`** avec sa suite de tests complète. C'est le premier code écrit du projet.
-- Filtre d'exception global, format d'erreur normalisé (`code` + `params`, sans message), `requestId`.
-- **Socle i18n** : `next-intl`, fichiers `fr.json` et `en.json`, contrôle de parité des clés en CI. À poser maintenant : une seule langue au démarrage laisse toujours passer des chaînes en dur.
-- Middleware Prisma : soft delete + filtrage `userId`.
-- Intercepteur d'audit global + table `AuditLog` + triggers d'immuabilité.
-- CI : lint, typecheck, tests, migration.
-
-**Critère de sortie** : une entité de test peut être créée via l'API, produit une entrée d'audit dans la même transaction SQL, et est invisible après soft delete. Le build échoue si une clé de traduction manque dans l'une des deux langues.
+Estimates are indicative, for one full-time developer.
 
 ---
 
-## Lot 1 — Identité et comptes (≈ 1 semaine)
+## Lot 0 — Foundations (≈ 1 week)
 
-- `auth` : inscription, connexion, refresh rotatif, sessions, mot de passe oublié.
-- `users` : profil, préférences, devise de référence, fuseau.
-- `currency` : table `Currency`, parités fixes en seed, saisie manuelle de taux, conversion.
-- `accounts` : CRUD, solde d'ouverture, archivage.
-- Front : écrans d'authentification, liste et création de comptes.
+Nothing functional yet, but everything else depends on it.
 
-**Critère de sortie** : un utilisateur s'inscrit, crée trois comptes de types et devises différents, et voit ses soldes d'ouverture. Test d'isolation A/B passant sur tous les endpoints.
+- Monorepo (`apps/api`, `apps/web`, `packages/contracts`), strict TypeScript, ESLint, Prettier.
+- NestJS + Prisma + PostgreSQL locally (Docker Compose).
+- **`money` kernel** with its complete test suite. This is the first code written for the project.
+- Global exception filter, normalized error format (`code` + `params`, no message), `requestId`.
+- **i18n foundation**: `next-intl`, `fr.json` and `en.json` files, key-parity check in CI. To be put in place now: starting with a single language always lets hardcoded strings slip through.
+- Prisma middleware: soft delete + `userId` filtering.
+- Global audit interceptor + `AuditLog` table + immutability triggers.
+- CI: lint, typecheck, tests, migration.
+
+**Exit criterion**: a test entity can be created via the API, produces an audit entry within the same SQL transaction, and is invisible after soft delete. The build fails if a translation key is missing in either language.
 
 ---
 
-## Lot 2 — Transactions (≈ 1,5 semaine)
+## Lot 1 — Identity and accounts (≈ 1 week)
 
-Cœur du produit.
+- `auth`: registration, login, rotating refresh, sessions, forgotten password.
+- `users`: profile, preferences, reference currency, timezone.
+- `currency`: `Currency` table, fixed parities in seed, manual rate entry, conversion.
+- `accounts`: CRUD, opening balance, archiving.
+- Frontend: authentication screens, account list and creation.
 
-- `categories` : arbre, catégories système en seed, réaffectation à la suppression.
+**Exit criterion**: a user signs up, creates three accounts of different types and currencies, and sees their opening balances. A/B isolation test passing on all endpoints.
+
+---
+
+## Lot 2 — Transactions (≈ 1.5 weeks)
+
+Core of the product.
+
+- `categories`: tree, system categories in seed, reassignment on deletion.
 - `tags`.
-- `transactions` : CRUD, transferts à deux jambes, `normalizedLabel`, `fingerprint`, maintien incrémental des soldes.
-- Liste paginée par curseur, filtres, recherche texte.
-- Opérations en lot.
-- `BalanceCheck` + tâche de réconciliation nocturne.
-- Front : saisie rapide (objectif < 15 s), liste, filtres, édition.
+- `transactions`: CRUD, two-leg transfers, `normalizedLabel`, `fingerprint`, incremental balance maintenance.
+- Cursor-paginated list, filters, text search.
+- Batch operations.
+- `BalanceCheck` + nightly reconciliation job.
+- Frontend: quick entry (target < 15 s), list, filters, editing.
 
-**Critère de sortie** : 500 transactions saisies et importées manuellement laissent les soldes exacts après réconciliation. Suppression et modification recalculent correctement.
-
----
-
-## Lot 3 — Import et export (≈ 1,5 semaine)
-
-- `import` : upload, sniffing, mapping assisté, `ImportSource` réutilisable, parsing tolérant aux erreurs, dédoublonnage à trois niveaux, prévisualisation, commit transactionnel, annulation de lot.
-- `CategorizationRule` : CRUD et application à l'import et à la saisie.
-- `export` : CSV et XLSX ciblés, export intégral avec manifeste.
-- Front : assistant d'import en 4 étapes, écran d'aperçu à trois onglets.
-
-**Critère de sortie** : un même relevé importé deux fois ne crée aucun doublon ; un fichier avec 10 % de lignes malformées s'importe en isolant les erreurs ; l'annulation d'un lot restaure les soldes exacts.
-
-> Ce lot est le plus risqué du projet. Le tester avec de **vrais** relevés (banque, mobile money) avant de le considérer terminé — les formats réels sont toujours plus sales que les jeux de test synthétiques.
+**Exit criterion**: 500 manually entered and imported transactions leave balances exact after reconciliation. Deletion and modification recalculate correctly.
 
 ---
 
-## Lot 4 — Budgets et récurrences (≈ 1,5 semaine)
+## Lot 3 — Import and export (≈ 1.5 weeks)
 
-- `recurrence` : règles, calcul des occurrences, matérialisation, skip, détection de suggestions.
-- `budgets` : budgets, périodes matérialisées, consommation incrémentale, report, seuils d'alerte, modèles 50/30/20 et base zéro.
-- `notifications` : notifications in-app, préférences par type et par canal, table `DeviceToken` et envoi push web (VAPID).
-- Front : écran budgets avec jauges, écran récurrences, centre de notifications, demande d'autorisation push contextuelle (RG-N7).
+- `import`: upload, sniffing, assisted mapping, reusable `ImportSource`, error-tolerant parsing, three-level deduplication, preview, transactional commit, batch cancellation.
+- `CategorizationRule`: CRUD and application on import and on entry.
+- `export`: targeted CSV and XLSX, full export with manifest.
+- Frontend: 4-step import wizard, three-tab preview screen.
 
-**Critère de sortie** : un budget mensuel avec report se comporte correctement sur 3 périodes simulées, y compris en cas de dépassement. Une modification de date de transaction déplace bien la consommation d'une période à l'autre.
+**Exit criterion**: the same statement imported twice creates no duplicates; a file with 10% malformed lines imports while isolating the errors; cancelling a batch restores exact balances.
 
----
-
-## Lot 5 — Dettes (≈ 1,5 semaine)
-
-- `debts` : CRUD, génération d'échéancier amortissable, paiements, paiements partiels, remboursement anticipé avec régénération, passage en retard, clôture.
-- Événement `DebtPaymentRecorded` créant la transaction liée.
-- Simulation de remboursement anticipé.
-- Front : détail de dette avec échéancier, saisie de paiement, simulateur.
-
-**Critère de sortie** : sur un prêt de référence (montant, taux, durée connus), l'échéancier généré correspond au centime près à un calcul de contrôle indépendant, et la dernière ligne laisse un capital restant dû strictement égal à 0.
+> This is the riskiest lot in the project. Test it with **real** statements (bank, mobile money) before considering it done — real-world formats are always messier than synthetic test datasets.
 
 ---
 
-## Lot 6 — Objectifs, rapports, prévisions (≈ 1,5 semaine)
+## Lot 4 — Budgets and recurrences (≈ 1.5 weeks)
 
-- `goals` : objectifs, contributions, progression, épargne requise.
-- `reporting` : les 8 rapports listés en `04-modules.md § J`, tous en SQL agrégé.
-- `forecasting` : projection de trésorerie et de patrimoine net sur 6 à 24 mois, avec décomposition.
-- Front : tableau de bord, écrans de rapports avec graphiques, écran de prévisions.
+- `recurrence`: rules, occurrence calculation, materialization, skip, suggestion detection.
+- `budgets`: budgets, materialized periods, incremental consumption, rollover, alert thresholds, 50/30/20 and zero-based models.
+- `notifications`: in-app notifications, preferences by type and channel, `DeviceToken` table and web push sending (VAPID).
+- Frontend: budgets screen with gauges, recurrences screen, notification center, contextual push permission request (RG-N7).
 
-**Critère de sortie** : le patrimoine net calculé correspond à la somme vérifiable manuellement des comptes et dettes ; les rapports restent sous 500 ms sur un jeu de 10 000 transactions.
-
----
-
-## Lot 7 — Finition MVP (≈ 1 semaine)
-
-- Consultation du journal d'audit (frise par entité).
-- Verrouillage PIN côté client (RG-S6 à RG-S9).
-- **PWA** : manifeste, icônes, installabilité, service worker.
-- **Cache de consultation hors ligne** en lecture seule (ADR-0008) : périmètre borné, bandeau de fraîcheur, écritures désactivées, purge à la déconnexion.
-- Vérification du support effectif du Web Push sur iOS et repli documenté.
-- Écran de préférences complet, dont le sélecteur de langue.
-- **Relecture i18n complète** : parcours intégral de l'application en `en`, chasse aux chaînes oubliées, vérification des pluriels et des formats de date et de montant dans les deux langues.
-- Accessibilité (navigation clavier, contrastes, libellés ARIA, cibles tactiles ≥ 44 px).
-- Comportement sur connexion lente : états de chargement, gestion des erreurs réseau, réessai.
-- Documentation utilisateur minimale.
-- Tests e2e Playwright sur les 13 cas d'usage MVP, **dont un parcours mobile et un parcours hors ligne**.
-
-**Fin du MVP.**
+**Exit criterion**: a monthly budget with rollover behaves correctly over 3 simulated periods, including in case of overspending. A change to a transaction's date correctly moves consumption from one period to another.
 
 ---
 
-## V2 — Après retours d'usage (≈ 4 à 6 semaines)
+## Lot 5 — Debts (≈ 1.5 weeks)
 
-Par ordre de priorité décroissante :
+- `debts`: CRUD, amortization schedule generation, payments, partial payments, early repayment with regeneration, transition to overdue, closure.
+- `DebtPaymentRecorded` event creating the linked transaction.
+- Early repayment simulation.
+- Frontend: debt detail with schedule, payment entry, simulator.
 
-1. **Recherche avancée** multi-critères sauvegardable (UC-17).
-2. **Scénarios de prévision** (UC-14) — le simulateur « et si ».
-3. **Stratégies de désendettement** : avalanche vs boule de neige avec comparaison chiffrée.
-4. **Notifications par email**.
-5. **Multi-devises avancé** : provider de taux optionnel, rapports de consolidation détaillés.
-6. **Pièces jointes** : photo de reçu attachée à une transaction.
-7. **Import OFX/QIF**.
-8. **Application mobile** (React Native ou PWA installable) — décision à prendre selon les retours.
-9. **Tableau de bord personnalisable** (widgets déplaçables).
+**Exit criterion**: on a reference loan (known amount, rate, term), the generated schedule matches an independent control calculation to the cent, and the last line leaves an outstanding principal strictly equal to 0.
 
 ---
 
-## V3 — Extensions structurantes
+## Lot 6 — Goals, reports, forecasts (≈ 1.5 weeks)
 
-À n'envisager qu'avec une base d'utilisateurs réelle :
+- `goals`: goals, contributions, progress, required savings.
+- `reporting`: the 8 reports listed in `04-modules.md § J`, all in aggregated SQL.
+- `forecasting`: cash flow and net worth projection over 6 to 24 months, with breakdown.
+- Frontend: dashboard, report screens with charts, forecast screen.
 
-1. **Budget partagé / foyer** : plusieurs utilisateurs sur un espace commun, avec rôles et permissions. Structurant : à anticiper dans le modèle (un `spaceId` en plus du `userId`) sans l'implémenter avant.
-2. **Investissements** : comptes titres, valorisation, plus-values.
-3. **Connecteurs bancaires** : uniquement via un agrégateur régulé, et seulement si le volume d'utilisateurs justifie le coût et la conformité associée.
-4. **API publique** pour intégrations tierces.
-5. **Analyses avancées** : détection d'anomalies de dépenses, comparaison à des moyennes anonymisées.
-
----
-
-## Ce qui reste explicitement hors périmètre
-
-Offline-first · connecteurs directs vers Gozem/Deliveroo/apps de livraison (nécessitent un partenariat commercial, pas une intégration technique) · comptabilité d'entreprise · conseil en investissement · dépendance dure à une API de taux payante.
+**Exit criterion**: the calculated net worth matches the manually verifiable sum of accounts and debts; reports stay under 500 ms on a dataset of 10,000 transactions.
 
 ---
 
-## Jalons de vérification
+## Lot 7 — MVP finishing (≈ 1 week)
 
-| Jalon | Vérification |
+- Audit log viewing (per-entity timeline).
+- Client-side PIN lock (RG-S6 to RG-S9).
+- **PWA**: manifest, icons, installability, service worker.
+- **Read-only offline consultation cache** (ADR-0008): bounded scope, freshness banner, writes disabled, purge on disconnect.
+- Verification of actual Web Push support on iOS and documented fallback.
+- Complete preferences screen, including the language selector.
+- **Full i18n review**: complete walkthrough of the application in `en`, hunt for forgotten strings, verification of plurals and of date and amount formats in both languages.
+- Accessibility (keyboard navigation, contrast, ARIA labels, touch targets ≥ 44 px).
+- Behavior on slow connections: loading states, network error handling, retry.
+- Minimal user documentation.
+- Playwright e2e tests on the 13 MVP use cases, **including one mobile flow and one offline flow**.
+
+**End of MVP.**
+
+---
+
+## V2 — After usage feedback (≈ 4 to 6 weeks)
+
+In descending order of priority:
+
+1. **Advanced search** multi-criteria, savable (UC-17).
+2. **Forecast scenarios** (UC-14) — the "what if" simulator.
+3. **Debt payoff strategies**: avalanche vs. snowball with quantified comparison.
+4. **Email notifications**.
+5. **Advanced multi-currency**: optional rate provider, detailed consolidation reports.
+6. **Attachments**: receipt photo attached to a transaction.
+7. **OFX/QIF import**.
+8. **Mobile application** (React Native or installable PWA) — decision to be made based on feedback.
+9. **Customizable dashboard** (movable widgets).
+
+---
+
+## V3 — Structural extensions
+
+To be considered only with a real user base:
+
+1. **Shared / household budget**: several users on a shared space, with roles and permissions. Structural: to be anticipated in the model (a `spaceId` in addition to `userId`) without implementing it beforehand.
+2. **Investments**: securities accounts, valuation, capital gains.
+3. **Bank connectors**: only via a regulated aggregator, and only if the user volume justifies the cost and associated compliance.
+4. **Public API** for third-party integrations.
+5. **Advanced analytics**: spending anomaly detection, comparison to anonymized averages.
+
+---
+
+## What remains explicitly out of scope
+
+Offline-first · direct connectors to Gozem/Deliveroo/delivery apps (require a business partnership, not a technical integration) · business accounting · investment advice · hard dependency on a paid exchange-rate API.
+
+---
+
+## Verification milestones
+
+| Milestone | Verification |
 |---|---|
-| Fin lot 0 | Audit écrit dans la transaction métier, soft delete effectif |
-| Fin lot 2 | Réconciliation des soldes exacte sur 500 transactions |
-| Fin lot 3 | Import de vrais relevés bancaires et mobile money |
-| Fin lot 5 | Échéancier validé contre un calcul indépendant |
-| Fin lot 7 | 13 cas d'usage MVP couverts en e2e |
+| End of lot 0 | Audit written within the business transaction, soft delete effective |
+| End of lot 2 | Exact balance reconciliation on 500 transactions |
+| End of lot 3 | Import of real bank and mobile money statements |
+| End of lot 5 | Schedule validated against an independent calculation |
+| End of lot 7 | 13 MVP use cases covered in e2e |
+</content>
+</invoke>

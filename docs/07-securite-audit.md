@@ -1,152 +1,152 @@
-# 07 — Sécurité, audit et horodatage
+# 07 — Security, audit, and timestamping
 
 ---
 
-## 1. Modèle de menace (résumé)
+## 1. Threat model (summary)
 
-| Menace | Gravité | Parade |
+| Threat | Severity | Mitigation |
 |---|---|---|
-| Accès aux données d'un autre utilisateur (IDOR) | Critique | Filtrage `userId` systématique + tests d'isolation par endpoint |
-| Vol de base de données | Critique | Chiffrement au repos, hachage Argon2id, pas de secret en base |
-| Vol de token | Élevée | Access token court, refresh rotatif, révocation de session |
-| Fuite par les logs | Élevée | Interdiction d'écrire montants, libellés et emails dans les logs |
-| Force brute sur le login | Moyenne | Limitation de débit + verrouillage temporaire |
-| Injection SQL | Moyenne | Prisma paramétré ; `$queryRaw` uniquement avec `Prisma.sql` |
-| Import de fichier malveillant | Moyenne | Taille limitée, parsing en sandbox, pas d'évaluation de formule Excel |
-| XSS via libellé de transaction | Moyenne | Échappement systématique côté rendu, jamais de `dangerouslySetInnerHTML` |
-| CSV injection à l'export | Faible | Préfixer d'une apostrophe toute cellule commençant par `= + - @` |
+| Access to another user's data (IDOR) | Critical | Systematic `userId` filtering + isolation tests per endpoint |
+| Database theft | Critical | Encryption at rest, Argon2id hashing, no secrets in the database |
+| Token theft | High | Short-lived access token, rotating refresh, session revocation |
+| Leakage via logs | High | Prohibition on writing amounts, labels, and emails to logs |
+| Brute force on login | Medium | Rate limiting + temporary lockout |
+| SQL injection | Medium | Parameterized Prisma; `$queryRaw` only with `Prisma.sql` |
+| Malicious file import | Medium | Size limit, sandboxed parsing, no Excel formula evaluation |
+| XSS via transaction label | Medium | Systematic escaping on render, never `dangerouslySetInnerHTML` |
+| CSV injection on export | Low | Prefix with an apostrophe any cell starting with `= + - @` |
 
 ---
 
-## 2. Authentification
+## 2. Authentication
 
-- **Hachage** : Argon2id, `memoryCost ≥ 19 MiB`, `timeCost ≥ 2`, `parallelism = 1`. Jamais MD5, SHA-*, ni bcrypt.
-- **Politique de mot de passe** : 12 caractères minimum, vérification contre une liste de mots de passe compromis (zxcvbn ou liste HIBP locale). Pas d'exigence de composition arbitraire (majuscule/chiffre/symbole), qui dégrade la qualité réelle des mots de passe.
-- **Access token** : JWT, 15 minutes, contient `sub`, `sessionId`, `iat`, `exp`. Aucune donnée personnelle dans le payload.
-- **Refresh token** : opaque (aléatoire 256 bits), 30 jours, **stocké haché** en base, **rotatif**. Détection de réutilisation : si un refresh token déjà consommé est présenté, révoquer toute la famille de sessions et notifier l'utilisateur — signal probable de vol.
-- **Verrouillage** : après 5 échecs, délai exponentiel (1 s, 2 s, 4 s…) plafonné à 15 minutes, par couple (email, IP).
-- **Réinitialisation de mot de passe** : token à usage unique, 30 minutes, invalidé après usage. La réponse de `/auth/password/forgot` est toujours 204, quelle que soit l'existence de l'email (pas d'énumération de comptes).
+- **Hashing**: Argon2id, `memoryCost ≥ 19 MiB`, `timeCost ≥ 2`, `parallelism = 1`. Never MD5, SHA-*, or bcrypt.
+- **Password policy**: 12 characters minimum, checked against a list of compromised passwords (zxcvbn or a local HIBP list). No arbitrary composition requirement (uppercase/digit/symbol), which degrades real password quality.
+- **Access token**: JWT, 15 minutes, contains `sub`, `sessionId`, `iat`, `exp`. No personal data in the payload.
+- **Refresh token**: opaque (256-bit random), 30 days, **stored hashed** in the database, **rotating**. Reuse detection: if an already-consumed refresh token is presented, revoke the entire session family and notify the user — a likely signal of theft.
+- **Lockout**: after 5 failures, exponential delay (1 s, 2 s, 4 s…) capped at 15 minutes, per (email, IP) pair.
+- **Password reset**: single-use token, 30 minutes, invalidated after use. The response of `/auth/password/forgot` is always 204, regardless of whether the email exists (no account enumeration).
 
-### Stockage des tokens côté client
+### Client-side token storage
 
-Le vol de token est la menace la plus probable sur un client, et le lieu de stockage détermine l'exposition. Les règles diffèrent selon le contexte d'exécution.
+Token theft is the most likely threat on a client, and the storage location determines the exposure. The rules differ depending on the execution context.
 
-| Contexte | Access token | Refresh token |
+| Context | Access token | Refresh token |
 |---|---|---|
-| **Web / PWA** | En mémoire uniquement (variable JavaScript). Jamais `localStorage`. | Cookie `HttpOnly` + `Secure` + `SameSite=Strict`, scopé sur `/api/v1/auth/refresh` |
-| **Client natif** (si ADR-0007 est réexaminée) | En mémoire | Keychain (iOS) / Keystore (Android), jamais dans les préférences applicatives |
+| **Web / PWA** | In memory only (JavaScript variable). Never `localStorage`. | `HttpOnly` + `Secure` + `SameSite=Strict` cookie, scoped to `/api/v1/auth/refresh` |
+| **Native client** (if ADR-0007 is reconsidered) | In memory | Keychain (iOS) / Keystore (Android), never in application preferences |
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-S1 | Le refresh token n'est **jamais** accessible au JavaScript de la page. Un cookie `HttpOnly` neutralise le vol par XSS, contrairement à `localStorage`. |
-| RG-S2 | L'access token vit en mémoire et disparaît au rechargement. Il est réobtenu par un appel de refresh au démarrage. Le coût est un appel réseau supplémentaire ; le bénéfice est qu'aucun token ne persiste sur disque côté web. |
-| RG-S3 | Le cookie de refresh étant `SameSite=Strict`, l'endpoint `/auth/refresh` est le seul à l'accepter, et il exige un en-tête anti-CSRF. Tous les autres endpoints n'acceptent que `Authorization: Bearer`. |
-| RG-S4 | À la déconnexion : révocation serveur de la session, suppression du cookie, purge du cache hors ligne (RG-OF3), révocation des `DeviceToken` de l'appareil. |
-| RG-S5 | Aucun token, sous aucune forme, n'est écrit dans le cache du service worker. |
+| RG-S1 | The refresh token is **never** accessible to the page's JavaScript. An `HttpOnly` cookie neutralizes theft via XSS, unlike `localStorage`. |
+| RG-S2 | The access token lives in memory and disappears on reload. It is re-obtained via a refresh call on startup. The cost is one extra network call; the benefit is that no token persists on disk on the web. |
+| RG-S3 | Since the refresh cookie is `SameSite=Strict`, the `/auth/refresh` endpoint is the only one that accepts it, and it requires an anti-CSRF header. All other endpoints only accept `Authorization: Bearer`. |
+| RG-S4 | On logout: server-side session revocation, cookie deletion, offline cache purge (RG-OF3), revocation of the device's `DeviceToken`s. |
+| RG-S5 | No token, in any form, is written to the service worker cache. |
 
-### Verrouillage applicatif (PIN)
+### Application lock (PIN)
 
-Verrouillage après inactivité (défaut 5 minutes, configurable, désactivable). Le PIN est une protection **locale** contre l'accès physique à l'appareil : il ne remplace pas l'authentification serveur et **n'est jamais transmis à l'API**.
+Lockout after inactivity (default 5 minutes, configurable, can be disabled). The PIN is a **local** protection against physical access to the device: it does not replace server-side authentication and **is never transmitted to the API**.
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-S6 | Le PIN est stocké haché (Argon2id, paramètres allégés adaptés au client) dans le stockage local, jamais en clair, jamais envoyé au serveur. |
-| RG-S7 | Le verrouillage masque l'interface **et** bloque l'accès aux données du cache hors ligne. Un verrouillage qui laisse les données lisibles par un autre moyen ne protège rien. |
-| RG-S8 | Après 5 PIN erronés, le client purge le cache local et force une reconnexion complète. |
-| RG-S9 | La biométrie système n'est pas garantie disponible en PWA (voir ADR-0007). Le PIN est le mécanisme de référence ; la biométrie, quand l'API `WebAuthn` est disponible, est proposée en complément optionnel. |
+| RG-S6 | The PIN is stored hashed (Argon2id, lightweight parameters suited to the client) in local storage, never in plaintext, never sent to the server. |
+| RG-S7 | The lock hides the interface **and** blocks access to offline cache data. A lock that leaves data readable by another means protects nothing. |
+| RG-S8 | After 5 incorrect PIN attempts, the client purges the local cache and forces a full reconnection. |
+| RG-S9 | System biometrics is not guaranteed to be available on a PWA (see ADR-0007). The PIN is the reference mechanism; biometrics, when the `WebAuthn` API is available, is offered as an optional complement. |
 
 ---
 
-## 3. Autorisation
+## 3. Authorization
 
-Une seule règle, mais absolue :
+A single rule, but absolute:
 
-> **Toute requête sur une table métier est filtrée par `userId` issu du token, jamais d'un paramètre de requête.**
+> **Every request on a business table is filtered by the `userId` from the token, never from a request parameter.**
 
-Mise en œuvre :
+Implementation:
 
-1. Un décorateur `@CurrentUser()` fournit l'identifiant.
-2. Une extension Prisma injecte automatiquement `where: { userId }` sur les modèles métier, avec une échappatoire explicite (`prisma.$unsafeGlobal`) réservée aux tâches système et auditée.
-3. **Test obligatoire pour chaque endpoint** : un utilisateur A obtient 404 sur une ressource de B. Ce test fait partie de la definition of done.
+1. A `@CurrentUser()` decorator provides the identifier.
+2. A Prisma extension automatically injects `where: { userId }` on business models, with an explicit escape hatch (`prisma.$unsafeGlobal`) reserved for system tasks and audited.
+3. **Mandatory test for each endpoint**: user A gets a 404 on a resource belonging to B. This test is part of the definition of done.
 
-Une ressource d'un autre utilisateur renvoie **404**, jamais 403.
+A resource belonging to another user returns **404**, never 403.
 
 ---
 
-## 4. Chiffrement
+## 4. Encryption
 
-| Donnée | Protection |
+| Data | Protection |
 |---|---|
-| En transit | TLS 1.3 obligatoire, HSTS, pas de repli HTTP |
-| Base de données | Chiffrement au repos au niveau du volume (fourni par l'hébergeur) |
-| Sauvegardes | Chiffrées, clés distinctes de celles de production |
-| Fichiers importés | Stockés chiffrés, purgés à 30 jours |
-| Secrets applicatifs | Variables d'environnement ou gestionnaire de secrets, jamais en dépôt |
+| In transit | TLS 1.3 mandatory, HSTS, no HTTP fallback |
+| Database | Encryption at rest at the volume level (provided by the host) |
+| Backups | Encrypted, keys distinct from production ones |
+| Imported files | Stored encrypted, purged after 30 days |
+| Application secrets | Environment variables or a secrets manager, never in the repository |
 
-Le chiffrement applicatif champ à champ des montants n'est **pas** retenu : il empêcherait toute agrégation SQL, et donc tous les rapports, pour un gain marginal face au chiffrement de volume. Décision à réexaminer seulement si une contrainte réglementaire l'impose.
-
----
-
-## 5. Journalisation applicative
-
-Interdits dans les logs, quel que soit le niveau :
-
-- montants, libellés de transaction, noms de bénéficiaires ;
-- adresses email, mots de passe, tokens, en-têtes `Authorization` ;
-- adresses IP en clair (hachées avec un sel applicatif).
-
-Autorisés : identifiants techniques (UUID), codes d'erreur, durées, `requestId`, noms d'endpoint.
-
-Chaque requête porte un `requestId` (ULID) propagé dans les logs et dans `AuditLog.requestId`, ce qui permet de relier une entrée d'audit à sa trace technique sans stocker de donnée sensible.
+Field-by-field application-level encryption of amounts is **not** adopted: it would prevent any SQL aggregation, and therefore all reports, for a marginal gain against volume encryption. Decision to be reconsidered only if a regulatory constraint requires it.
 
 ---
 
-## 6. Horodatage — règles générales
+## 5. Application logging
 
-L'horodatage de toutes les actions est une exigence structurante du projet. Elle se décline à trois niveaux.
+Prohibited in logs, regardless of level:
 
-### Niveau 1 — Horodatage des enregistrements
+- amounts, transaction labels, beneficiary names;
+- email addresses, passwords, tokens, `Authorization` headers;
+- IP addresses in cleartext (hashed with an application-level salt).
 
-Toute table métier porte `createdAt`, `updatedAt`, `deletedAt`, en `timestamptz`, **stockés en UTC**.
+Allowed: technical identifiers (UUID), error codes, durations, `requestId`, endpoint names.
 
-- La conversion en heure locale est faite à l'affichage, à partir de `user.timezone`.
-- Ne jamais utiliser le fuseau du serveur pour un calcul métier.
-- `createdAt` est **immuable** : aucun endpoint ne permet de le modifier.
+Every request carries a `requestId` (ULID) propagated in the logs and in `AuditLog.requestId`, which allows linking an audit entry to its technical trace without storing sensitive data.
 
-### Niveau 2 — Distinction date métier / date technique
+---
 
-| Champ | Sens | Utilisé pour |
+## 6. Timestamping — general rules
+
+Timestamping of all actions is a structuring requirement of the project. It is broken down into three levels.
+
+### Level 1 — Record timestamping
+
+Every business table carries `createdAt`, `updatedAt`, `deletedAt`, in `timestamptz`, **stored in UTC**.
+
+- Conversion to local time is done at display time, based on `user.timezone`.
+- Never use the server's timezone for a business calculation.
+- `createdAt` is **immutable**: no endpoint allows modifying it.
+
+### Level 2 — Business date / technical date distinction
+
+| Field | Meaning | Used for |
 |---|---|---|
-| `occurredAt` | Quand l'opération a eu lieu | Budgets, rapports, prévisions, soldes historiques |
-| `createdAt` | Quand la ligne a été enregistrée | Audit, tri de saisie, détection d'anomalie |
+| `occurredAt` | When the operation took place | Budgets, reports, forecasts, historical balances |
+| `createdAt` | When the row was recorded | Audit, entry sorting, anomaly detection |
 
-Une dépense du 3 juillet saisie le 28 juillet compte dans le budget de juillet (par `occurredAt`), et apparaît dans le journal comme créée le 28 (par `createdAt`). Confondre les deux fausse tous les rapports.
+An expense from July 3 entered on July 28 counts toward July's budget (via `occurredAt`), and appears in the journal as created on the 28th (via `createdAt`). Conflating the two skews all reports.
 
-### Niveau 3 — Journal d'audit
+### Level 3 — Audit log
 
-Voir section suivante.
+See the following section.
 
 ---
 
-## 7. Journal d'audit
+## 7. Audit log
 
-### Principe
+### Principle
 
-Toute action modifiant des données produit une entrée dans `AuditLog`. La table est **append-only**, garantie par trigger PostgreSQL (voir `03-modele-donnees.md § 14`).
+Every action that modifies data produces an entry in `AuditLog`. The table is **append-only**, guaranteed by a PostgreSQL trigger (see `03-modele-donnees.md § 14`).
 
-### Mise en œuvre
+### Implementation
 
-Un **intercepteur NestJS global** capture les mutations. Pas de `auditService.log(...)` disséminé dans les services : ça serait oublié quelque part.
+A **global NestJS interceptor** captures mutations. No `auditService.log(...)` scattered across services: that would be forgotten somewhere.
 
 ```
-Requête → Guard auth → Intercepteur audit (ouvre le contexte)
-        → Controller → Service → Prisma (transaction SQL)
-        → Intercepteur audit (écrit l'entrée dans la MÊME transaction SQL)
+Request → Auth Guard → Audit interceptor (opens the context)
+        → Controller → Service → Prisma (SQL transaction)
+        → Audit interceptor (writes the entry in the SAME SQL transaction)
 ```
 
-L'écriture de l'audit est **dans la transaction métier** : si l'opération est annulée, l'entrée d'audit ne subsiste pas ; si l'audit échoue, l'opération échoue. Un audit décorrélé de l'écriture n'a aucune valeur probante.
+The audit write happens **inside the business transaction**: if the operation is rolled back, the audit entry does not persist; if the audit fails, the operation fails. An audit decoupled from the write has no evidentiary value.
 
-### Contenu d'une entrée
+### Content of an entry
 
 ```json
 {
@@ -166,17 +166,17 @@ L'écriture de l'audit est **dans la transaction métier** : si l'opération est
 }
 ```
 
-Règles de contenu :
+Content rules:
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-AU1 | `before`/`after` ne contiennent que les **champs modifiés**, pas l'entité entière. |
-| RG-AU2 | Liste noire de champs jamais journalisés : `passwordHash`, `refreshTokenHash`, tout champ nommé `*token*`, `*secret*`, `*password*`. Cette liste est centralisée et testée. |
-| RG-AU3 | Les opérations en lot produisent **une** entrée avec un compteur, pas une entrée par ligne (`transaction.bulk_update`, `metadata: { count: 143 }`). |
-| RG-AU4 | Les actions système portent `actorType = SYSTEM` ou `SCHEDULER` et `userId` renseigné quand l'action concerne un utilisateur précis. |
-| RG-AU5 | Les lectures ne sont pas journalisées, **sauf** trois cas sensibles : export de données, consultation du journal d'audit lui-même, connexion. |
+| RG-AU1 | `before`/`after` contain only the **modified fields**, not the entire entity. |
+| RG-AU2 | Blacklist of fields never logged: `passwordHash`, `refreshTokenHash`, any field named `*token*`, `*secret*`, `*password*`. This list is centralized and tested. |
+| RG-AU3 | Batch operations produce **one** entry with a counter, not one entry per row (`transaction.bulk_update`, `metadata: { count: 143 }`). |
+| RG-AU4 | System actions carry `actorType = SYSTEM` or `SCHEDULER` and `userId` is filled in when the action concerns a specific user. |
+| RG-AU5 | Reads are not logged, **except** for three sensitive cases: data export, viewing the audit log itself, and login. |
 
-### Actions à journaliser (liste minimale)
+### Actions to log (minimum list)
 
 ```
 auth.login, auth.login_failed, auth.logout, auth.refresh,
@@ -201,45 +201,45 @@ currency.rate_create|rate_delete
 
 ### Consultation
 
-- `GET /audit-log` : journal de l'utilisateur, filtrable.
-- `GET /audit-log/:entityType/:entityId` : historique complet d'une entité, présenté en frise chronologique dans l'interface (« Modifié le 12/07 : montant 12 500 → 15 000 »).
-- Aucun endpoint d'écriture ou de suppression n'est exposé.
+- `GET /audit-log`: the user's journal, filterable.
+- `GET /audit-log/:entityType/:entityId`: full history of an entity, presented as a timeline in the interface ("Modified on 07/12: amount 12,500 → 15,000").
+- No write or delete endpoint is exposed.
 
-### Rétention
+### Retention
 
-Conservation 24 mois glissants. Au-delà, archivage vers stockage froid (export mensuel) puis purge. La purge est elle-même journalisée avec `actorType = SYSTEM`.
-
----
-
-## 8. Données personnelles
-
-- **Minimisation** : seuls email, nom d'affichage et préférences sont collectés. Pas de numéro de téléphone, pas d'adresse, pas de date de naissance.
-- **Droit d'accès et de portabilité** : `GET /me/export` fournit l'intégralité des données dans un format ouvert.
-- **Droit à l'effacement** : `DELETE /me` marque le compte supprimé, révoque les sessions, et déclenche une purge physique à J+30. Le délai permet la récupération en cas d'erreur ; il est annoncé à l'utilisateur.
-- **Conservation** : les données sont conservées tant que le compte est actif. Un compte inactif depuis 24 mois est notifié avant toute action.
-- **Sous-traitants** : aucun service tiers ne reçoit de données financières en V1. Si un fournisseur d'email transactionnel est utilisé, il ne reçoit que l'adresse et le contenu du message.
+24 rolling months of retention. Beyond that, archival to cold storage (monthly export) then purge. The purge itself is logged with `actorType = SYSTEM`.
 
 ---
 
-## 9. Sécurité applicative — points de vigilance concrets
+## 8. Personal data
 
-**Import Excel** — ne jamais évaluer les formules d'un classeur importé. Lire les valeurs calculées ou la chaîne brute, jamais exécuter.
-
-**Export CSV** — toute cellule commençant par `=`, `+`, `-`, `@`, tabulation ou retour chariot est préfixée d'une apostrophe. Sans cela, un libellé de transaction contenant une formule s'exécute à l'ouverture dans Excel.
-
-**Upload** — vérifier le type MIME **et** la signature du fichier, pas seulement l'extension. Stocker hors de la racine web, sous un nom généré.
-
-**En-têtes HTTP** — `Content-Security-Policy` stricte, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy` minimale.
-
-**CORS** — liste blanche d'origines explicite. Jamais `*` avec `credentials`.
-
-**Dépendances** — `npm audit` en CI, mise à jour mensuelle, verrouillage par lockfile.
+- **Minimization**: only email, display name, and preferences are collected. No phone number, no address, no date of birth.
+- **Right of access and portability**: `GET /me/export` provides all data in an open format.
+- **Right to erasure**: `DELETE /me` marks the account as deleted, revokes sessions, and triggers a physical purge at D+30. The delay allows for recovery in case of error; it is announced to the user.
+- **Retention**: data is retained as long as the account is active. An account inactive for 24 months is notified before any action.
+- **Subprocessors**: no third-party service receives financial data in V1. If a transactional email provider is used, it only receives the address and the message content.
 
 ---
 
-## 10. Sauvegardes et restauration
+## 9. Application security — concrete points of vigilance
 
-- Sauvegarde quotidienne complète + journalisation continue (PITR) sur 7 jours.
-- Rétention : 7 jours quotidiens, 4 hebdomadaires, 12 mensuels.
-- **Test de restauration trimestriel obligatoire.** Une sauvegarde jamais restaurée n'est pas une sauvegarde.
-- Objectifs : RPO 1 h, RTO 4 h.
+**Excel import** — never evaluate the formulas of an imported workbook. Read the calculated values or the raw string, never execute.
+
+**CSV export** — any cell starting with `=`, `+`, `-`, `@`, a tab, or a carriage return is prefixed with an apostrophe. Without this, a transaction label containing a formula executes upon opening in Excel.
+
+**Upload** — verify the MIME type **and** the file signature, not just the extension. Store outside the web root, under a generated name.
+
+**HTTP headers** — strict `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, minimal `Permissions-Policy`.
+
+**CORS** — explicit origin allowlist. Never `*` with `credentials`.
+
+**Dependencies** — `npm audit` in CI, monthly updates, lockfile locking.
+
+---
+
+## 10. Backups and restoration
+
+- Daily full backup + continuous logging (PITR) over 7 days.
+- Retention: 7 daily, 4 weekly, 12 monthly.
+- **Mandatory quarterly restore test.** A backup that is never restored is not a backup.
+- Objectives: RPO 1 h, RTO 4 h.

@@ -63,6 +63,7 @@ interface Transaction {
   description: string;
   categoryId: string | null;
   transferGroupId: string | null;
+  source: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT';
 }
 
 interface Summary {
@@ -128,6 +129,7 @@ export default function TransactionsPage() {
   const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [type, setType] = useState<(typeof CREATE_TYPES)[number]>('EXPENSE');
   const [currency, setCurrency] = useState('XOF');
   const [accountId, setAccountId] = useState('');
@@ -194,6 +196,7 @@ export default function TransactionsPage() {
   }
 
   function openCreateDialog() {
+    setEditingId(null);
     setType('EXPENSE');
     setCurrency('XOF');
     setAmount('');
@@ -203,12 +206,32 @@ export default function TransactionsPage() {
     setDialogOpen(true);
   }
 
+  function openEditDialog(tx: Transaction) {
+    setEditingId(tx.id);
+    setType(tx.type);
+    setCurrency(tx.currency);
+    setAccountId(tx.accountId);
+    setAmount(tx.amountMinor);
+    setCategoryId(tx.categoryId ?? '');
+    setOccurredAt(tx.occurredAt.slice(0, 10));
+    setNotes(tx.description ?? '');
+    setDialogOpen(true);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
-      if (type === 'TRANSFER') {
+      if (editingId) {
+        await apiClient.patch(`/transactions/${editingId}`, {
+          accountId,
+          amountMinor: amount,
+          occurredAt,
+          description: notes || '-',
+          categoryId: categoryId || null,
+        });
+      } else if (type === 'TRANSFER') {
         await apiClient.post('/transactions/transfer', {
           fromAccountId: accountId,
           toAccountId,
@@ -229,7 +252,7 @@ export default function TransactionsPage() {
       setDialogOpen(false);
       setCursorStack([]);
       await loadPage(null);
-      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+      toast({ title: editingId ? tCommon('updateSuccessTitle') : tCommon('createSuccessTitle'), variant: 'success' });
     } catch (err) {
       const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
       setError(code);
@@ -451,6 +474,7 @@ export default function TransactionsPage() {
                   const account = accountsById.get(tx.accountId);
                   const category = tx.categoryId ? categoriesByAccount.get(tx.categoryId) : null;
                   const isTransfer = !!tx.transferGroupId;
+                  const isEditable = !isTransfer && tx.source !== 'DEBT_PAYMENT';
                   const minorUnits = minorUnitsByCode[tx.currency] ?? 0;
                   const isNegative = tx.type === 'EXPENSE';
                   return (
@@ -483,7 +507,8 @@ export default function TransactionsPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={t('edit')}
-                            disabled={isTransfer}
+                            disabled={!isEditable}
+                            onClick={() => openEditDialog(tx)}
                           >
                             <Pencil className="size-3.5" />
                           </Button>
@@ -524,14 +549,14 @@ export default function TransactionsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('create')}</DialogTitle>
-            <DialogDescription>{t('createDescription')}</DialogDescription>
+            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+            <DialogDescription>{editingId ? t('editDescription') : t('createDescription')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type" required>{t('typeLabel')}</Label>
-                <Select items={typeItems} value={type} onValueChange={(value) => setType(value as (typeof CREATE_TYPES)[number])}>
+                <Select items={typeItems} value={type} onValueChange={(value) => setType(value as (typeof CREATE_TYPES)[number])} disabled={!!editingId}>
                   <SelectTrigger id="type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -551,7 +576,7 @@ export default function TransactionsPage() {
             </div>
             <div>
               <Label htmlFor="currency" required>{t('currencyLabel')}</Label>
-              <Select items={currencyItems} value={currency} onValueChange={(value) => setCurrency(value ?? '')}>
+              <Select items={currencyItems} value={currency} onValueChange={(value) => setCurrency(value ?? '')} disabled={!!editingId}>
                 <SelectTrigger id="currency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

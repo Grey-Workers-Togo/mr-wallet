@@ -26,6 +26,16 @@ import { apiClient } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/shared/Logo';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const PRIMARY_NAV_ITEMS = [
   { href: '/accounts', icon: Wallet, key: 'accounts' },
@@ -54,6 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   async function onLogout() {
     try {
@@ -106,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="p-3">
           <button
             type="button"
-            onClick={onLogout}
+            onClick={() => setLogoutConfirmOpen(true)}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
           >
             <LogOut size={20} aria-hidden="true" />
@@ -128,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="px-3 pt-2">
             <button
               type="button"
-              onClick={onLogout}
+              onClick={() => setLogoutConfirmOpen(true)}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
             >
               <LogOut size={20} aria-hidden="true" />
@@ -179,6 +190,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('logoutConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('logoutConfirmDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('logoutConfirmCancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={onLogout}>{t('logoutConfirmAction')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
