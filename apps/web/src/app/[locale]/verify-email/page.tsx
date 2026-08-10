@@ -71,7 +71,7 @@ function VerifyEmailContent() {
               <Alert variant="destructive">
                 <AlertDescription>{error ? tError(error as never) : t('missingToken')}</AlertDescription>
               </Alert>
-              <p className="mt-4 text-center text-sm text-neutral-600">
+              <p className="mt-4 text-center text-sm text-neutral-600 dark:text-neutral-400">
                 <Link href="/login" className="font-medium text-primary hover:underline">
                   {t('loginLink')}
                 </Link>

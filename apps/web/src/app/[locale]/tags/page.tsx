@@ -85,7 +85,7 @@ export default function TagsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
 
       {error && (
         <Alert variant="destructive">
@@ -94,12 +94,12 @@ export default function TagsPage() {
       )}
 
       {tags === null && <PageLoader />}
-      {tags?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
+      {tags?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
       {tags && tags.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tags.map((tag) => (
             <Card key={tag.id} className="p-4 flex items-center justify-between gap-2">
-              <span className="text-neutral-900">{tag.name}</span>
+              <span className="text-neutral-900 dark:text-neutral-100">{tag.name}</span>
               <Button
                 type="button"
                 variant="destructive"

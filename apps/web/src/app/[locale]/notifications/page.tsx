@@ -90,7 +90,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
         <Button type="button" variant="secondary" size="sm" loading={markingAll} onClick={onMarkAllRead}>
           {t('markAllRead')}
         </Button>
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
       )}
 
       {notifications === null && <PageLoader />}
-      {notifications?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
+      {notifications?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
       {notifications && notifications.length > 0 && (
         <div className="space-y-3">
           {notifications.map((notification) => (
@@ -111,8 +111,8 @@ export default function NotificationsPage() {
               <div className="flex items-center gap-2">
                 {!notification.readAt && <Badge variant="info">•</Badge>}
                 <div>
-                  <p className="text-neutral-900">{renderMessage(notification)}</p>
-                  <p className="text-sm text-neutral-600">{notification.createdAt.slice(0, 10)}</p>
+                  <p className="text-neutral-900 dark:text-neutral-100">{renderMessage(notification)}</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{notification.createdAt.slice(0, 10)}</p>
                 </div>
               </div>
               {!notification.readAt && (

@@ -189,7 +189,7 @@ export default function PreferencesPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+      <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
 
       {error && (
         <Alert variant="destructive">
@@ -260,7 +260,7 @@ export default function PreferencesPage() {
               <CardTitle>{t('pinSection')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
-              <p className="text-neutral-600">{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
+              <p className="text-neutral-600 dark:text-neutral-400">{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
               <form onSubmit={onSetPin} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="pin" required>{t('pinLabel')}</Label>
@@ -304,7 +304,7 @@ export default function PreferencesPage() {
               <CardTitle>{t('pushSection')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
-              {devices?.length === 0 && <p className="text-neutral-600">{t('pushEmpty')}</p>}
+              {devices?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('pushEmpty')}</p>}
               {devices && devices.length > 0 && (
                 <div className="space-y-2">
                   {devices.map((d) => (
@@ -312,7 +312,7 @@ export default function PreferencesPage() {
                       key={d.id}
                       className="flex flex-col items-start gap-2 border-b border-border pb-2 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <span className="text-neutral-900 break-all">{d.deviceLabel ?? d.id}</span>
+                      <span className="text-neutral-900 dark:text-neutral-100 break-all">{d.deviceLabel ?? d.id}</span>
                       <Button
                         type="button"
                         variant="destructive"

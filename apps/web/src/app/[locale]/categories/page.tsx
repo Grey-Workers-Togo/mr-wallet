@@ -143,7 +143,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold text-neutral-900">{t('title')}</h1>
+        <h1 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{t('title')}</h1>
         <Button type="button" onClick={openCreateDialog}>
           <Plus className="size-4" />
           {t('add')}
@@ -157,14 +157,14 @@ export default function CategoriesPage() {
       )}
 
       {categories === null && <PageLoader />}
-      {categories?.length === 0 && <p className="text-neutral-600">{t('empty')}</p>}
+      {categories?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
       {categories && categories.length > 0 && (
         <div className="space-y-4">
           {topLevel.map((category) => (
             <Card key={category.id} className="p-5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-medium text-neutral-900">{resolveName(category)}</h3>
+                  <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{resolveName(category)}</h3>
                   <Badge>{tKind(category.kind as never)}</Badge>
                   {category.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                 </div>
@@ -192,7 +192,7 @@ export default function CategoriesPage() {
                     .map((child) => (
                       <li key={child.id} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-neutral-900">{resolveName(child)}</span>
+                          <span className="text-neutral-900 dark:text-neutral-100">{resolveName(child)}</span>
                           {child.isSystem && <Badge variant="secondary">{t('system')}</Badge>}
                         </div>
                         {!child.isSystem && (
