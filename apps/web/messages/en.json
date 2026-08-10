@@ -6,6 +6,7 @@
     "submit": "Submit",
     "loading": "Loading...",
     "switchLanguage": "Switch language",
+    "switchTheme": "Switch theme",
     "createSuccessTitle": "Created successfully",
     "updateSuccessTitle": "Updated successfully",
     "deleteSuccessTitle": "Deleted successfully",
@@ -20,6 +21,14 @@
   "home": {
     "login": "Log in",
     "register": "Sign up",
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
     "seo": {
       "title": "Mr Wallet — Personal Budget & Expense Tracker",
       "description": "Track accounts, budgets, expenses, debts, goals and recurring payments in one simple app. Multi-currency support (FCFA, EUR, USD). Free to start."
@@ -139,19 +148,48 @@
       "title": "Your data stays yours",
       "description": "No data is ever sent to a third party. Every action — create, update, delete — is timestamped and kept in an immutable audit trail. You export whenever you want, you leave whenever you want.",
       "items": [
-        { "title": "No external dependency", "description": "Your statements come in via import. Nothing goes out." },
-        { "title": "Import with deduplication", "description": "Your CSV/Excel statements are cleaned up automatically." },
-        { "title": "Export any time", "description": "Get your data back in CSV/Excel, no lock-in." }
+        {
+          "title": "No external dependency",
+          "description": "Your statements come in via import. Nothing goes out."
+        },
+        {
+          "title": "Import with deduplication",
+          "description": "Your CSV/Excel statements are cleaned up automatically."
+        },
+        {
+          "title": "Export any time",
+          "description": "Get your data back in CSV/Excel, no lock-in."
+        }
       ],
       "log": {
         "label": "Audit log",
         "sublabel": "Timestamped · immutable",
         "lines": [
-          { "time": "08:42:11", "action": "CREATE", "target": "transaction" },
-          { "time": "08:41:03", "action": "UPDATE", "target": "budget:groceries" },
-          { "time": "08:39:50", "action": "IMPORT", "target": "statement_2026-08.csv" },
-          { "time": "08:38:22", "action": "CREATE", "target": "debt:car_loan" },
-          { "time": "08:36:01", "action": "DELETE", "target": "transaction #482" }
+          {
+            "time": "08:42:11",
+            "action": "CREATE",
+            "target": "transaction"
+          },
+          {
+            "time": "08:41:03",
+            "action": "UPDATE",
+            "target": "budget:groceries"
+          },
+          {
+            "time": "08:39:50",
+            "action": "IMPORT",
+            "target": "statement_2026-08.csv"
+          },
+          {
+            "time": "08:38:22",
+            "action": "CREATE",
+            "target": "debt:car_loan"
+          },
+          {
+            "time": "08:36:01",
+            "action": "DELETE",
+            "target": "transaction #482"
+          }
         ]
       }
     },
@@ -181,12 +219,46 @@
         }
       ]
     },
+    "pricing": {
+      "title": "Simple pricing",
+      "subtitle": "Everything you need to manage your money, free while we're building.",
+      "plans": [
+        {
+          "name": "Free",
+          "price": "0 F",
+          "period": "/ forever",
+          "badge": "Current plan",
+          "cta": "Create my space",
+          "features": [
+            "Unlimited accounts and transactions",
+            "Budgets, goals, debts and recurrences",
+            "CSV/Excel import and export",
+            "Multi-currency (FCFA, EUR, USD)"
+          ]
+        },
+        {
+          "name": "Pro",
+          "price": "Soon",
+          "cta": "Notify me",
+          "features": [
+            "Bank connectors",
+            "Shared accounts and household budgets",
+            "Advanced reports and forecasts",
+            "Priority support"
+          ]
+        }
+      ]
+    },
     "controlCta": {
       "title": "Take back control of your finances",
       "description": "Start for free. Import your statements, set up your budgets and project your financial future today.",
       "primary": "Create an account",
       "secondary": "Learn more",
-      "points": ["No credit card", "Bilingual FR · EN", "Export any time"]
+      "points": [
+        "No credit card",
+        "Bilingual FR · EN",
+        "Export any time"
+      ]
     },
     "designedFor": {
       "title": "Designed for West Africa",
@@ -203,22 +275,55 @@
     "howItWorks": {
       "title": "Get started in 4 steps",
       "steps": [
-        { "title": "Sign up", "description": "Email and password. 30 seconds." },
-        { "title": "Import or enter", "description": "CSV/Excel import or manual entry." },
-        { "title": "Set your budgets", "description": "Templates or fully custom." },
-        { "title": "Watch it grow", "description": "Dashboards and reports." }
+        {
+          "title": "Sign up",
+          "description": "Email and password. 30 seconds."
+        },
+        {
+          "title": "Import or enter",
+          "description": "CSV/Excel import or manual entry."
+        },
+        {
+          "title": "Set your budgets",
+          "description": "Templates or fully custom."
+        },
+        {
+          "title": "Watch it grow",
+          "description": "Dashboards and reports."
+        }
       ]
     },
     "faq": {
       "title": "Frequently asked questions",
       "items": [
-        { "question": "How much does it cost?", "answer": "Free, no ads." },
-        { "question": "Is my data protected?", "answer": "Encryption and a full audit log." },
-        { "question": "Can I import from my bank?", "answer": "CSV/Excel today, direct connectors are planned." },
-        { "question": "Does it work on mobile?", "answer": "Yes, it's an installable PWA." },
-        { "question": "How do I get my data back?", "answer": "Full export at any time." },
-        { "question": "Is there a transaction limit?", "answer": "No." },
-        { "question": "What happens if I delete my account?", "answer": "Soft delete, then permanent deletion after 30 days." }
+        {
+          "question": "How much does it cost?",
+          "answer": "Free, no ads."
+        },
+        {
+          "question": "Is my data protected?",
+          "answer": "Encryption and a full audit log."
+        },
+        {
+          "question": "Can I import from my bank?",
+          "answer": "CSV/Excel today, direct connectors are planned."
+        },
+        {
+          "question": "Does it work on mobile?",
+          "answer": "Yes, it's an installable PWA."
+        },
+        {
+          "question": "How do I get my data back?",
+          "answer": "Full export at any time."
+        },
+        {
+          "question": "Is there a transaction limit?",
+          "answer": "No."
+        },
+        {
+          "question": "What happens if I delete my account?",
+          "answer": "Soft delete, then permanent deletion after 30 days."
+        }
       ]
     },
     "ctaFinal": {
@@ -229,7 +334,8 @@
     },
     "footer": {
       "description": "Personal finance, kept simple.",
-      "linksTitle": "Links",
+      "productTitle": "Product",
+      "linksTitle": "Resources",
       "docs": "Docs",
       "github": "GitHub",
       "contact": "Contact",
@@ -287,8 +393,13 @@
       "submitting": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Log in",
-      "successTitle": "Check your inbox",
-      "successMessage": "A confirmation email was just sent. Click the link inside it to activate your account."
+      "passwordStrength": {
+        "label": "Strength",
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      }
     },
     "login": {
       "title": "Log in",
@@ -300,39 +411,17 @@
       "submitting": "Logging in...",
       "noAccount": "No account yet?",
       "registerLink": "Sign up",
-      "resendVerification": "Resend confirmation email",
-      "resendVerificationSending": "Sending...",
-      "resendVerificationSent": "Confirmation email resent, if the account exists."
+      "forgotPassword": "Forgot password?"
     },
-    "verifyEmail": {
-      "title": "Email confirmation",
-      "verifying": "Verifying...",
-      "successTitle": "Email confirmed",
-      "successMessage": "Your account is now active, redirecting...",
-      "missingToken": "Invalid link: missing token.",
-      "loginLink": "Log in"
-    },
-    "forgotPassword": {
+    "forgot": {
       "title": "Forgot password",
-      "subtitle": "Enter your email address, we'll send you a reset link.",
+      "subtitle": "Enter your email to receive a reset link.",
       "emailLabel": "Email address",
-      "submit": "Send link",
+      "submit": "Send reset link",
       "submitting": "Sending...",
-      "successTitle": "Email sent",
-      "successMessage": "If an account exists for this address, a reset link has just been sent.",
-      "backToLogin": "Back to login"
-    },
-    "resetPassword": {
-      "title": "Reset password",
-      "subtitle": "Choose a new password.",
-      "newPasswordLabel": "New password",
-      "confirmPasswordLabel": "Confirm password",
-      "submit": "Reset",
-      "submitting": "Resetting...",
-      "successTitle": "Password changed",
-      "successMessage": "Your password has been reset. You can now log in.",
-      "loginLink": "Log in",
-      "missingToken": "Invalid link: missing token."
+      "backToLogin": "Back to login",
+      "successTitle": "Check your inbox",
+      "successBody": "If an account exists for this address, you'll receive a reset link within a few minutes."
     }
   },
   "accounts": {

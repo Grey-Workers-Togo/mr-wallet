@@ -6,6 +6,7 @@
     "submit": "Valider",
     "loading": "Chargement...",
     "switchLanguage": "Changer de langue",
+    "switchTheme": "Changer de thème",
     "createSuccessTitle": "Créé avec succès",
     "updateSuccessTitle": "Modifié avec succès",
     "deleteSuccessTitle": "Supprimé avec succès",
@@ -20,6 +21,14 @@
   "home": {
     "login": "Se connecter",
     "register": "S'inscrire",
+    "nav": {
+      "features": "Fonctionnalités",
+      "howItWorks": "Comment ça marche",
+      "pricing": "Tarifs",
+      "faq": "FAQ",
+      "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu"
+    },
     "seo": {
       "title": "Mr Wallet — Gestion de budget et suivi des dépenses",
       "description": "Gère comptes, budgets, dépenses, dettes, objectifs et récurrences dans une seule application simple. Multi-devises (FCFA, EUR, USD). Gratuit pour démarrer."
@@ -139,19 +148,48 @@
       "title": "Vos données restent les vôtres",
       "description": "Aucune donnée n'est envoyée à un tiers. Chaque action — création, modification, suppression — est horodatée et conservée dans un journal d'audit immuable. Vous exportez quand vous voulez, vous repartez quand vous voulez.",
       "items": [
-        { "title": "Aucune dépendance externe", "description": "Vos relevés entrent par import. Rien ne sort." },
-        { "title": "Import avec dédoublonnage", "description": "Vos relevés CSV/Excel sont nettoyés automatiquement." },
-        { "title": "Export à tout moment", "description": "Récupérez vos données en CSV/Excel, sans verrou." }
+        {
+          "title": "Aucune dépendance externe",
+          "description": "Vos relevés entrent par import. Rien ne sort."
+        },
+        {
+          "title": "Import avec dédoublonnage",
+          "description": "Vos relevés CSV/Excel sont nettoyés automatiquement."
+        },
+        {
+          "title": "Export à tout moment",
+          "description": "Récupérez vos données en CSV/Excel, sans verrou."
+        }
       ],
       "log": {
         "label": "Journal d'audit",
         "sublabel": "Horodaté · immuable",
         "lines": [
-          { "time": "08:42:11", "action": "CREATE", "target": "transaction" },
-          { "time": "08:41:03", "action": "UPDATE", "target": "budget:courses" },
-          { "time": "08:39:50", "action": "IMPORT", "target": "relevé_2026-08.csv" },
-          { "time": "08:38:22", "action": "CREATE", "target": "dette:prêt_auto" },
-          { "time": "08:36:01", "action": "DELETE", "target": "transaction #482" }
+          {
+            "time": "08:42:11",
+            "action": "CREATE",
+            "target": "transaction"
+          },
+          {
+            "time": "08:41:03",
+            "action": "UPDATE",
+            "target": "budget:courses"
+          },
+          {
+            "time": "08:39:50",
+            "action": "IMPORT",
+            "target": "relevé_2026-08.csv"
+          },
+          {
+            "time": "08:38:22",
+            "action": "CREATE",
+            "target": "dette:prêt_auto"
+          },
+          {
+            "time": "08:36:01",
+            "action": "DELETE",
+            "target": "transaction #482"
+          }
         ]
       }
     },
@@ -181,12 +219,46 @@
         }
       ]
     },
+    "pricing": {
+      "title": "Tarifs simples",
+      "subtitle": "Tout ce qu'il faut pour gérer ton argent, gratuit pendant qu'on construit.",
+      "plans": [
+        {
+          "name": "Gratuit",
+          "price": "0 F",
+          "period": "/ pour toujours",
+          "badge": "Plan actuel",
+          "cta": "Créer mon espace",
+          "features": [
+            "Comptes et transactions illimités",
+            "Budgets, objectifs, dettes et récurrences",
+            "Import et export CSV/Excel",
+            "Multi-devises (FCFA, EUR, USD)"
+          ]
+        },
+        {
+          "name": "Pro",
+          "price": "Bientôt",
+          "cta": "Me prévenir",
+          "features": [
+            "Connecteurs bancaires",
+            "Comptes partagés et budgets familiaux",
+            "Rapports et prévisions avancés",
+            "Support prioritaire"
+          ]
+        }
+      ]
+    },
     "controlCta": {
       "title": "Reprenez le contrôle de vos finances",
       "description": "Commencez gratuitement. Importez vos relevés, créez vos budgets et projetez votre avenir financier dès aujourd'hui.",
       "primary": "Créer un compte",
       "secondary": "En savoir plus",
-      "points": ["Sans carte bancaire", "Bilingue FR · EN", "Export à tout moment"]
+      "points": [
+        "Sans carte bancaire",
+        "Bilingue FR · EN",
+        "Export à tout moment"
+      ]
     },
     "designedFor": {
       "title": "Conçu pour l'Afrique de l'Ouest",
@@ -203,22 +275,55 @@
     "howItWorks": {
       "title": "Commencer en 4 étapes",
       "steps": [
-        { "title": "S'inscrire", "description": "Email et mot de passe. 30 secondes." },
-        { "title": "Importer ou saisir", "description": "Import CSV/Excel ou saisie manuelle." },
-        { "title": "Définir tes budgets", "description": "Templates ou personnalisé." },
-        { "title": "Regarder croître", "description": "Dashboards et rapports." }
+        {
+          "title": "S'inscrire",
+          "description": "Email et mot de passe. 30 secondes."
+        },
+        {
+          "title": "Importer ou saisir",
+          "description": "Import CSV/Excel ou saisie manuelle."
+        },
+        {
+          "title": "Définir tes budgets",
+          "description": "Templates ou personnalisé."
+        },
+        {
+          "title": "Regarder croître",
+          "description": "Dashboards et rapports."
+        }
       ]
     },
     "faq": {
       "title": "Questions fréquentes",
       "items": [
-        { "question": "Combien ça coûte ?", "answer": "Gratuit, zéro publicité." },
-        { "question": "Mes données sont-elles protégées ?", "answer": "Chiffrement et audit log complet." },
-        { "question": "Puis-je importer les relevés de ma banque ?", "answer": "CSV/Excel dès aujourd'hui, des connecteurs directs sont prévus." },
-        { "question": "Ça fonctionne sur mobile ?", "answer": "Oui, c'est une PWA installable." },
-        { "question": "Comment je récupère mes données ?", "answer": "Export complet à tout moment." },
-        { "question": "Y a-t-il une limite de transactions ?", "answer": "Non." },
-        { "question": "Que se passe-t-il si je supprime mon compte ?", "answer": "Suppression logique, puis définitive après 30 jours." }
+        {
+          "question": "Combien ça coûte ?",
+          "answer": "Gratuit, zéro publicité."
+        },
+        {
+          "question": "Mes données sont-elles protégées ?",
+          "answer": "Chiffrement et audit log complet."
+        },
+        {
+          "question": "Puis-je importer les relevés de ma banque ?",
+          "answer": "CSV/Excel dès aujourd'hui, des connecteurs directs sont prévus."
+        },
+        {
+          "question": "Ça fonctionne sur mobile ?",
+          "answer": "Oui, c'est une PWA installable."
+        },
+        {
+          "question": "Comment je récupère mes données ?",
+          "answer": "Export complet à tout moment."
+        },
+        {
+          "question": "Y a-t-il une limite de transactions ?",
+          "answer": "Non."
+        },
+        {
+          "question": "Que se passe-t-il si je supprime mon compte ?",
+          "answer": "Suppression logique, puis définitive après 30 jours."
+        }
       ]
     },
     "ctaFinal": {
@@ -229,7 +334,8 @@
     },
     "footer": {
       "description": "Les finances personnelles, en simple.",
-      "linksTitle": "Liens",
+      "productTitle": "Produit",
+      "linksTitle": "Ressources",
       "docs": "Docs",
       "github": "GitHub",
       "contact": "Contact",
@@ -287,8 +393,13 @@
       "submitting": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
-      "successTitle": "Vérifiez votre boîte mail",
-      "successMessage": "Un e-mail de confirmation vient d'être envoyé. Cliquez sur le lien qu'il contient pour activer votre compte."
+      "passwordStrength": {
+        "label": "Robustesse",
+        "weak": "Faible",
+        "fair": "Moyen",
+        "good": "Bon",
+        "strong": "Fort"
+      }
     },
     "login": {
       "title": "Connexion",
@@ -300,39 +411,17 @@
       "submitting": "Connexion...",
       "noAccount": "Pas encore de compte ?",
       "registerLink": "S'inscrire",
-      "resendVerification": "Renvoyer l'e-mail de confirmation",
-      "resendVerificationSending": "Envoi...",
-      "resendVerificationSent": "E-mail de confirmation renvoyé, si le compte existe."
+      "forgotPassword": "Mot de passe oublié ?"
     },
-    "verifyEmail": {
-      "title": "Confirmation de l'e-mail",
-      "verifying": "Vérification en cours...",
-      "successTitle": "E-mail confirmé",
-      "successMessage": "Votre compte est activé, redirection...",
-      "missingToken": "Lien invalide : jeton manquant.",
-      "loginLink": "Se connecter"
-    },
-    "forgotPassword": {
+    "forgot": {
       "title": "Mot de passe oublié",
-      "subtitle": "Indiquez votre adresse e-mail, nous vous enverrons un lien de réinitialisation.",
+      "subtitle": "Entrez votre e-mail pour recevoir un lien de réinitialisation.",
       "emailLabel": "Adresse e-mail",
       "submit": "Envoyer le lien",
       "submitting": "Envoi...",
-      "successTitle": "E-mail envoyé",
-      "successMessage": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d'être envoyé.",
-      "backToLogin": "Retour à la connexion"
-    },
-    "resetPassword": {
-      "title": "Réinitialiser le mot de passe",
-      "subtitle": "Choisissez un nouveau mot de passe.",
-      "newPasswordLabel": "Nouveau mot de passe",
-      "confirmPasswordLabel": "Confirmer le mot de passe",
-      "submit": "Réinitialiser",
-      "submitting": "Réinitialisation...",
-      "successTitle": "Mot de passe modifié",
-      "successMessage": "Votre mot de passe a été réinitialisé. Vous pouvez vous connecter.",
-      "loginLink": "Se connecter",
-      "missingToken": "Lien invalide : jeton manquant."
+      "backToLogin": "Retour à la connexion",
+      "successTitle": "Vérifiez votre boîte mail",
+      "successBody": "Si un compte existe pour cette adresse, vous recevrez un lien de réinitialisation dans quelques minutes."
     }
   },
   "accounts": {
