@@ -1,0 +1,32 @@
+# Budget Manager
+
+> Personal finance management application: expense tracking, budgets, debts, savings goals and forecasts. Modular monolith backend (NestJS), single responsive PWA frontend (Next.js), no offline-first, no third-party financial connectors, bilingual (fr/en) end to end, monetary amounts always stored as integer minor units.
+
+Read the docs in this order: glossary → vision/scope → architecture → data model → module specs → API → import/export → security/audit → currencies → roadmap → dev conventions.
+
+## Docs
+
+- [Glossary](docs/00-glossaire.md): Common business vocabulary
+- [Vision & scope](docs/01-vision-perimetre.md): Objectives, non-objectives, personas, use cases
+- [Architecture](docs/02-architecture.md): Stack, modular breakdown, inter-module dependency rules, events
+- [Data model](docs/03-modele-donnees.md): Full Prisma schema, entities, relations, constraints
+- [Specs by module](docs/04-modules.md): Detailed business rules per module
+- [REST API](docs/05-api.md): Endpoints, conventions, errors, pagination
+- [Import & export](docs/06-import-export.md): CSV/Excel import pipeline, mapping, deduplication, exports
+- [Security & audit](docs/07-securite-audit.md): Authentication, encryption, audit log, personal data
+- [Currencies](docs/08-devises.md): Multi-currency model and exchange rate strategy
+- [Roadmap](docs/09-roadmap.md): MVP / V2 / V3 breakdown, implementation order
+- [Dev conventions](docs/10-conventions-dev.md): Code style, tests, folder structure, CI, definition of done
+- [ADRs](docs/adr/): Architecture decision records (modular monolith, minor-unit amounts, stored balance, no offline-first, no third-party connectors, no paid FX API, PWA over native, read-only cache, i18n)
+
+## Root files
+
+- [README](README.md): Project overview, stack, local startup
+- [CONTRIBUTING](CONTRIBUTING.md): Absolute rules summary for contributors
+- [CLAUDE.md](CLAUDE.md): Instructions for the implementation agent
+- [SECURITY](SECURITY.md): Vulnerability disclosure policy
+
+## Optional
+
+- [README_fr.md](README_fr.md): French version of the README
+- `docs/*_fr.md`: French translations of each numbered doc
