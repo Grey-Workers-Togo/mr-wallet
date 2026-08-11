@@ -138,6 +138,7 @@ export default function TransactionsPage() {
   const [categoryId, setCategoryId] = useState('');
   const [occurredAt, setOccurredAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   async function loadStatic() {
     const [accountList, categoryList] = await Promise.all([
@@ -649,7 +650,14 @@ export default function TransactionsPage() {
             )}
             <div>
               <Label htmlFor="occurredAt" required>{t('occurredAtLabel')}</Label>
-              <Input id="occurredAt" type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
+              <Input
+                id="occurredAt"
+                type="date"
+                max={todayStr}
+                value={occurredAt}
+                onChange={(e) => setOccurredAt(e.target.value > todayStr ? todayStr : e.target.value)}
+                required
+              />
             </div>
             <div>
               <Label htmlFor="notes">{t('noteLabel')}</Label>
