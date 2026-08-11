@@ -89,6 +89,7 @@ export class AuthController {
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('email/resend')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audit({ action: 'auth.email_resend', entityType: 'User' })
   async resendVerification(@Body(new ZodValidationPipe(resendVerificationSchema)) dto: ResendVerificationDto) {
     await this.authService.resendVerification(dto);
   }
@@ -154,6 +155,7 @@ export class AuthController {
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('password/forgot')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audit({ action: 'auth.password_forgot', entityType: 'User' })
   async forgotPassword(@Body(new ZodValidationPipe(forgotPasswordSchema)) dto: ForgotPasswordDto) {
     await this.authService.forgotPassword(dto.email);
   }
