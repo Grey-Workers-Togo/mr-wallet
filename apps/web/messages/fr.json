@@ -21,6 +21,7 @@
   "home": {
     "login": "Se connecter",
     "register": "S'inscrire",
+    "myAccount": "Mon compte",
     "nav": {
       "features": "Fonctionnalités",
       "howItWorks": "Comment ça marche",

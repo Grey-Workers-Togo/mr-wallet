@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   const t = useTranslations('auth.register');
   const tError = useTranslations('error');
   const router = useRouter();
+  const session = useAuthSession();
   const currencies = useCurrencies();
   const currencyItems = Object.fromEntries(currencies.map((c) => [c.code, c.code]));
   const [email, setEmail] = useState('');
@@ -32,6 +34,12 @@ export default function RegisterPage() {
   const [baseCurrency, setBaseCurrency] = useState('XOF');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (session === 'authenticated') {
+      router.replace('/accounts');
+    }
+  }, [session, router]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

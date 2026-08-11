@@ -322,6 +322,7 @@ model BudgetPeriod {
   closedAt        DateTime? @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime? @db.Timestamptz(6)
 
   @@unique([budgetId, periodStart])
   @@index([userId, periodStart])
@@ -423,6 +424,7 @@ model DebtInstallment {
   paidAt            DateTime?         @db.Timestamptz(6)
   createdAt         DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime          @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?         @db.Timestamptz(6)
 
   @@unique([debtId, sequence])
   @@index([userId, dueOn, status])
@@ -562,6 +564,7 @@ model ImportBatch {
   revertedAt    DateTime?    @db.Timestamptz(6)
   createdAt     DateTime     @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime     @updatedAt @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
 
   @@index([userId, createdAt])
 }
@@ -670,6 +673,8 @@ model Notification {
   severity   Severity         @default(INFO)
   readAt     DateTime?        @db.Timestamptz(6)
   createdAt  DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime         @updatedAt @db.Timestamptz(6)
+  deletedAt  DateTime?        @db.Timestamptz(6)
 
   @@index([userId, readAt, createdAt])
 }
@@ -686,7 +691,10 @@ model BalanceCheck {
   computedMinor BigInt
   deltaMinor    BigInt
   isMatch       Boolean
-  checkedAt     DateTime @default(now()) @db.Timestamptz(6)
+  checkedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt     DateTime? @db.Timestamptz(6)
 
   @@index([userId, accountId, checkedAt])
 }
@@ -794,6 +802,8 @@ model ExportJob {
   completedAt  DateTime?  @db.Timestamptz(6)
   expiresAt    DateTime   @db.Timestamptz(6)
   createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime?  @db.Timestamptz(6)
 
   @@index([userId, createdAt])
 }

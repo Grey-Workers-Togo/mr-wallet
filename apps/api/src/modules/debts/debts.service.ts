@@ -400,10 +400,19 @@ export class DebtsService {
     const now = new Date();
 
     const overdue = await this.prisma.debtInstallment.findMany({ where: { status: 'SCHEDULED', dueOn: { lt: now } } });
+    const horizon = new Date(now.getTime() + DUE_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const dueSoon = await this.prisma.debtInstallment.findMany({
+      where: { status: 'SCHEDULED', dueOn: { gte: now, lte: horizon } },
+    });
+
+    const debtIds = [...new Set([...overdue, ...dueSoon].map((i) => i.debtId))];
+    const debts = await this.prisma.debt.findMany({ where: { id: { in: debtIds } } });
+    const debtById = new Map(debts.map((d) => [d.id, d]));
+
     for (const installment of overdue) {
       try {
         await this.prisma.debtInstallment.update({ where: { id: installment.id }, data: { status: 'LATE' } });
-        const debt = await this.prisma.debt.findUnique({ where: { id: installment.debtId } });
+        const debt = debtById.get(installment.debtId);
         if (!debt) continue;
         await this.events.emitAsync('debt.installment_overdue', {
           userId: installment.userId,
@@ -417,13 +426,9 @@ export class DebtsService {
       }
     }
 
-    const horizon = new Date(now.getTime() + DUE_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-    const dueSoon = await this.prisma.debtInstallment.findMany({
-      where: { status: 'SCHEDULED', dueOn: { gte: now, lte: horizon } },
-    });
     for (const installment of dueSoon) {
       try {
-        const debt = await this.prisma.debt.findUnique({ where: { id: installment.debtId } });
+        const debt = debtById.get(installment.debtId);
         if (!debt) continue;
         await this.events.emitAsync('debt.installment_due_soon', {
           userId: installment.userId,

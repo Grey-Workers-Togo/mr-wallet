@@ -40,14 +40,14 @@ export class MailService {
 
   async send(input: SendMailInput): Promise<void> {
     if (!this.transporter) {
-      this.logger.warn(`SMTP not configured, dropping email to ${input.to} (${input.subject})`);
+      this.logger.warn(`SMTP not configured, dropping email (${input.subject})`);
       return;
     }
     try {
       await this.transporter.sendMail({ from: this.from, to: input.to, subject: input.subject, text: input.text });
     } catch (error) {
       // Never blocks the caller's flow (e.g. password reset stays no-enumeration even if delivery fails).
-      this.logger.warn(`Email delivery failed for ${input.to}: ${error}`);
+      this.logger.warn(`Email delivery failed: ${error}`);
     }
   }
 }
