@@ -89,6 +89,9 @@ function tryRefresh(): Promise<boolean> {
   return refreshInFlight;
 }
 
+/** Silent session check: tries the HttpOnly refresh cookie, no redirect on failure. */
+export const checkSession = (): Promise<boolean> => tryRefresh();
+
 export const apiClient = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>

@@ -7,11 +7,13 @@ import { Link } from '@/i18n/navigation';
 import { Logo } from '@/components/shared/Logo';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import { cn } from '@/lib/utils';
 
 export function SiteHeader() {
   const t = useTranslations('home');
   const [scrolled, setScrolled] = useState(false);
+  const session = useAuthSession();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -37,19 +39,31 @@ export function SiteHeader() {
         <div className="flex items-center gap-1">
           <LanguageSwitcher />
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="ml-1 hidden rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:inline-flex dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
-          >
-            {t('login')}
-          </Link>
-          <Link
-            href="/register"
-            className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-          >
-            {t('register')}
-            <ArrowRight aria-hidden className="size-4" />
-          </Link>
+          {session === 'authenticated' ? (
+            <Link
+              href="/accounts"
+              className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              {t('myAccount')}
+              <ArrowRight aria-hidden className="size-4" />
+            </Link>
+          ) : session === 'guest' ? (
+            <>
+              <Link
+                href="/login"
+                className="ml-1 hidden rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:inline-flex dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+              >
+                {t('login')}
+              </Link>
+              <Link
+                href="/register"
+                className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+              >
+                {t('register')}
+                <ArrowRight aria-hidden className="size-4" />
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
     </header>
