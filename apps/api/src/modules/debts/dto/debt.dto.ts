@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
+const nameField = z.string().trim().min(1).max(120);
 const directionEnum = z.enum(['OWED_BY_ME', 'OWED_TO_ME']);
 const kindEnum = z.enum(['LOAN', 'CREDIT_CARD', 'MORTGAGE', 'INFORMAL', 'INSTALLMENT', 'OTHER']);
 const rateTypeEnum = z.enum(['FIXED', 'VARIABLE', 'ZERO']);
@@ -8,12 +10,12 @@ const frequencyEnum = z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTER
 
 export const createDebtSchema = z
   .object({
-    name: z.string().min(1).max(120),
+    name: nameField,
     direction: directionEnum,
     counterparty: z.string().max(120).optional(),
     kind: kindEnum.default('LOAN'),
     linkedAccountId: z.string().uuid().optional(),
-    principalMinor: z.string().regex(/^\d+$/),
+    principalMinor: unsignedAmountMinor(),
     currency: z.string().length(3),
     annualRatePct: z.number().min(0).max(100).optional(),
     rateType: rateTypeEnum.default('FIXED'),
@@ -29,7 +31,7 @@ export type CreateDebtDto = z.infer<typeof createDebtSchema>;
 
 export const updateDebtSchema = z
   .object({
-    name: z.string().min(1).max(120).optional(),
+    name: nameField.optional(),
     counterparty: z.string().max(120).optional(),
     linkedAccountId: z.string().uuid().nullable().optional(),
     notes: z.string().max(2000).optional(),
@@ -41,7 +43,7 @@ export type UpdateDebtDto = z.infer<typeof updateDebtSchema>;
 export const recordPaymentSchema = z
   .object({
     paidAt: z.coerce.date(),
-    amountMinor: z.string().regex(/^\d+$/),
+    amountMinor: unsignedAmountMinor(),
     installmentId: z.string().uuid().optional(),
     isExtraPayment: z.boolean().default(false),
     description: z.string().max(200).optional(),
@@ -63,7 +65,7 @@ export type RegenerateScheduleDto = z.infer<typeof regenerateScheduleSchema>;
 
 export const simulatePayoffSchema = z
   .object({
-    extraPaymentMinor: z.string().regex(/^\d+$/),
+    extraPaymentMinor: unsignedAmountMinor(),
     asOf: z.coerce.date().optional(),
   })
   .strict();

@@ -44,7 +44,7 @@ export function SiteHeader() {
               href="/accounts"
               className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              {t('myAccount')}
+              {t('mySpace')}
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           ) : session === 'guest' ? (

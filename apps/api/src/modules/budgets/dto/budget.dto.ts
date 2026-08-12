@@ -1,12 +1,14 @@
 import { z } from 'zod';
+import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const budgetPeriodTypeEnum = z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']);
+const nameField = z.string().trim().min(1).max(120);
 
 export const createBudgetSchema = z
   .object({
-    name: z.string().min(1).max(120),
+    name: nameField,
     categoryId: z.string().uuid().optional(),
-    amountMinor: z.string().regex(/^\d+$/),
+    amountMinor: unsignedAmountMinor(),
     currency: z.string().length(3),
     period: budgetPeriodTypeEnum,
     startsOn: z.coerce.date(),
@@ -19,8 +21,8 @@ export type CreateBudgetDto = z.infer<typeof createBudgetSchema>;
 
 export const updateBudgetSchema = z
   .object({
-    name: z.string().min(1).max(120).optional(),
-    amountMinor: z.string().regex(/^\d+$/).optional(),
+    name: nameField.optional(),
+    amountMinor: unsignedAmountMinor().optional(),
     endsOn: z.coerce.date().optional(),
     rollover: z.boolean().optional(),
     alertThresholds: z.array(z.number().int().min(1).max(500)).optional(),
@@ -34,12 +36,12 @@ export const templateEnum = z.enum(['FIFTY_THIRTY_TWENTY', 'ZERO_BASED', 'CUSTOM
 export const fromTemplateSchema = z
   .object({
     template: templateEnum,
-    totalIncomeMinor: z.string().regex(/^\d+$/),
+    totalIncomeMinor: unsignedAmountMinor(),
     currency: z.string().length(3),
     period: budgetPeriodTypeEnum.default('MONTHLY'),
     startsOn: z.coerce.date(),
     categoryAllocations: z
-      .array(z.object({ categoryId: z.string().uuid(), amountMinor: z.string().regex(/^\d+$/) }))
+      .array(z.object({ categoryId: z.string().uuid(), amountMinor: unsignedAmountMinor() }))
       .optional(),
   })
   .strict();

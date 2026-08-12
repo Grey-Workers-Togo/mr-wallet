@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const matchFieldEnum = z.enum(['DESCRIPTION', 'PAYEE', 'EXTERNAL_REF']);
 const matchTypeEnum = z.enum(['CONTAINS', 'EQUALS', 'STARTS_WITH', 'ENDS_WITH', 'REGEX']);
@@ -9,8 +10,8 @@ export const createRuleSchema = z
     matchField: matchFieldEnum.default('DESCRIPTION'),
     matchType: matchTypeEnum.default('CONTAINS'),
     matchValue: z.string().min(1).max(200),
-    minAmountMinor: z.string().regex(/^\d+$/).optional(),
-    maxAmountMinor: z.string().regex(/^\d+$/).optional(),
+    minAmountMinor: unsignedAmountMinor().optional(),
+    maxAmountMinor: unsignedAmountMinor().optional(),
     accountId: z.string().uuid().optional(),
     categoryId: z.string().uuid(),
     addTagIds: z.array(z.string().uuid()).default([]),
@@ -25,8 +26,8 @@ export const updateRuleSchema = z
     matchField: matchFieldEnum.optional(),
     matchType: matchTypeEnum.optional(),
     matchValue: z.string().min(1).max(200).optional(),
-    minAmountMinor: z.string().regex(/^\d+$/).optional(),
-    maxAmountMinor: z.string().regex(/^\d+$/).optional(),
+    minAmountMinor: unsignedAmountMinor().optional(),
+    maxAmountMinor: unsignedAmountMinor().optional(),
     accountId: z.string().uuid().optional(),
     categoryId: z.string().uuid().optional(),
     addTagIds: z.array(z.string().uuid()).optional(),

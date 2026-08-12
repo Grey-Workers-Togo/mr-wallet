@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const transactionTypeEnum = z.enum(['EXPENSE', 'INCOME']);
 const txStatusEnum = z.enum(['PENDING', 'CLEARED', 'RECONCILED', 'VOID']);
@@ -7,9 +8,9 @@ export const createTransactionSchema = z
   .object({
     accountId: z.string().uuid(),
     type: transactionTypeEnum,
-    amountMinor: z.string().regex(/^\d+$/),
+    amountMinor: unsignedAmountMinor(),
     occurredAt: z.coerce.date(),
-    description: z.string().min(1).max(200),
+    description: z.string().trim().min(1).max(200),
     categoryId: z.string().uuid().optional(),
     payee: z.string().max(120).optional(),
     notes: z.string().max(500).optional(),
@@ -22,9 +23,9 @@ export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
 export const updateTransactionSchema = z
   .object({
     accountId: z.string().uuid().optional(),
-    amountMinor: z.string().regex(/^\d+$/).optional(),
+    amountMinor: unsignedAmountMinor().optional(),
     occurredAt: z.coerce.date().optional(),
-    description: z.string().min(1).max(200).optional(),
+    description: z.string().trim().min(1).max(200).optional(),
     categoryId: z.string().uuid().nullable().optional(),
     payee: z.string().max(120).optional(),
     notes: z.string().max(500).optional(),
@@ -38,9 +39,9 @@ export const createTransferSchema = z
   .object({
     fromAccountId: z.string().uuid(),
     toAccountId: z.string().uuid(),
-    amountMinor: z.string().regex(/^\d+$/),
+    amountMinor: unsignedAmountMinor(),
     occurredAt: z.coerce.date(),
-    description: z.string().min(1).max(200).default('Transfer'),
+    description: z.string().trim().min(1).max(200).default('Transfer'),
     notes: z.string().max(500).optional(),
   })
   .strict()
@@ -56,8 +57,8 @@ export const listTransactionsSchema = z
     type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
-    minAmountMinor: z.string().regex(/^\d+$/).optional(),
-    maxAmountMinor: z.string().regex(/^\d+$/).optional(),
+    minAmountMinor: unsignedAmountMinor().optional(),
+    maxAmountMinor: unsignedAmountMinor().optional(),
     q: z.string().max(200).optional(),
   })
   .strict();

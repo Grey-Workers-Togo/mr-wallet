@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { signedAmountMinor } from '../../../common/validation/amount.schema';
 
 export const createRateSchema = z
   .object({
@@ -12,7 +13,7 @@ export type CreateRateDto = z.infer<typeof createRateSchema>;
 
 export const convertSchema = z
   .object({
-    amountMinor: z.string().regex(/^-?\d+$/),
+    amountMinor: signedAmountMinor(),
     from: z.string().length(3),
     to: z.string().length(3),
     at: z.coerce.date().optional(),

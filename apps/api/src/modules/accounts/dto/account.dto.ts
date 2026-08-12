@@ -1,15 +1,17 @@
 import { z } from 'zod';
+import { signedAmountMinor, unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const accountTypeEnum = z.enum(['CASH', 'BANK', 'MOBILE_MONEY', 'CREDIT_CARD', 'SAVINGS', 'WALLET', 'OTHER']);
+const nameField = z.string().trim().min(1).max(100);
 
 export const createAccountSchema = z
   .object({
-    name: z.string().min(1).max(100),
+    name: nameField,
     type: accountTypeEnum,
     currency: z.string().length(3),
-    openingBalanceMinor: z.string().regex(/^-?\d+$/).default('0'),
+    openingBalanceMinor: signedAmountMinor().default('0'),
     openingBalanceAt: z.coerce.date(),
-    creditLimitMinor: z.string().regex(/^\d+$/).optional(),
+    creditLimitMinor: unsignedAmountMinor().optional(),
     institution: z.string().max(100).optional(),
     color: z.string().max(20).optional(),
     icon: z.string().max(50).optional(),
@@ -20,12 +22,12 @@ export type CreateAccountDto = z.infer<typeof createAccountSchema>;
 
 export const updateAccountSchema = z
   .object({
-    name: z.string().min(1).max(100).optional(),
+    name: nameField.optional(),
     institution: z.string().max(100).optional(),
     color: z.string().max(20).optional(),
     icon: z.string().max(50).optional(),
     includeInNetWorth: z.boolean().optional(),
-    creditLimitMinor: z.string().regex(/^\d+$/).optional(),
+    creditLimitMinor: unsignedAmountMinor().optional(),
   })
   .strict();
 export type UpdateAccountDto = z.infer<typeof updateAccountSchema>;

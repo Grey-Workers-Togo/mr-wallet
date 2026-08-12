@@ -1,15 +1,16 @@
 import { z } from 'zod';
+import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const transactionTypeEnum = z.enum(['EXPENSE', 'INCOME']);
 const frequencyEnum = z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY']);
 
 export const createRecurrenceSchema = z
   .object({
-    name: z.string().min(1).max(120),
+    name: z.string().trim().min(1).max(120),
     type: transactionTypeEnum,
     accountId: z.string().uuid(),
     categoryId: z.string().uuid().optional(),
-    amountMinor: z.string().regex(/^\d+$/),
+    amountMinor: unsignedAmountMinor(),
     currency: z.string().length(3),
     amountIsEstimate: z.boolean().default(false),
     frequency: frequencyEnum,
