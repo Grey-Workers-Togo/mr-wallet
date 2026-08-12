@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
+import { NAME_MAX_LENGTH, isValidAmount, isValidName, sanitizeNameInput } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
 
@@ -124,6 +125,10 @@ export default function AccountsPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isValidName(name) || (!editingId && !isValidAmount(openingBalance))) {
+      setError('VALIDATION_FAILED');
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -354,7 +359,8 @@ export default function AccountsPage() {
                 id="name"
                 placeholder={t('namePlaceholder')}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                maxLength={NAME_MAX_LENGTH}
+                onChange={(e) => setName(sanitizeNameInput(e.target.value))}
                 required
               />
             </div>
