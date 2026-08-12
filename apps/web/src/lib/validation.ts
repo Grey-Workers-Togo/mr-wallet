@@ -7,12 +7,18 @@ export function isValidEmail(value: string): boolean {
 
 export const PASSWORD_MIN_LENGTH = 12;
 
-export const AMOUNT_PATTERN = '^[0-9]+$';
-const AMOUNT_REGEX = /^[0-9]*$/;
+export const AMOUNT_PATTERN = '^(0|[1-9][0-9]*)$';
+const AMOUNT_REGEX = /^(0|[1-9][0-9]*)$/;
 
-/** Strips anything but digits, keeping amountMinor an unsigned integer string (bigint minor units, never a float). */
+/**
+ * Strips anything but digits and collapses leading zeros ("0885" -> "885"), keeping
+ * amountMinor an unsigned integer string. BigInt("0885") throws on the backend, so a
+ * leading zero must never reach the API.
+ */
 export function sanitizeAmountInput(value: string): string {
-  return value.replace(/[^0-9]/g, '');
+  const digitsOnly = value.replace(/[^0-9]/g, '');
+  const withoutLeadingZeros = digitsOnly.replace(/^0+(?=\d)/, '');
+  return withoutLeadingZeros;
 }
 
 export function isValidAmount(value: string): boolean {
@@ -20,3 +26,16 @@ export function isValidAmount(value: string): boolean {
 }
 
 export const CURRENCY_CODE_PATTERN = '^[A-Z]{3}$';
+
+export const NAME_MIN_LENGTH = 1;
+export const NAME_MAX_LENGTH = 120;
+
+/** Trims and collapses internal whitespace so a name/label field can't be saved as blank or oddly spaced. */
+export function sanitizeNameInput(value: string): string {
+  return value.replace(/\s+/g, ' ').trimStart();
+}
+
+export function isValidName(value: string, maxLength = NAME_MAX_LENGTH): boolean {
+  const trimmed = value.trim();
+  return trimmed.length >= NAME_MIN_LENGTH && trimmed.length <= maxLength;
+}
