@@ -550,7 +550,10 @@ export default function TransactionsPage() {
       </motion.div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          initialFocus={() => document.getElementById('amount')}
+        >
           <DialogHeader>
             <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
             <DialogDescription>{editingId ? t('editDescription') : t('createDescription')}</DialogDescription>
