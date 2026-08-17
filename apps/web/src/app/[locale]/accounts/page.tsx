@@ -34,6 +34,7 @@ import { useCurrencies } from '@/hooks/useCurrencies';
 import { NAME_MAX_LENGTH, isValidAmount, isValidName, sanitizeNameInput } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
@@ -268,7 +269,14 @@ export default function AccountsPage() {
       )}
 
       {accounts === null && <PageLoader />}
-      {accounts?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
+      {accounts?.length === 0 && (
+        <EmptyState
+          title={t('emptyGuideTitle')}
+          description={t('emptyGuideDescription')}
+          cta={{ label: t('emptyGuideCta'), onClick: openCreateDialog }}
+          dataTour="onboarding-create-account"
+        />
+      )}
       {accounts && accounts.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
           <Card className="overflow-x-auto p-0">

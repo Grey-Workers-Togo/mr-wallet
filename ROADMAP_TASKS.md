@@ -322,19 +322,78 @@
 
 ---
 
-## V2 — Après retours d'usage (optionnel, hors MVP)
+## V2 — Après retours d'usage (détail : `docs/12-roadmap-v2_fr.md`)
 
-- [ ] Recherche avancée multi-critères sauvegardable
-- [ ] Scénarios de prévision
-- [ ] Stratégies de désendettement (avalanche vs boule de neige)
-- [ ] Notifications par email
-- [ ] Multi-devises avancé (provider de taux)
-- [ ] Pièces jointes (photo de reçu)
-- [ ] Import OFX/QIF
-- [ ] Application mobile (React Native)
-- [ ] Tableau de bord personnalisable
-- [ ] Budget partagé / foyer
+### Lot 8 — Recherche avancée (semaine 0.5)
+
+- [ ] `listTransactionsSchema` : `categoryId[]`, `tagId[]`, `accountId[]` multi-valeurs, filtre `payee`
+- [ ] Table `SavedSearch` (userId, name, filterJson, timestamps, audit)
+- [ ] Endpoints : `GET/POST /saved-searches`, `DELETE /saved-searches/:id`, `GET /transactions?savedSearchId=`
+- [ ] Front : panneau filtres multi-sélection, sauvegarde/application de recherche
+- [ ] Tests : équivalence recherche sauvegardée / filtres manuels, isolation multi-utilisateur
+
+### Lot 9 — Scénarios de prévision (semaine 1)
+
+- [ ] Endpoint `POST /forecast/scenario` (hypothèses : montant récurrence modifié, montant ponctuel, horizon)
+- [ ] Réutilisation moteur cashflow/net-worth existant, sans persistance (pas de `SavedScenario`)
+- [ ] Front : entrées d'hypothèses, courbe scénario vs référence
+- [ ] Tests : divergence attendue vérifiable à la main sur 3 mois
+
+### Lot 10 — Stratégies de désendettement (semaine 0.5)
+
+- [ ] Fonction domaine `rankDebtsForStrategy` (avalanche : taux décroissant / boule de neige : solde croissant, cascade)
+- [ ] Endpoint `GET /debts/payoff-strategies?extraMinor=&strategy=`
+- [ ] Front : comparaison avalanche vs boule de neige (intérêts, date de solde)
+- [ ] Tests : jeu de données de référence au centime près, jamais pire que le scénario sans extra
+
+### Lot 11 — Notifications par email (semaine 0.5)
+
+- [ ] Brancher `NotificationsService` sur `MailService` existant (déjà utilisé par `auth`)
+- [ ] Rendu email server-side par type + params, respect `emailEnabled` par type et par locale
+- [ ] Tests : envoi/non-envoi selon préférence, localisation correcte
+
+### Lot 12 — Multi-devises avancé (semaine 0.5)
+
+- [ ] Interface `ExchangeRateProvider` branchable, désactivée par défaut
+- [ ] Tâche planifiée : rafraîchit uniquement les taux `PROVIDER`, no-op sans provider configuré
+- [ ] Rapport de consolidation par devise d'origine (`reporting`)
+- [ ] Tests : comportement sans provider inchangé, refresh isolé de `MANUAL`/`PEGGED`
+
+### Lot 13 — Pièces jointes (semaine 0.5)
+
+- [ ] Table `Attachment` (userId, transactionId, storageKey, mimeType, sizeBytes, timestamps, audit)
+- [ ] Adaptateur de stockage (disque local par défaut, S3 optionnel)
+- [ ] Endpoints : `POST/GET/DELETE /transactions/:id/attachments[/:attachmentId]`
+- [ ] Limites conservatrices (type MIME, taille) consignées dans `docs/QUESTIONS.md`
+- [ ] Tests : cycle upload/récupération/suppression, isolation multi-utilisateur
+
+### Lot 14 — Import OFX/QIF (semaine 0.5)
+
+- [ ] `domain/parse-ofx.ts`, `domain/parse-qif.ts` alimentant le pipeline mapRow/dedupe existant
+- [ ] Détection format étendue dans `domain/sniff.ts` (extension + signature de contenu)
+- [ ] Tests : fichiers réels OFX/QIF, dédoublonnage contre import CSV antérieur
+
+### Lot 15 — Décision application mobile (2 jours, étude)
+
+- [ ] Évaluation PWA installable vs React Native sur retours d'usage réels post-MVP
+- [ ] ADR dans `docs/adr/` avec décision et justification
+
+### Lot 16 — Tableau de bord personnalisable (semaine 0.5)
+
+- [ ] Route `apps/web/src/app/[locale]/dashboard/` (aucune existante actuellement)
+- [ ] Grille de widgets sur endpoints existants (net-worth, budgets, dettes, récurrences, objectifs)
+- [ ] Disposition persistée côté client (`localStorage`)
+- [ ] Tests : réorganisation survit au rechargement, widget retiré ne requête pas
+
+---
+
+## V3 — Extensions structurantes (hors périmètre V2)
+
+- [ ] Budget partagé / foyer (nécessite `spaceId` anticipé dans le modèle — non implémenté en V2)
 - [ ] Investissements
+- [ ] Connecteurs bancaires régulés
+- [ ] API publique
+- [ ] Analyses avancées (anomalies, comparaisons anonymisées)
 
 ---
 

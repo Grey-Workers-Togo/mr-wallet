@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/shared/Logo';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { UserMenu } from '@/components/shared/UserMenu';
+import { ProductTour } from '@/components/onboarding/ProductTour';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           href={href}
           onClick={() => setMobileOpen(false)}
           aria-current={active ? 'page' : undefined}
+          data-tour={`nav-${key}`}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
             active
@@ -201,6 +203,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8">{children}</main>
       </div>
+
+      <ProductTour />
 
       <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
         <AlertDialogContent>

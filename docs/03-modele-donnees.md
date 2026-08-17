@@ -48,6 +48,7 @@ model User {
   timezone          String    @default("Africa/Porto-Novo")
   weekStartsOn      Int       @default(1)        // 1 = Monday
   monthStartDay     Int       @default(1)        // budget anchored on the 1st, or on payday
+  hasSeenOnboarding Boolean   @default(false)    // guided tour shown once, never repeats
   emailVerifiedAt   Dt?
   lastLoginAt       Dt?
   createdAt         Dt        @default(now())
