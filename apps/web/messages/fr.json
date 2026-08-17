@@ -396,6 +396,11 @@
       "submitting": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
+      "checkEmailTitle": "Vérifiez votre boîte mail",
+      "checkEmailMessage": "Nous avons envoyé un lien de confirmation à {email}. Ouvrez-le pour activer votre compte.",
+      "resendButton": "Renvoyer l'e-mail",
+      "resendSubmitting": "Envoi...",
+      "resendSuccess": "E-mail renvoyé.",
       "passwordStrength": {
         "label": "Robustesse",
         "weak": "Faible",

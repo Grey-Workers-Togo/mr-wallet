@@ -396,6 +396,11 @@
       "submitting": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Log in",
+      "checkEmailTitle": "Check your inbox",
+      "checkEmailMessage": "We sent a confirmation link to {email}. Open it to activate your account.",
+      "resendButton": "Resend the email",
+      "resendSubmitting": "Sending...",
+      "resendSuccess": "Email sent again.",
       "passwordStrength": {
         "label": "Strength",
         "weak": "Weak",

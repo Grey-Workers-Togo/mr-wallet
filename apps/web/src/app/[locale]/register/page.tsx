@@ -4,7 +4,6 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { setAccessToken } from '@/lib/auth-store';
 import { useAuthSession } from '@/hooks/useAuthSession';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { Label } from '@/components/ui/label';
@@ -20,8 +19,7 @@ import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface RegisterResponse {
-  accessToken: string;
-  user: { id: string; email: string };
+  email: string;
 }
 
 export default function RegisterPage() {
@@ -36,6 +34,8 @@ export default function RegisterPage() {
   const [baseCurrency, setBaseCurrency] = useState('XOF');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (session === 'authenticated') {
@@ -53,14 +53,51 @@ export default function RegisterPage() {
         password,
         baseCurrency,
       });
-      setAccessToken(result.accessToken);
-      router.push('/accounts');
+      setRegisteredEmail(result.email);
     } catch (err) {
       const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
       setError(code);
       toast({ title: tError(code as never), variant: 'destructive' });
+    } finally {
       setSubmitting(false);
     }
+  }
+
+  async function onResend() {
+    if (!registeredEmail) return;
+    setResending(true);
+    try {
+      await apiClient.post('/auth/email/resend', { email: registeredEmail });
+      toast({ title: t('resendSuccess'), variant: 'success' });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      toast({ title: tError(code as never), variant: 'destructive' });
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (registeredEmail) {
+    return (
+      <AuthLayout>
+        <div className="mb-2">
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+            {t('checkEmailTitle')}
+          </h1>
+          <p className="mt-2 text-neutral-600 dark:text-neutral-400">
+            {t('checkEmailMessage', { email: registeredEmail })}
+          </p>
+        </div>
+        <Button variant="secondary" className="mt-6 h-11 w-full" loading={resending} onClick={onResend}>
+          {resending ? t('resendSubmitting') : t('resendButton')}
+        </Button>
+        <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400">
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            {t('loginLink')}
+          </Link>
+        </p>
+      </AuthLayout>
+    );
   }
 
   return (
