@@ -65,15 +65,39 @@ export default async function LocaleLayout({
   }
 
   const t = await getTranslations({ locale, namespace: 'home' });
+  const appName = t('hero.title');
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: t('hero.title'),
+    name: appName,
     description: t('hero.description'),
     url: `${SITE_URL}/${locale}`,
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  };
+  const brandJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: appName,
+        alternateName: ['Mister Wallet'],
+        url: SITE_URL,
+        logo: `${SITE_URL}/icon-512x512.png`,
+        sameAs: ['https://github.com/Grey-Workers-Togo/mr-wallet'],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        name: appName,
+        alternateName: ['Mister Wallet'],
+        url: SITE_URL,
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        inLanguage: routing.locales,
+      },
+    ],
   };
 
   return (
@@ -85,6 +109,7 @@ export default async function LocaleLayout({
           }}
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <InstallPrompt />
