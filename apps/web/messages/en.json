@@ -909,6 +909,27 @@
     "exportSection": "Full export",
     "exportFull": "Download all my data"
   },
+  "onboarding": {
+    "welcomeTitle": "Welcome to Mr Wallet",
+    "welcomeContent": "Let's take a quick tour of the main sections before you start.",
+    "accountsTitle": "Accounts",
+    "accountsContent": "An account is a place your money lives — a bank account, mobile money wallet, or cash. Everything starts here.",
+    "transactionsTitle": "Transactions",
+    "transactionsContent": "Every expense, income, or transfer between your accounts is a transaction.",
+    "budgetsTitle": "Budgets",
+    "budgetsContent": "Set a spending cap per category and get warned before you overspend.",
+    "debtsTitle": "Debts",
+    "debtsContent": "Track money you owe or that's owed to you, with an automatic repayment schedule.",
+    "goalsTitle": "Goals",
+    "goalsContent": "Set a savings target and follow your progress toward it.",
+    "finishTitle": "You're all set",
+    "finishContent": "Start by creating your first account, then log a transaction to see it in action.",
+    "back": "Back",
+    "close": "Close",
+    "finish": "Finish",
+    "next": "Next",
+    "skip": "Skip"
+  },
   "error": {
     "INTERNAL_ERROR": "An unexpected error occurred.",
     "NOT_FOUND": "Resource not found.",

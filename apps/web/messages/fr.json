@@ -909,6 +909,27 @@
     "exportSection": "Export intégral",
     "exportFull": "Télécharger toutes mes données"
   },
+  "onboarding": {
+    "welcomeTitle": "Bienvenue sur Mr Wallet",
+    "welcomeContent": "Faisons un petit tour des sections principales avant de commencer.",
+    "accountsTitle": "Comptes",
+    "accountsContent": "Un compte est un endroit où se trouve votre argent : compte bancaire, mobile money ou espèces. Tout part de là.",
+    "transactionsTitle": "Transactions",
+    "transactionsContent": "Chaque dépense, revenu ou transfert entre vos comptes est une transaction.",
+    "budgetsTitle": "Budgets",
+    "budgetsContent": "Fixez un plafond de dépense par catégorie et soyez alerté avant de le dépasser.",
+    "debtsTitle": "Dettes",
+    "debtsContent": "Suivez l'argent que vous devez ou qu'on vous doit, avec un échéancier de remboursement automatique.",
+    "goalsTitle": "Objectifs",
+    "goalsContent": "Fixez un montant cible et suivez votre progression vers cet objectif.",
+    "finishTitle": "Vous êtes prêt",
+    "finishContent": "Commencez par créer votre premier compte, puis enregistrez une transaction pour voir comment ça marche.",
+    "back": "Précédent",
+    "close": "Fermer",
+    "finish": "Terminer",
+    "next": "Suivant",
+    "skip": "Passer"
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur inattendue est survenue.",
     "NOT_FOUND": "Ressource introuvable.",
