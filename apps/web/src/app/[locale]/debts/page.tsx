@@ -33,6 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
@@ -386,7 +387,13 @@ export default function DebtsPage() {
       )}
 
       {debts === null && <PageLoader />}
-      {debts?.length === 0 && <p className="text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
+      {debts?.length === 0 && (
+        <EmptyState
+          title={t('emptyGuideTitle')}
+          description={t('emptyGuideDescription')}
+          cta={{ label: t('emptyGuideCta'), onClick: openCreateDialog }}
+        />
+      )}
       {debts && debts.length > 0 && (
         <motion.div
           variants={staggerContainer}

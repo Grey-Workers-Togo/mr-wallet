@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
@@ -276,12 +277,11 @@ export default function GoalsPage() {
       {goals === null && <PageLoader />}
 
       {goals?.length === 0 && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-          <Card className="flex flex-col items-center justify-center gap-1 py-12 text-center">
-            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('emptyTitle')}</h2>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('emptySubtitle')}</p>
-          </Card>
-        </motion.div>
+        <EmptyState
+          title={t('emptyGuideTitle')}
+          description={t('emptyGuideDescription')}
+          cta={{ label: t('emptyGuideCta'), onClick: openCreateDialog }}
+        />
       )}
 
       {goals && goals.length > 0 && (

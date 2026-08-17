@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
@@ -456,7 +457,23 @@ export default function TransactionsPage() {
         </div>
 
         {transactions === null && <PageLoader />}
-        {transactions?.length === 0 && <p className="p-5 text-neutral-600 dark:text-neutral-400">{t('empty')}</p>}
+        {transactions?.length === 0 && (
+          <div className="p-5">
+            {accounts.length === 0 ? (
+              <EmptyState
+                title={t('emptyNoAccountTitle')}
+                description={t('emptyNoAccountDescription')}
+                cta={{ label: t('emptyNoAccountCta'), href: '/accounts' }}
+              />
+            ) : (
+              <EmptyState
+                title={t('emptyGuideTitle')}
+                description={t('emptyGuideDescription')}
+                cta={{ label: t('emptyGuideCta'), onClick: openCreateDialog }}
+              />
+            )}
+          </div>
+        )}
         {transactions && transactions.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
