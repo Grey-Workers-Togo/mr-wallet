@@ -34,6 +34,8 @@ import { useCurrencies } from '@/hooks/useCurrencies';
 import { NAME_MAX_LENGTH, isValidAmount, isValidName, sanitizeNameInput } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 const ACCOUNT_TYPES = ['CASH', 'BANK', 'MOBILE_MONEY', 'CREDIT_CARD', 'SAVINGS', 'WALLET', 'OTHER'] as const;
 
@@ -352,7 +354,7 @@ export default function AccountsPage() {
           <DialogHeader>
             <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+          <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input
@@ -432,6 +434,7 @@ export default function AccountsPage() {
                 {editingId ? t('saveChanges') : t('submit')}
               </Button>
             </DialogFooter>
+            <SubmitShortcutHint />
           </form>
         </DialogContent>
       </Dialog>

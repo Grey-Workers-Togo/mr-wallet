@@ -388,7 +388,8 @@ model Debt {
   compounding           Compounding   @default(MONTHLY)
 
   startedOn             Dt
-  termMonths            Int?
+  termDays              Int?                        // durée réelle en jours ; le nombre de périodes en dérive via / periodsPerYear
+  scheduleMode          ScheduleMode  @default(AUTO) // AUTO = moteur d'amortissement, MANUAL = échéances saisies à la main
   paymentFrequency      Frequency     @default(MONTHLY)
   paymentDayOfMonth     Int?
   installmentMinor      BigInt?                     // mensualité, calculée ou saisie

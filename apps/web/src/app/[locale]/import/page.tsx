@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/useToast';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface Account {
   id: string;
@@ -135,7 +137,7 @@ export default function ImportPage() {
 
       <Card className="p-6">
         <CardContent className="p-0">
-          <form onSubmit={onUpload} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <form onSubmit={onUpload} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="accountId" required>{t('accountLabel')}</Label>
               <Select items={accountItems} value={accountId} onValueChange={(value) => setAccountId(value ?? '')}>
@@ -182,6 +184,7 @@ export default function ImportPage() {
               <Button type="submit" loading={uploading}>
                 {t('submit')}
               </Button>
+              <SubmitShortcutHint />
             </div>
           </form>
         </CardContent>

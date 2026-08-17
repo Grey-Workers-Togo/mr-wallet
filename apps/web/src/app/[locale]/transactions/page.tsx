@@ -35,6 +35,8 @@ import { Badge } from '@/components/ui/badge';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 const CREATE_TYPES = ['EXPENSE', 'INCOME', 'TRANSFER'] as const;
 const FILTER_TYPES = ['ALL', 'EXPENSE', 'INCOME', 'TRANSFER'] as const;
@@ -548,12 +550,15 @@ export default function TransactionsPage() {
       </motion.div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          initialFocus={() => document.getElementById('amount')}
+        >
           <DialogHeader>
             <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
             <DialogDescription>{editingId ? t('editDescription') : t('createDescription')}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+          <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type" required>{t('typeLabel')}</Label>
@@ -668,6 +673,7 @@ export default function TransactionsPage() {
                 {t('submit')}
               </Button>
             </DialogFooter>
+            <SubmitShortcutHint />
           </form>
         </DialogContent>
       </Dialog>

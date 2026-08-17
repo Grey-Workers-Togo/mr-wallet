@@ -10,7 +10,8 @@
     "createSuccessTitle": "Créé avec succès",
     "updateSuccessTitle": "Modifié avec succès",
     "deleteSuccessTitle": "Supprimé avec succès",
-    "actionErrorTitle": "Échec de l'action"
+    "actionErrorTitle": "Échec de l'action",
+    "submitShortcutHint": "Astuce : appuyez sur {shortcut} pour valider"
   },
   "confirm": {
     "deleteTitle": "Supprimer cet élément ?",
@@ -22,6 +23,7 @@
     "login": "Se connecter",
     "register": "S'inscrire",
     "mySpace": "Mon espace",
+    "accessMySpace": "Accéder à mon espace",
     "nav": {
       "features": "Fonctionnalités",
       "howItWorks": "Comment ça marche",
@@ -394,6 +396,11 @@
       "submitting": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
+      "checkEmailTitle": "Vérifiez votre boîte mail",
+      "checkEmailMessage": "Nous avons envoyé un lien de confirmation à {email}. Ouvrez-le pour activer votre compte.",
+      "resendButton": "Renvoyer l'e-mail",
+      "resendSubmitting": "Envoi...",
+      "resendSuccess": "E-mail renvoyé.",
       "passwordStrength": {
         "label": "Robustesse",
         "weak": "Faible",
@@ -702,7 +709,17 @@
     "directionLabel": "Sens",
     "principalLabel": "Capital",
     "rateLabel": "Taux annuel (%)",
-    "termLabel": "Durée (mois)",
+    "termLabel": "Durée",
+    "termUnitLabel": "Unité",
+    "useExactDueDateLabel": "Je connais la date d'échéance exacte",
+    "dueDateLabel": "Date d'échéance",
+    "scheduleModeLabel": "Type d'échéancier",
+    "manualInstallmentsLabel": "Échéances",
+    "addInstallmentRow": "Ajouter une échéance",
+    "removeInstallmentRow": "Supprimer cette échéance",
+    "manualInstallmentDueDateLabel": "Date d'échéance",
+    "manualInstallmentAmountLabel": "Montant",
+    "manualScheduleSumHint": "Total des échéances : {sum} / capital : {principal}",
     "startedOnLabel": "Date de départ",
     "linkedAccountLabel": "Compte lié",
     "noLinkedAccountOption": "Aucun compte lié",
@@ -730,6 +747,15 @@
       "PARTIAL": "Partielle",
       "LATE": "En retard",
       "SKIPPED": "Ignorée"
+    },
+    "termUnit": {
+      "DAYS": "Jours",
+      "WEEKS": "Semaines",
+      "MONTHS": "Mois"
+    },
+    "scheduleMode": {
+      "AUTO": "Automatique (échéancier calculé)",
+      "MANUAL": "Manuel (dates et montants personnalisés)"
     }
   },
   "goals": {
@@ -929,6 +955,7 @@
     "DEBT_PAYMENT_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",
     "DEBT_PAYMENT_EXCEEDS_OUTSTANDING": "Le montant dépasse le capital restant dû.",
     "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "Le montant dépasse ce qui reste dû sur cette échéance.",
+    "DEBT_MANUAL_SCHEDULE_NOT_REGENERATABLE": "Cette dette utilise un échéancier manuel et ne peut pas être régénérée.",
     "GOAL_NOT_FOUND": "Objectif introuvable.",
     "GOAL_NO_LINKED_ACCOUNT": "Cet objectif n'a pas de compte lié pour recevoir un virement.",
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "Le montant doit être supérieur à zéro.",

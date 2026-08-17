@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface Profile {
   id: string;
@@ -206,7 +208,7 @@ export default function PreferencesPage() {
               <CardTitle>{t('title')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <form onSubmit={onSaveProfile} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <form onSubmit={onSaveProfile} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="displayName">{t('displayNameLabel')}</Label>
                   <Input id="displayName" name="displayName" defaultValue={profile.displayName ?? ''} />
@@ -250,6 +252,7 @@ export default function PreferencesPage() {
                   <Button type="submit" loading={pending === 'profile'}>
                     {t('save')}
                   </Button>
+                  <SubmitShortcutHint />
                 </div>
               </form>
             </CardContent>
@@ -261,7 +264,7 @@ export default function PreferencesPage() {
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <p className="text-neutral-600 dark:text-neutral-400">{profile.pinEnabled ? t('pinEnabled') : t('pinDisabled')}</p>
-              <form onSubmit={onSetPin} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <form onSubmit={onSetPin} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="pin" required>{t('pinLabel')}</Label>
                   <Input
@@ -289,6 +292,7 @@ export default function PreferencesPage() {
                   <Button type="submit" loading={pending === 'setPin'}>
                     {t('setPin')}
                   </Button>
+                  <SubmitShortcutHint />
                 </div>
               </form>
               {profile.pinEnabled && (

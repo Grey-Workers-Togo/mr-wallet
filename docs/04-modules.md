@@ -161,6 +161,8 @@ capital_restant_k = capital_restant_{k−1} − capital_k
 | RG-D8 | When `outstandingPrincipalMinor` reaches 0, the debt moves to `PAID_OFF`, `closedAt` is set, and `DebtPaidOff` is notified. |
 | RG-D9 | Recording a `DebtPayment` with a `linkedAccountId` emits `DebtPaymentRecorded`, which creates an `EXPENSE` transaction (or `INCOME` if `OWED_TO_ME`) on that account. Deleting the payment deletes the transaction. |
 | RG-D10 | A debt of type `OWED_TO_ME` (receivable) counts as an **asset** in net worth; a debt of type `OWED_BY_ME` as a **liability**. |
+| RG-D11 | A debt's duration (`termDays`) is a real day-count, not months — it accepts days, weeks, or months from the UI (converted to days client-side) or a direct due date (derived as `dueDate - startedOn`). The installment *count* derives from `termDays`; each installment's actual due date still steps real calendar periods via the existing date arithmetic. |
+| RG-D12 | `scheduleMode = MANUAL` disables the amortization engine entirely: the user supplies each installment's `dueOn` and amount by hand (`rateType` must be `ZERO`, totals must sum exactly to `principalMinor`). RG-D1/RG-D2 rounding rules don't apply (no engine-computed rounding to absorb). Manual debts reject schedule regeneration and payoff simulation, and an extra payment does not reshuffle their future installments (RG-D4/RG-D5 don't apply). |
 
 ### Views to provide
 

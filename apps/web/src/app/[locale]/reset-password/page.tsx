@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PASSWORD_MIN_LENGTH } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 export default function ResetPasswordPage() {
   return (
@@ -77,7 +79,7 @@ function ResetPasswordForm() {
               <AlertDescription>{t('missingToken')}</AlertDescription>
             </Alert>
           ) : (
-            <form onSubmit={onSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
               <div>
                 <Label htmlFor="newPassword" required>{t('newPasswordLabel')}</Label>
                 <Input
@@ -108,6 +110,7 @@ function ResetPasswordForm() {
               <Button type="submit" className="w-full" loading={submitting}>
                 {submitting ? t('submitting') : t('submit')}
               </Button>
+              <SubmitShortcutHint />
             </form>
           )}
         </CardContent>
