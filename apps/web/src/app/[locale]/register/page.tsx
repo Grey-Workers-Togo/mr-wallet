@@ -16,6 +16,8 @@ import { PasswordStrength } from '@/components/shared/PasswordStrength';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface RegisterResponse {
   accessToken: string;
@@ -68,7 +70,7 @@ export default function RegisterPage() {
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email" required>
             {t('emailLabel')}
@@ -129,6 +131,7 @@ export default function RegisterPage() {
         <Button type="submit" size="lg" className="h-11 w-full" loading={submitting}>
           {submitting ? t('submitting') : t('submit')}
         </Button>
+        <SubmitShortcutHint />
       </form>
 
       <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400">

@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EMAIL_PATTERN } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('auth.forgot');
@@ -63,7 +65,7 @@ export default function ForgotPasswordPage() {
             <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" required>
                 {t('emailLabel')}
@@ -87,6 +89,7 @@ export default function ForgotPasswordPage() {
             <Button type="submit" size="lg" className="h-11 w-full" loading={submitting}>
               {submitting ? t('submitting') : t('submit')}
             </Button>
+            <SubmitShortcutHint />
           </form>
 
           <Link

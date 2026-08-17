@@ -34,6 +34,8 @@ import {
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY'] as const;
 const TYPES = ['EXPENSE', 'INCOME'] as const;
@@ -391,7 +393,7 @@ export default function RecurrencesPage() {
             <DialogTitle>{t('create')}</DialogTitle>
             <DialogDescription>{t('createDescription')}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+          <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type" required>{t('typeLabel')}</Label>
@@ -513,6 +515,7 @@ export default function RecurrencesPage() {
                 {t('submit')}
               </Button>
             </DialogFooter>
+            <SubmitShortcutHint />
           </form>
         </DialogContent>
       </Dialog>

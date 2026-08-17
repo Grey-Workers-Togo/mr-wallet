@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EMAIL_PATTERN } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface LoginResponse {
   accessToken: string;
@@ -58,7 +60,7 @@ export default function LoginPage() {
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email" required>
             {t('emailLabel')}
@@ -101,6 +103,7 @@ export default function LoginPage() {
         <Button type="submit" size="lg" className="h-11 w-full" loading={submitting}>
           {submitting ? t('submitting') : t('submit')}
         </Button>
+        <SubmitShortcutHint />
       </form>
 
       <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400">

@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 interface Tag {
   id: string;
@@ -118,7 +120,7 @@ export default function TagsPage() {
           <CardTitle>{t('create')}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+          <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="name" required>{t('nameLabel')}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -127,6 +129,7 @@ export default function TagsPage() {
               <Button type="submit" loading={isSubmitting}>
                 {t('submit')}
               </Button>
+              <SubmitShortcutHint />
             </div>
           </form>
         </CardContent>
