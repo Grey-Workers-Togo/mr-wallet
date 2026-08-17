@@ -388,7 +388,8 @@ model Debt {
   compounding           Compounding   @default(MONTHLY)
 
   startedOn             Dt
-  termMonths            Int?
+  termDays              Int?                        // real day-count; period count derives from this / periodsPerYear
+  scheduleMode          ScheduleMode  @default(AUTO) // AUTO = amortization engine, MANUAL = hand-typed installments
   paymentFrequency      Frequency     @default(MONTHLY)
   paymentDayOfMonth     Int?
   installmentMinor      BigInt?                     // installment, calculated or entered
