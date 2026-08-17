@@ -27,9 +27,9 @@ export function periodsPerYear(frequency: Frequency): number {
   }
 }
 
-/** `termMonths` is always expressed in months regardless of payment frequency (docs/04 §G). */
-export function installmentCount(termMonths: number, frequency: Frequency): number {
-  return Math.max(1, Math.round((termMonths * periodsPerYear(frequency)) / 12));
+/** `termDays` is a real day-count; period count derives from the fraction of a year it covers. */
+export function installmentCount(termDays: number, frequency: Frequency): number {
+  return Math.max(1, Math.round((termDays / 365) * periodsPerYear(frequency)));
 }
 
 /** UTC date arithmetic with day-of-month clamping, consistent with budgets/domain/period-bounds.ts. */

@@ -161,6 +161,8 @@ capital_restant_k = capital_restant_{k−1} − capital_k
 | RG-D8 | Quand `outstandingPrincipalMinor` atteint 0, la dette passe en `PAID_OFF`, `closedAt` est renseigné, et `DebtPaidOff` est notifié. |
 | RG-D9 | Enregistrer un `DebtPayment` avec un `linkedAccountId` émet `DebtPaymentRecorded`, qui crée une transaction `EXPENSE` (ou `INCOME` si `OWED_TO_ME`) sur ce compte. Supprimer le paiement supprime la transaction. |
 | RG-D10 | Une dette `OWED_TO_ME` (créance) compte comme **actif** dans le patrimoine net ; une dette `OWED_BY_ME` comme **passif**. |
+| RG-D11 | La durée d'une dette (`termDays`) est un nombre de jours réel, pas des mois — elle accepte des jours, semaines ou mois depuis l'UI (convertis en jours côté client) ou une date d'échéance directe (`dueDate - startedOn`). Le *nombre* d'échéances dérive de `termDays` ; la date de chaque échéance suit toujours le calendrier réel via l'arithmétique de dates existante. |
+| RG-D12 | `scheduleMode = MANUAL` désactive entièrement le moteur d'amortissement : l'utilisateur saisit `dueOn` et le montant de chaque échéance à la main (`rateType` doit être `ZERO`, la somme doit correspondre exactement à `principalMinor`). Les règles d'arrondi RG-D1/RG-D2 ne s'appliquent pas (aucun arrondi calculé à absorber). Une dette manuelle refuse la régénération d'échéancier et la simulation de remboursement anticipé, et un paiement anticipé ne modifie pas ses échéances futures (RG-D4/RG-D5 ne s'appliquent pas). |
 
 ### Vues à fournir
 

@@ -8,7 +8,7 @@ export interface AmortizationInput {
   principalMinor: bigint;
   annualRatePct: number | null;
   rateType: RateType;
-  termMonths: number | null;
+  termDays: number | null;
   paymentFrequency: Frequency;
   startedOn: Date;
   startSequence?: number; // for regeneration (RG-D5): resume numbering after already-settled installments.
@@ -67,12 +67,36 @@ function generateForCount(
   return lines;
 }
 
-/** RG-D3: no `termMonths` → no schedule, only the running balance is tracked. */
+/** RG-D3: no `termDays` → no schedule, only the running balance is tracked. */
 export function generateAmortizationSchedule(input: AmortizationInput): AmortizationLine[] {
-  if (!input.termMonths || input.principalMinor <= 0n) return [];
-  const n = installmentCount(input.termMonths, input.paymentFrequency);
+  if (!input.termDays || input.principalMinor <= 0n) return [];
+  const n = installmentCount(input.termDays, input.paymentFrequency);
   const i = periodicRate(input.annualRatePct, input.rateType, input.paymentFrequency);
   return generateForCount(input.principalMinor, i, n, input.paymentFrequency, input.startedOn, input.startSequence ?? 1);
+}
+
+/**
+ * Manual schedule mode: installments are hand-typed by the user rather than computed. Each line
+ * is treated as pure principal (no interest split) — the caller is responsible for validating
+ * that dates are strictly ascending and totals sum to `principalMinor` before calling this.
+ */
+export function buildManualSchedule(
+  lines: { dueOn: Date; totalMinor: bigint }[],
+  principalMinor: bigint,
+  startSequence = 1,
+): AmortizationLine[] {
+  let balance = principalMinor;
+  return lines.map((line, k) => {
+    balance -= line.totalMinor;
+    return {
+      sequence: startSequence + k,
+      dueOn: line.dueOn,
+      totalMinor: line.totalMinor,
+      principalMinor: line.totalMinor,
+      interestMinor: 0n,
+      balanceAfterMinor: balance,
+    };
+  });
 }
 
 /**

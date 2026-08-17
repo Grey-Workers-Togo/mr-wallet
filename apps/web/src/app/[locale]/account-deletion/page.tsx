@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/shared/Logo';
+import { routing } from '@/i18n/routing';
 
 export async function generateMetadata({
   params,
@@ -15,6 +16,10 @@ export async function generateMetadata({
     title: t('title'),
     description: t('intro'),
     robots: { index: true, follow: true },
+    alternates: {
+      canonical: `/${locale}/account-deletion`,
+      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}/account-deletion`])),
+    },
   };
 }
 

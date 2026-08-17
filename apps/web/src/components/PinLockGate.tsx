@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { clearLocalPin, hasLocalPin, verifyLocalPin } from '@/lib/local-pin';
 import { purgeOfflineCache } from '@/lib/offline-cache';
 import { setAccessToken } from '@/lib/auth-store';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 const DEFAULT_LOCK_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
@@ -84,7 +86,7 @@ export function PinLockGate() {
         zIndex: 9999,
       }}
     >
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter}>
         <label>
           {t('pinLabel')}
           <input
@@ -101,6 +103,7 @@ export function PinLockGate() {
         </label>
         {error && <p role="alert">{t('pinLockedWrong')}</p>}
         <button type="submit">{t('pinUnlock')}</button>
+        <SubmitShortcutHint />
       </form>
     </div>
   );

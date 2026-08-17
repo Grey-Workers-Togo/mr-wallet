@@ -29,34 +29,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'home' });
   const appName = t('hero.title');
   const title = t('seo.title');
-  const description = t('seo.description');
 
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: title, template: `%s · ${appName}` },
-    description,
     applicationName: appName,
     manifest: '/manifest.json',
-    keywords: ['budget', 'finances personnelles', 'dépenses', 'épargne', 'personal finance', 'expense tracker'],
-    alternates: {
-      canonical: `/${locale}`,
-      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}`])),
-    },
-    openGraph: {
-      type: 'website',
-      url: `/${locale}`,
-      siteName: appName,
-      title,
-      description,
-      locale,
-      images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: ['/icon-512x512.png'],
-    },
     robots: { index: true, follow: true },
     icons: [
       { rel: 'icon', url: '/icon.svg', type: 'image/svg+xml' },
@@ -87,15 +65,39 @@ export default async function LocaleLayout({
   }
 
   const t = await getTranslations({ locale, namespace: 'home' });
+  const appName = t('hero.title');
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: t('hero.title'),
+    name: appName,
     description: t('hero.description'),
     url: `${SITE_URL}/${locale}`,
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  };
+  const brandJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: appName,
+        alternateName: ['Mister Wallet'],
+        url: SITE_URL,
+        logo: `${SITE_URL}/icon-512x512.png`,
+        sameAs: ['https://github.com/Grey-Workers-Togo/mr-wallet'],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        name: appName,
+        alternateName: ['Mister Wallet'],
+        url: SITE_URL,
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        inLanguage: routing.locales,
+      },
+    ],
   };
 
   return (
@@ -107,6 +109,7 @@ export default async function LocaleLayout({
           }}
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <InstallPrompt />

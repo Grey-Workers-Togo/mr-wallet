@@ -10,7 +10,8 @@
     "createSuccessTitle": "Created successfully",
     "updateSuccessTitle": "Updated successfully",
     "deleteSuccessTitle": "Deleted successfully",
-    "actionErrorTitle": "Action failed"
+    "actionErrorTitle": "Action failed",
+    "submitShortcutHint": "Tip: press {shortcut} to submit"
   },
   "confirm": {
     "deleteTitle": "Delete this item?",
@@ -22,6 +23,7 @@
     "login": "Log in",
     "register": "Sign up",
     "mySpace": "My space",
+    "accessMySpace": "Access my space",
     "nav": {
       "features": "Features",
       "howItWorks": "How it works",
@@ -394,6 +396,11 @@
       "submitting": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Log in",
+      "checkEmailTitle": "Check your inbox",
+      "checkEmailMessage": "We sent a confirmation link to {email}. Open it to activate your account.",
+      "resendButton": "Resend the email",
+      "resendSubmitting": "Sending...",
+      "resendSuccess": "Email sent again.",
       "passwordStrength": {
         "label": "Strength",
         "weak": "Weak",
@@ -702,7 +709,17 @@
     "directionLabel": "Direction",
     "principalLabel": "Principal",
     "rateLabel": "Annual rate (%)",
-    "termLabel": "Term (months)",
+    "termLabel": "Duration",
+    "termUnitLabel": "Unit",
+    "useExactDueDateLabel": "I know the exact due date",
+    "dueDateLabel": "Due date",
+    "scheduleModeLabel": "Schedule type",
+    "manualInstallmentsLabel": "Installments",
+    "addInstallmentRow": "Add an installment",
+    "removeInstallmentRow": "Remove this installment",
+    "manualInstallmentDueDateLabel": "Due date",
+    "manualInstallmentAmountLabel": "Amount",
+    "manualScheduleSumHint": "Installments total: {sum} / principal: {principal}",
     "startedOnLabel": "Start date",
     "linkedAccountLabel": "Linked account",
     "noLinkedAccountOption": "No linked account",
@@ -730,6 +747,15 @@
       "PARTIAL": "Partial",
       "LATE": "Late",
       "SKIPPED": "Skipped"
+    },
+    "termUnit": {
+      "DAYS": "Days",
+      "WEEKS": "Weeks",
+      "MONTHS": "Months"
+    },
+    "scheduleMode": {
+      "AUTO": "Automatic (amortization schedule)",
+      "MANUAL": "Manual (custom dates and amounts)"
     }
   },
   "goals": {
@@ -929,6 +955,7 @@
     "DEBT_PAYMENT_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",
     "DEBT_PAYMENT_EXCEEDS_OUTSTANDING": "The amount exceeds the outstanding principal.",
     "DEBT_PAYMENT_EXCEEDS_INSTALLMENT": "The amount exceeds what remains due on this installment.",
+    "DEBT_MANUAL_SCHEDULE_NOT_REGENERATABLE": "This debt uses a manual schedule and cannot be regenerated.",
     "GOAL_NOT_FOUND": "Goal not found.",
     "GOAL_NO_LINKED_ACCOUNT": "This goal has no linked account to receive a transfer.",
     "GOAL_CONTRIBUTION_AMOUNT_MUST_BE_POSITIVE": "The amount must be greater than zero.",

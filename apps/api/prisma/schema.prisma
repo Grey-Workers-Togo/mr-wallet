@@ -366,6 +366,11 @@ enum DebtStatus {
   CANCELLED
 }
 
+enum ScheduleMode {
+  AUTO
+  MANUAL
+}
+
 model Debt {
   id                        String        @id @default(uuid())
   userId                    String
@@ -384,7 +389,8 @@ model Debt {
   compounding               Compounding   @default(MONTHLY)
 
   startedOn                 DateTime      @db.Timestamptz(6)
-  termMonths                Int?
+  termDays                  Int?
+  scheduleMode              ScheduleMode  @default(AUTO)
   paymentFrequency          Frequency     @default(MONTHLY)
   paymentDayOfMonth         Int?
   installmentMinor          BigInt?

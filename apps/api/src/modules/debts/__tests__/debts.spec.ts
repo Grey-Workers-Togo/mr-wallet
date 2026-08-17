@@ -1,7 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { NotFoundAppError } from '../../../common/errors/app-error';
+import { NotFoundAppError, ValidationAppError } from '../../../common/errors/app-error';
 import { AccountsService } from '../../accounts/accounts.service';
 import { AccountsFacade } from '../../accounts/accounts.facade';
 import { CategoriesService } from '../../categories/categories.service';
@@ -59,7 +59,8 @@ describe('debts', () => {
       rateType: 'FIXED',
       compounding: 'MONTHLY',
       startedOn: new Date('2026-01-31'),
-      termMonths: 6,
+      termDays: 180,
+      scheduleMode: 'AUTO',
       paymentFrequency: 'MONTHLY',
     });
     debtOfB = debt.id;
@@ -161,5 +162,69 @@ describe('debts', () => {
     expect(closed.status).toBe('PAID_OFF');
     expect(closed.outstandingPrincipalMinor).toBe(0n);
     expect(closed.closedAt).not.toBeNull();
+  });
+
+  describe('manual schedule mode', () => {
+    let manualDebtId: string;
+
+    beforeAll(async () => {
+      const debt = await service.create(userB, {
+        name: 'Informal loan to a friend',
+        direction: 'OWED_TO_ME',
+        kind: 'INFORMAL',
+        principalMinor: '50000',
+        currency: 'EUR',
+        rateType: 'ZERO',
+        compounding: 'MONTHLY',
+        startedOn: new Date('2026-01-01'),
+        scheduleMode: 'MANUAL',
+        manualInstallments: [
+          { dueOn: new Date('2026-01-10'), totalMinor: '10000' },
+          { dueOn: new Date('2026-01-20'), totalMinor: '15000' },
+          { dueOn: new Date('2026-02-01'), totalMinor: '25000' },
+        ],
+        paymentFrequency: 'MONTHLY',
+      });
+      manualDebtId = debt.id;
+    });
+
+    it('persists the hand-typed installments as-is', async () => {
+      const schedule = await service.schedule(userB, manualDebtId);
+      expect(schedule.map((i) => i.totalMinor)).toEqual([10000n, 15000n, 25000n]);
+      expect(schedule.every((i) => i.interestMinor === 0n)).toBe(true);
+      expect(schedule[schedule.length - 1]?.balanceAfterMinor).toBe(0n);
+    });
+
+    it('user A cannot read user B manual debt', async () => {
+      await expect(service.getById(userA, manualDebtId)).rejects.toBeInstanceOf(NotFoundAppError);
+    });
+
+    it('rejects schedule regeneration for a manual debt', async () => {
+      await expect(service.regenerateSchedule(userB, manualDebtId, { strategy: 'REDUCE_TERM' })).rejects.toBeInstanceOf(
+        ValidationAppError,
+      );
+    });
+
+    it('rejects payoff simulation for a manual debt', async () => {
+      await expect(service.simulatePayoff(userB, manualDebtId, { extraPaymentMinor: '1000' })).rejects.toBeInstanceOf(
+        ValidationAppError,
+      );
+    });
+
+    it('an extra payment reduces principal but leaves future manual installments untouched', async () => {
+      const before = await service.schedule(userB, manualDebtId);
+      await service.recordPayment(userB, manualDebtId, {
+        paidAt: new Date('2026-01-05'),
+        amountMinor: '5000',
+        isExtraPayment: true,
+      });
+
+      const debt = await service.getById(userB, manualDebtId);
+      expect(debt.outstandingPrincipalMinor).toBe(45000n);
+
+      const after = await service.schedule(userB, manualDebtId);
+      expect(after.map((i) => i.totalMinor)).toEqual(before.map((i) => i.totalMinor));
+      expect(after.map((i) => i.dueOn)).toEqual(before.map((i) => i.dueOn));
+    });
   });
 });
