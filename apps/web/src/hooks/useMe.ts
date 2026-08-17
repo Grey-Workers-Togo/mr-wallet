@@ -4,6 +4,7 @@ import { apiClient } from '@/lib/api-client';
 export interface Me {
   email: string;
   displayName: string | null;
+  hasSeenOnboarding: boolean;
 }
 
 /** Initials from the display name (first letters of the first two words) or, failing that, the email local-part. */

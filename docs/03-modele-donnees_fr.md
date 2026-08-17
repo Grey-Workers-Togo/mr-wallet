@@ -48,6 +48,7 @@ model User {
   timezone          String    @default("Africa/Porto-Novo")
   weekStartsOn      Int       @default(1)        // 1 = lundi
   monthStartDay     Int       @default(1)        // budget calé sur le 1er, ou sur le jour de paie
+  hasSeenOnboarding Boolean   @default(false)    // visite guidée affichée une seule fois
   emailVerifiedAt   Dt?
   lastLoginAt       Dt?
   createdAt         Dt        @default(now())

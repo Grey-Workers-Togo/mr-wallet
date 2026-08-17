@@ -33,6 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
@@ -332,10 +333,12 @@ export default function BudgetsPage() {
 
           <Card className="p-5">
             {current.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center py-10 text-center">
-                <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{t('listTitle')}</h2>
-                <p className="mt-1 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">{t('listSubtitle')}</p>
-              </div>
+              <EmptyState
+                bare
+                title={t('emptyGuideTitle')}
+                description={t('emptyGuideDescription')}
+                cta={{ label: t('emptyGuideCta'), onClick: openCreateDialog }}
+              />
             ) : (
               <div className="space-y-4">
                 <AnimatePresence initial={false}>

@@ -24,6 +24,7 @@ model User {
   monthStartDay   Int       @default(1)
   pinHash         String?
   pinLockMinutes  Int       @default(5)
+  hasSeenOnboarding Boolean @default(false)
   emailVerifiedAt DateTime? @db.Timestamptz(6)
   lastLoginAt     DateTime? @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @db.Timestamptz(6)

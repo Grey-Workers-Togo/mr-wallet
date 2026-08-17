@@ -16,6 +16,7 @@ export interface UserProfile {
   monthStartDay: number;
   pinEnabled: boolean;
   pinLockMinutes: number;
+  hasSeenOnboarding: boolean;
   createdAt: Date;
 }
 
@@ -31,6 +32,7 @@ function toProfile(user: User): UserProfile {
     monthStartDay: user.monthStartDay,
     pinEnabled: user.pinHash !== null,
     pinLockMinutes: user.pinLockMinutes,
+    hasSeenOnboarding: user.hasSeenOnboarding,
     createdAt: user.createdAt,
   };
 }
