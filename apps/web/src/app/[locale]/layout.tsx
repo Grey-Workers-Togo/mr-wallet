@@ -29,34 +29,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'home' });
   const appName = t('hero.title');
   const title = t('seo.title');
-  const description = t('seo.description');
 
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: title, template: `%s · ${appName}` },
-    description,
     applicationName: appName,
     manifest: '/manifest.json',
-    keywords: ['budget', 'finances personnelles', 'dépenses', 'épargne', 'personal finance', 'expense tracker'],
-    alternates: {
-      canonical: `/${locale}`,
-      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}`])),
-    },
-    openGraph: {
-      type: 'website',
-      url: `/${locale}`,
-      siteName: appName,
-      title,
-      description,
-      locale,
-      images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: ['/icon-512x512.png'],
-    },
     robots: { index: true, follow: true },
     icons: [
       { rel: 'icon', url: '/icon.svg', type: 'image/svg+xml' },
