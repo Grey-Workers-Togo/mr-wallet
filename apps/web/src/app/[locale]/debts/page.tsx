@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Banknote } from 'lucide-react';
+import { Plus, Pencil, Banknote, X } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import {
@@ -37,6 +37,14 @@ import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
 
 const DIRECTIONS = ['OWED_BY_ME', 'OWED_TO_ME'] as const;
+const TERM_UNITS = ['DAYS', 'WEEKS', 'MONTHS'] as const;
+const SCHEDULE_MODES = ['AUTO', 'MANUAL'] as const;
+const TERM_UNIT_DAYS: Record<(typeof TERM_UNITS)[number], number> = { DAYS: 1, WEEKS: 7, MONTHS: 30 };
+
+interface ManualInstallmentRow {
+  dueOn: string;
+  totalMinor: string;
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -74,7 +82,8 @@ interface Debt {
   currency: string;
   status: string;
   annualRatePct: string | null;
-  termMonths: number | null;
+  termDays: number | null;
+  scheduleMode: (typeof SCHEDULE_MODES)[number];
   startedOn: string;
   linkedAccountId: string | null;
 }
@@ -91,7 +100,12 @@ export default function DebtsPage() {
   const tConfirm = useTranslations('confirm');
   const tCommon = useTranslations('common');
 
+  const tTermUnit = useTranslations('debts.termUnit');
+  const tScheduleMode = useTranslations('debts.scheduleMode');
+
   const directionItems = Object.fromEntries(DIRECTIONS.map((value) => [value, tDirection(value)]));
+  const termUnitItems = Object.fromEntries(TERM_UNITS.map((value) => [value, tTermUnit(value)]));
+  const scheduleModeItems = Object.fromEntries(SCHEDULE_MODES.map((value) => [value, tScheduleMode(value)]));
   const currencies = useCurrencies();
   const minorUnitsByCode = Object.fromEntries(currencies.map((c) => [c.code, c.minorUnits]));
 
@@ -103,7 +117,12 @@ export default function DebtsPage() {
   const [direction, setDirection] = useState<(typeof DIRECTIONS)[number]>('OWED_BY_ME');
   const [principalMinor, setPrincipalMinor] = useState('');
   const [annualRatePct, setAnnualRatePct] = useState('');
-  const [termMonths, setTermMonths] = useState('');
+  const [termValue, setTermValue] = useState('');
+  const [termUnit, setTermUnit] = useState<(typeof TERM_UNITS)[number]>('MONTHS');
+  const [useExactDueDate, setUseExactDueDate] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const [scheduleMode, setScheduleMode] = useState<(typeof SCHEDULE_MODES)[number]>('AUTO');
+  const [manualInstallments, setManualInstallments] = useState<ManualInstallmentRow[]>([{ dueOn: '', totalMinor: '' }]);
   const [startedOn, setStartedOn] = useState('');
   const [linkedAccountId, setLinkedAccountId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +158,12 @@ export default function DebtsPage() {
     setDirection('OWED_BY_ME');
     setPrincipalMinor('');
     setAnnualRatePct('');
-    setTermMonths('');
+    setTermValue('');
+    setTermUnit('MONTHS');
+    setUseExactDueDate(false);
+    setDueDate('');
+    setScheduleMode('AUTO');
+    setManualInstallments([{ dueOn: '', totalMinor: '' }]);
     setStartedOn('');
     setLinkedAccountId('');
     setDialogOpen(true);
@@ -152,9 +176,26 @@ export default function DebtsPage() {
     setPrincipalMinor(debt.principalMinor);
     setLinkedAccountId(debt.linkedAccountId ?? '');
     setAnnualRatePct(debt.annualRatePct ?? '');
-    setTermMonths(debt.termMonths ? String(debt.termMonths) : '');
+    setTermValue(debt.termDays ? String(debt.termDays) : '');
+    setTermUnit('DAYS');
+    setUseExactDueDate(false);
+    setDueDate('');
+    setScheduleMode(debt.scheduleMode);
+    setManualInstallments([{ dueOn: '', totalMinor: '' }]);
     setStartedOn(debt.startedOn.slice(0, 10));
     setDialogOpen(true);
+  }
+
+  function addManualInstallmentRow() {
+    setManualInstallments((rows) => [...rows, { dueOn: '', totalMinor: '' }]);
+  }
+
+  function removeManualInstallmentRow(index: number) {
+    setManualInstallments((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  function updateManualInstallmentRow(index: number, patch: Partial<ManualInstallmentRow>) {
+    setManualInstallments((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
   async function onSubmit(e: FormEvent) {
@@ -163,20 +204,37 @@ export default function DebtsPage() {
     setIsSubmitting(true);
     try {
       if (editingId) {
-        // direction/principalMinor/annualRatePct/termMonths/startedOn are immutable after creation
+        // direction/principalMinor/annualRatePct/termDays/scheduleMode/startedOn are immutable after creation
         await apiClient.patch(`/debts/${editingId}`, {
           name,
           linkedAccountId: linkedAccountId || null,
         });
       } else {
+        const isManual = scheduleMode === 'MANUAL';
+        const termDays = isManual
+          ? undefined
+          : useExactDueDate
+            ? dueDate
+              ? Math.round((new Date(dueDate).getTime() - new Date(startedOn).getTime()) / 86_400_000)
+              : undefined
+            : termValue
+              ? Number(termValue) * TERM_UNIT_DAYS[termUnit]
+              : undefined;
+
         await apiClient.post('/debts', {
           name,
           direction,
           principalMinor,
           currency: 'XOF',
-          rateType: annualRatePct ? 'FIXED' : 'ZERO',
-          annualRatePct: annualRatePct ? Number(annualRatePct) : undefined,
-          termMonths: termMonths ? Number(termMonths) : undefined,
+          rateType: isManual ? 'ZERO' : annualRatePct ? 'FIXED' : 'ZERO',
+          annualRatePct: isManual || !annualRatePct ? undefined : Number(annualRatePct),
+          termDays,
+          scheduleMode,
+          manualInstallments: isManual
+            ? manualInstallments
+                .filter((row) => row.dueOn && row.totalMinor)
+                .map((row) => ({ dueOn: row.dueOn, totalMinor: row.totalMinor }))
+            : undefined,
           startedOn,
           paymentFrequency: 'MONTHLY',
           linkedAccountId: linkedAccountId || undefined,
@@ -425,30 +483,6 @@ export default function DebtsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="annualRatePct">{t('rateLabel')}</Label>
-              <Input
-                id="annualRatePct"
-                type="number"
-                min={0}
-                step="0.01"
-                value={annualRatePct}
-                onChange={(e) => setAnnualRatePct(e.target.value)}
-                disabled={!!editingId}
-              />
-            </div>
-            <div>
-              <Label htmlFor="termMonths">{t('termLabel')}</Label>
-              <Input
-                id="termMonths"
-                type="number"
-                min={1}
-                step={1}
-                value={termMonths}
-                onChange={(e) => setTermMonths(e.target.value)}
-                disabled={!!editingId}
-              />
-            </div>
-            <div>
               <Label htmlFor="startedOn" required>{t('startedOnLabel')}</Label>
               <Input
                 id="startedOn"
@@ -459,6 +493,159 @@ export default function DebtsPage() {
                 required
               />
             </div>
+            <div>
+              <Label htmlFor="scheduleMode">{t('scheduleModeLabel')}</Label>
+              <Select
+                items={scheduleModeItems}
+                value={scheduleMode}
+                onValueChange={(value) => setScheduleMode(value as (typeof SCHEDULE_MODES)[number])}
+                disabled={!!editingId}
+              >
+                <SelectTrigger id="scheduleMode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SCHEDULE_MODES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tScheduleMode(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {scheduleMode === 'AUTO' && (
+              <>
+                <div>
+                  <Label htmlFor="annualRatePct">{t('rateLabel')}</Label>
+                  <Input
+                    id="annualRatePct"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={annualRatePct}
+                    onChange={(e) => setAnnualRatePct(e.target.value)}
+                    disabled={!!editingId}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="useExactDueDate"
+                    checked={useExactDueDate}
+                    onCheckedChange={(checked) => setUseExactDueDate(checked === true)}
+                    disabled={!!editingId}
+                  />
+                  <Label htmlFor="useExactDueDate">{t('useExactDueDateLabel')}</Label>
+                </div>
+                {useExactDueDate ? (
+                  <div>
+                    <Label htmlFor="dueDate">{t('dueDateLabel')}</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      disabled={!!editingId}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="termValue">{t('termLabel')}</Label>
+                      <Input
+                        id="termValue"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={termValue}
+                        onChange={(e) => setTermValue(e.target.value)}
+                        disabled={!!editingId}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="termUnit">{t('termUnitLabel')}</Label>
+                      <Select
+                        items={termUnitItems}
+                        value={termUnit}
+                        onValueChange={(value) => setTermUnit(value as (typeof TERM_UNITS)[number])}
+                        disabled={!!editingId}
+                      >
+                        <SelectTrigger id="termUnit" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TERM_UNITS.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {tTermUnit(value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {scheduleMode === 'MANUAL' && !editingId && (
+              <div>
+                <Label>{t('manualInstallmentsLabel')}</Label>
+                <div className="mt-2 space-y-2">
+                  {manualInstallments.map((row, index) => (
+                    <div key={index} className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor={`manualDueOn-${index}`} className="text-xs">
+                          {t('manualInstallmentDueDateLabel')}
+                        </Label>
+                        <Input
+                          id={`manualDueOn-${index}`}
+                          type="date"
+                          value={row.dueOn}
+                          onChange={(e) => updateManualInstallmentRow(index, { dueOn: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor={`manualAmount-${index}`} className="text-xs">
+                          {t('manualInstallmentAmountLabel')}
+                        </Label>
+                        <AmountInput
+                          id={`manualAmount-${index}`}
+                          value={row.totalMinor}
+                          onValueChange={(value) => updateManualInstallmentRow(index, { totalMinor: value })}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        aria-label={t('removeInstallmentRow')}
+                        onClick={() => removeManualInstallmentRow(index)}
+                        disabled={manualInstallments.length <= 1}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" variant="secondary" size="sm" className="mt-2" onClick={addManualInstallmentRow}>
+                  <Plus className="size-3.5" />
+                  {t('addInstallmentRow')}
+                </Button>
+                <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+                  {t('manualScheduleSumHint', {
+                    sum: manualInstallments.reduce((acc, row) => {
+                      try {
+                        return row.totalMinor ? acc + BigInt(row.totalMinor) : acc;
+                      } catch {
+                        return acc;
+                      }
+                    }, 0n).toString(),
+                    principal: principalMinor || '0',
+                  })}
+                </p>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="linkedAccountId">{t('linkedAccountLabel')}</Label>
               <Select
