@@ -10,7 +10,8 @@
     "createSuccessTitle": "Created successfully",
     "updateSuccessTitle": "Updated successfully",
     "deleteSuccessTitle": "Deleted successfully",
-    "actionErrorTitle": "Action failed"
+    "actionErrorTitle": "Action failed",
+    "submitShortcutHint": "Tip: press {shortcut} to submit"
   },
   "confirm": {
     "deleteTitle": "Delete this item?",

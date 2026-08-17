@@ -10,7 +10,8 @@
     "createSuccessTitle": "Créé avec succès",
     "updateSuccessTitle": "Modifié avec succès",
     "deleteSuccessTitle": "Supprimé avec succès",
-    "actionErrorTitle": "Échec de l'action"
+    "actionErrorTitle": "Échec de l'action",
+    "submitShortcutHint": "Astuce : appuyez sur {shortcut} pour valider"
   },
   "confirm": {
     "deleteTitle": "Supprimer cet élément ?",
