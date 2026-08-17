@@ -7,6 +7,11 @@ const kindEnum = z.enum(['LOAN', 'CREDIT_CARD', 'MORTGAGE', 'INFORMAL', 'INSTALL
 const rateTypeEnum = z.enum(['FIXED', 'VARIABLE', 'ZERO']);
 const compoundingEnum = z.enum(['NONE', 'MONTHLY', 'QUARTERLY', 'ANNUAL']);
 const frequencyEnum = z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY']);
+const scheduleModeEnum = z.enum(['AUTO', 'MANUAL']);
+const manualInstallmentField = z.object({
+  dueOn: z.coerce.date(),
+  totalMinor: unsignedAmountMinor(),
+});
 
 export const createDebtSchema = z
   .object({
@@ -21,12 +26,36 @@ export const createDebtSchema = z
     rateType: rateTypeEnum.default('FIXED'),
     compounding: compoundingEnum.default('MONTHLY'),
     startedOn: z.coerce.date(),
-    termMonths: z.number().int().positive().optional(),
+    termDays: z.number().int().positive().optional(),
+    scheduleMode: scheduleModeEnum.default('AUTO'),
+    manualInstallments: z.array(manualInstallmentField).optional(),
     paymentFrequency: frequencyEnum.default('MONTHLY'),
     paymentDayOfMonth: z.number().int().min(1).max(31).optional(),
     notes: z.string().max(2000).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((v, ctx) => {
+    if (v.scheduleMode !== 'MANUAL') return;
+    if (v.rateType !== 'ZERO') {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['rateType'], message: 'MANUAL schedule requires rateType ZERO' });
+    }
+    const lines = v.manualInstallments ?? [];
+    if (lines.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['manualInstallments'], message: 'MANUAL schedule requires at least one installment' });
+      return;
+    }
+    for (let k = 1; k < lines.length; k += 1) {
+      const current = lines[k];
+      const previous = lines[k - 1];
+      if (current && previous && current.dueOn.getTime() <= previous.dueOn.getTime()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['manualInstallments', k, 'dueOn'], message: 'dueOn must be strictly ascending' });
+      }
+    }
+    const sum = lines.reduce((acc, l) => acc + BigInt(l.totalMinor), 0n);
+    if (sum !== BigInt(v.principalMinor)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['manualInstallments'], message: 'manualInstallments totals must sum to principalMinor' });
+    }
+  });
 export type CreateDebtDto = z.infer<typeof createDebtSchema>;
 
 export const updateDebtSchema = z

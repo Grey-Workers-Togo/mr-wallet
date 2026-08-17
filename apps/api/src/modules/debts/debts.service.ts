@@ -7,6 +7,7 @@ import { AccountsFacade } from '../accounts/accounts.facade';
 import { TransactionsFacade } from '../transactions/transactions.facade';
 import {
   AmortizationLine,
+  buildManualSchedule,
   generateAmortizationSchedule,
   generateFixedInstallmentSchedule,
   generateForRemainingCount,
@@ -48,14 +49,20 @@ export class DebtsService {
     }
     const principalMinor = BigInt(dto.principalMinor);
 
-    const lines = generateAmortizationSchedule({
-      principalMinor,
-      annualRatePct: dto.annualRatePct ?? null,
-      rateType: dto.rateType,
-      termMonths: dto.termMonths ?? null,
-      paymentFrequency: dto.paymentFrequency,
-      startedOn: dto.startedOn,
-    });
+    const lines =
+      dto.scheduleMode === 'MANUAL'
+        ? buildManualSchedule(
+            (dto.manualInstallments ?? []).map((line) => ({ dueOn: line.dueOn, totalMinor: BigInt(line.totalMinor) })),
+            principalMinor,
+          )
+        : generateAmortizationSchedule({
+            principalMinor,
+            annualRatePct: dto.annualRatePct ?? null,
+            rateType: dto.rateType,
+            termDays: dto.termDays ?? null,
+            paymentFrequency: dto.paymentFrequency,
+            startedOn: dto.startedOn,
+          });
 
     const debt = await this.prisma.$transaction(async (tx) => {
       const created = await tx.debt.create({
@@ -73,7 +80,8 @@ export class DebtsService {
           rateType: dto.rateType,
           compounding: dto.compounding,
           startedOn: dto.startedOn,
-          termMonths: dto.termMonths,
+          termDays: dto.termDays,
+          scheduleMode: dto.scheduleMode,
           paymentFrequency: dto.paymentFrequency,
           paymentDayOfMonth: dto.paymentDayOfMonth,
           installmentMinor: lines[0]?.totalMinor,
@@ -132,6 +140,9 @@ export class DebtsService {
   /** RG-D5: regeneration never touches `PAID`/`PARTIAL` installments — only replaces the future `SCHEDULED`/`LATE` ones. */
   async regenerateSchedule(userId: string, debtId: string, dto: RegenerateScheduleDto) {
     const debt = await this.getById(userId, debtId);
+    if (debt.scheduleMode === 'MANUAL') {
+      throw new ValidationAppError('DEBT_MANUAL_SCHEDULE_NOT_REGENERATABLE');
+    }
     const installments = await this.getInstallments(debtId);
     const settled = installments.filter((i) => i.status === 'PAID' || i.status === 'PARTIAL');
     const toReplace = installments.filter((i) => i.status === 'SCHEDULED' || i.status === 'LATE');
@@ -258,8 +269,9 @@ export class DebtsService {
       },
     });
 
-    if (dto.isExtraPayment && !paidOff) {
+    if (dto.isExtraPayment && !paidOff && debt.scheduleMode !== 'MANUAL') {
       // RG-D4: extra payment triggers regeneration of the remaining schedule (default: reduce duration).
+      // Manual schedules have no amortization engine to regenerate from, so they're left untouched.
       await this.regenerateSchedule(userId, debtId, { strategy: 'REDUCE_TERM' });
     }
 
@@ -330,6 +342,9 @@ export class DebtsService {
   /** Pure projection — does not persist anything. */
   async simulatePayoff(userId: string, debtId: string, dto: SimulatePayoffDto) {
     const debt = await this.getById(userId, debtId);
+    if (debt.scheduleMode === 'MANUAL') {
+      throw new ValidationAppError('DEBT_MANUAL_SCHEDULE_NOT_REGENERATABLE');
+    }
     const scheduled = (await this.getInstallments(debtId)).filter((i) => i.status === 'SCHEDULED' || i.status === 'LATE');
     const currentInterestRemaining = scheduled.reduce((acc, i) => acc + i.interestMinor, 0n);
 
