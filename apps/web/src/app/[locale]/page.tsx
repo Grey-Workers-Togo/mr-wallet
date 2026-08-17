@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import { Accordion } from '@/components/ui/accordion';
 import { Logo } from '@/components/shared/Logo';
 import { SiteHeader } from '@/components/landing/SiteHeader';
@@ -45,6 +46,8 @@ const BAND = 'border-y border-neutral-200 bg-neutral-50 dark:border-white/10 dar
 export default function HomePage() {
   const t = useTranslations('home');
   const reduce = useReducedMotion();
+  const session = useAuthSession();
+  const isAuthenticated = session === 'authenticated';
 
   const features = t.raw('features.items') as { title: string; description: string }[];
   const steps = t.raw('howItWorks.steps') as { title: string; description: string }[];
@@ -116,8 +119,8 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="mt-9 flex flex-col items-center gap-4 sm:flex-row"
             >
-              <Link href="/register" className={PRIMARY_BUTTON}>
-                {t('hero.ctaPrimary')}
+              <Link href={isAuthenticated ? '/accounts' : '/register'} className={PRIMARY_BUTTON}>
+                {isAuthenticated ? t('accessMySpace') : t('hero.ctaPrimary')}
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
               <a
