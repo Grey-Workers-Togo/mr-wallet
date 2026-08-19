@@ -164,6 +164,31 @@ describe('debts', () => {
     expect(closed.closedAt).not.toBeNull();
   });
 
+  it('RG-D8: a paid-off debt leaves no SCHEDULED/LATE installment behind', async () => {
+    const schedule = await service.schedule(userB, debtOfB);
+    expect(schedule.filter((i) => i.status === 'SCHEDULED' || i.status === 'LATE')).toHaveLength(0);
+    expect(schedule.some((i) => i.status === 'SKIPPED')).toBe(true);
+
+    // The closed debt must not feed the forecast anymore (no fake future outflows, no late sweep).
+    const upcoming = await service.upcomingInstallments(userB, new Date('2027-12-31'));
+    expect(upcoming).toHaveLength(0);
+  });
+
+  it('RG-D8: deleting the payoff payment reactivates the debt and restores its skipped installments', async () => {
+    const payments = await service.payments(userB, debtOfB);
+    const payoff = payments.find((p) => p.isExtraPayment && p.installmentId === null) as (typeof payments)[number];
+
+    await service.removePayment(userB, debtOfB, payoff.id);
+
+    const debt = await service.getById(userB, debtOfB);
+    expect(debt.status).toBe('ACTIVE');
+    expect(debt.outstandingPrincipalMinor).toBeGreaterThan(0n);
+
+    const schedule = await service.schedule(userB, debtOfB);
+    expect(schedule.some((i) => i.status === 'SKIPPED')).toBe(false);
+    expect(schedule.some((i) => i.status === 'SCHEDULED' || i.status === 'LATE')).toBe(true);
+  });
+
   describe('manual schedule mode', () => {
     let manualDebtId: string;
 
