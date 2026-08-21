@@ -297,6 +297,11 @@ export class DebtsService {
     }
 
     if (paidOff) {
+      // RG-D8: the remaining installments will never be due — mark them SKIPPED.
+      await this.prisma.debtInstallment.updateMany({
+        where: { userId, debtId, status: { in: ['SCHEDULED', 'LATE'] } },
+        data: { status: 'SKIPPED' },
+      });
       await this.events.emitAsync('debt.paid_off', { userId, debtId, debtName: debt.name });
     }
 
@@ -335,6 +340,14 @@ export class DebtsService {
         ...(debt.status === 'PAID_OFF' && { status: 'ACTIVE', closedAt: null }),
       },
     });
+
+    if (debt.status === 'PAID_OFF') {
+      // The debt is reactivated: the installments skipped at payoff time are due again (RG-D7).
+      await this.prisma.debtInstallment.updateMany({
+        where: { userId, debtId, status: 'SKIPPED' },
+        data: { status: 'SCHEDULED' },
+      });
+    }
 
     await this.prisma.debtPayment.update({ where: { id: paymentId }, data: { deletedAt: new Date() } });
   }
