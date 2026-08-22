@@ -3,6 +3,9 @@ export function monthsRemaining(targetDate: Date | null, now: Date): number | nu
   if (!targetDate) return null;
   const months =
     (targetDate.getUTCFullYear() - now.getUTCFullYear()) * 12 + (targetDate.getUTCMonth() - now.getUTCMonth());
+  // Same calendar month but the deadline is still ahead (e.g. Aug 18 -> Aug 31):
+  // one partial month remains, so the goal must not be reported overdue.
+  if (months === 0 && targetDate.getTime() > now.getTime()) return 1;
   return months;
 }
 
