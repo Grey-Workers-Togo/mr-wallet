@@ -315,7 +315,7 @@ export class AuthService {
     ]);
   }
 
-  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+  async changePassword(userId: string, sessionId: string, dto: ChangePasswordDto): Promise<void> {
     if (!isPasswordAcceptable(dto.newPassword)) {
       throw new ValidationAppError('PASSWORD_TOO_WEAK');
     }
@@ -324,6 +324,13 @@ export class AuthService {
       throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED);
     }
     const passwordHash = await hashPassword(dto.newPassword, this.config.get('ARGON_MEMORY_COST') ?? 19456);
-    await this.users.updatePasswordHash(userId, passwordHash);
+    // Mirrors `resetPassword`: caller's session stays alive, every other device must log in again.
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      this.prisma.session.updateMany({
+        where: { userId, revokedAt: null, id: { not: sessionId } },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
   }
 }
