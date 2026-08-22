@@ -28,11 +28,17 @@ export function PinLockGate() {
   }, []);
 
   useEffect(() => {
-    hasLocalPin().then((has) => {
-      setEnabled(has);
-      if (has) scheduleLock();
-    });
-  }, [scheduleLock]);
+    // RG-S7: the lock must survive a reload, and if the PIN store cannot be read we fail closed.
+    hasLocalPin()
+      .then((has) => {
+        setEnabled(has);
+        if (has) setLocked(true);
+      })
+      .catch(() => {
+        setEnabled(true);
+        setLocked(true);
+      });
+  }, []);
 
   useEffect(() => {
     if (!enabled || locked) return;
