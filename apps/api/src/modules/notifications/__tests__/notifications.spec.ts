@@ -12,6 +12,7 @@ import { TransactionsService } from '../../transactions/transactions.service';
 import { TransactionsFacade } from '../../transactions/transactions.facade';
 import { RecurrenceService } from '../../recurrence/recurrence.service';
 import { RecurrenceFacade } from '../../recurrence/recurrence.facade';
+import { MailService } from '../../../common/mail/mail.service';
 import { NotificationsService } from '../notifications.service';
 
 describe('notifications', () => {
@@ -23,7 +24,7 @@ describe('notifications', () => {
     new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2()),
   );
   const recurrenceFacade = new RecurrenceFacade(new RecurrenceService(prisma, transactionsFacade));
-  const service = new NotificationsService(prisma, recurrenceFacade, new ConfigService());
+  const service = new NotificationsService(prisma, recurrenceFacade, new ConfigService(), new MailService(new ConfigService({ SMTP_FROM: 'test@example.com' })));
 
   let userId: string;
 
