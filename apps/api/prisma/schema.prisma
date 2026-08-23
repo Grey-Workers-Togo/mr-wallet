@@ -190,6 +190,7 @@ enum TxSource {
   IMPORT
   RECURRENCE
   DEBT_PAYMENT
+  DEBT_CREATION
   GOAL_CONTRIBUTION
   ADJUSTMENT
 }
@@ -219,6 +220,7 @@ model Transaction {
 
   recurrenceId       String?
   debtPaymentId      String?
+  debtId             String?
   goalContributionId String?
 
   createdAt          DateTime        @default(now()) @db.Timestamptz(6)
@@ -380,6 +382,7 @@ model Debt {
   counterparty              String?
   kind                      DebtKind      @default(LOAN)
   linkedAccountId           String?
+  creationTransactionId     String?
 
   principalMinor            BigInt
   outstandingPrincipalMinor BigInt
