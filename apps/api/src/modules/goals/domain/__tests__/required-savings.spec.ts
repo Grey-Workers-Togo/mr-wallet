@@ -34,4 +34,18 @@ describe('computeRequiredSavings (RG-G3)', () => {
     expect(result.requiredMonthlyMinor).toBe(0n);
     expect(result.isOverdue).toBe(false);
   });
+
+  it('a deadline later in the current month is one partial month, not overdue', () => {
+    // Aug 18 -> Aug 31: 13 days left, the old month-only arithmetic reported the goal overdue.
+    const result = computeRequiredSavings(100_000n, 40_000n, new Date(Date.UTC(2026, 7, 31)), new Date(Date.UTC(2026, 7, 18)));
+    expect(result.monthsRemaining).toBe(1);
+    expect(result.isOverdue).toBe(false);
+    expect(result.requiredMonthlyMinor).toBe(60_000n);
+  });
+
+  it('a deadline earlier in the current month is still overdue', () => {
+    const result = computeRequiredSavings(100_000n, 10_000n, new Date(Date.UTC(2026, 7, 5)), new Date(Date.UTC(2026, 7, 18)));
+    expect(result.isOverdue).toBe(true);
+    expect(result.requiredMonthlyMinor).toBeNull();
+  });
 });
