@@ -127,11 +127,12 @@ export class TransactionsService {
     userId: string,
     dto: CreateTransactionDto,
     opts?: {
-      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT';
+      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'DEBT_CREATION';
       importBatchId?: string;
       externalRef?: string;
       recurrenceId?: string;
       debtPaymentId?: string;
+      debtId?: string;
     },
   ) {
     const amountMinor = BigInt(dto.amountMinor);
@@ -195,6 +196,7 @@ export class TransactionsService {
           externalRef: opts?.externalRef,
           recurrenceId: opts?.recurrenceId,
           debtPaymentId: opts?.debtPaymentId,
+          debtId: opts?.debtId,
         },
       });
       if (tagIds.length > 0) {
@@ -219,7 +221,7 @@ export class TransactionsService {
       // RG-T4: transfer legs are edited as a pair — use a dedicated flow, not the plain update.
       throw new ConflictAppError('TRANSACTION_IS_TRANSFER_LEG');
     }
-    if (existing.source === 'DEBT_PAYMENT') {
+    if (existing.source === 'DEBT_PAYMENT' || existing.source === 'DEBT_CREATION') {
       // RG-T10
       throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
     }
@@ -285,9 +287,17 @@ export class TransactionsService {
     return this.attachTagsOne(updated);
   }
 
-  async remove(userId: string, id: string, opts?: { allowDebtPayment?: boolean }): Promise<void> {
+  async remove(
+    userId: string,
+    id: string,
+    opts?: { allowDebtPayment?: boolean; allowDebtCreation?: boolean },
+  ): Promise<void> {
     const existing = await this.getById(userId, id);
     if (existing.source === 'DEBT_PAYMENT' && !opts?.allowDebtPayment) {
+      // RG-T10
+      throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
+    }
+    if (existing.source === 'DEBT_CREATION' && !opts?.allowDebtCreation) {
       // RG-T10
       throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
     }
