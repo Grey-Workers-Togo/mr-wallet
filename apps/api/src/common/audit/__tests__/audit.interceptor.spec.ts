@@ -38,7 +38,7 @@ describe('AuditInterceptor', () => {
 
     expect(result).toEqual({ id: 'g1', name: 'Trip' });
     expect(create).toHaveBeenCalledOnce();
-    const data = create.mock.calls[0][0].data;
+    const data = create.mock.calls[0]?.[0].data;
     expect(data.before).toEqual({ id: 'g1', name: 'Trip' });
     expect(data.before).not.toHaveProperty('passwordHash');
     expect(data.after).toEqual({ id: 'g1', name: 'Trip' });
@@ -54,7 +54,7 @@ describe('AuditInterceptor', () => {
 
     await lastValueFrom(interceptor.intercept(fakeContext({}), handler));
 
-    expect(create.mock.calls[0][0].data.before).toBeNull();
+    expect(create.mock.calls[0]?.[0].data.before).toBeNull();
   });
 
   it('passes handlers without @Audit metadata through untouched', async () => {
