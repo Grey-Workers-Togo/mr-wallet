@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
+import type { Session } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
 import { MailService } from '../../common/mail/mail.service';
@@ -40,6 +41,12 @@ const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
  * a superseded token still resolves to its successor session instead of nuking the family.
  */
 const REFRESH_REUSE_GRACE_MS = 10_000;
+
+/**
+ * A `{ superseded }` outcome is resolved through the grace/reuse path outside the transaction,
+ * whose family-wide revocation must survive the terminal error it raises.
+ */
+type RefreshTxOutcome = AuthResult | { superseded: Session };
 
 @Injectable()
 export class AuthService {
@@ -171,68 +178,57 @@ export class AuthService {
     return { accessToken, refreshToken, user: { id: userId, email } };
   }
 
-  /** Rotation: the presented refresh token is immediately superseded, a new one issued (docs/07 §2). */
+  /**
+   * Rotation: the presented refresh token is immediately superseded, a new one issued (docs/07 §2).
+   * Lookup and rotation run in one interactive transaction so two concurrent requests carrying
+   * the same token cannot both rotate it; a loser falls through to the grace/reuse path.
+   */
   async refresh(presentedToken: string, ipHash: string, userAgent: string | null): Promise<AuthResult> {
     const hash = hashRefreshToken(presentedToken);
-    const session = await this.prisma.session.findFirst({ where: { refreshTokenHash: hash } });
 
-    if (!session) {
-      throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
-    }
+    const outcome = await this.prisma.$transaction<RefreshTxOutcome>(async (tx) => {
+      const session = await tx.session.findFirst({ where: { refreshTokenHash: hash } });
 
-    if (session.supersededAt) {
-      const withinGrace = Date.now() - session.supersededAt.getTime() <= REFRESH_REUSE_GRACE_MS;
-      const successor = session.successorId
-        ? await this.prisma.session.findUnique({ where: { id: session.successorId } })
-        : null;
-
-      if (withinGrace && successor && !successor.revokedAt) {
-        const user = await this.users.findById(successor.userId);
-        if (user) {
-          const accessToken = signAccessToken(
-            { sub: user.id, sessionId: successor.id },
-            this.config.getOrThrow('JWT_SECRET'),
-            this.config.get('JWT_ACCESS_TTL') ?? '15m',
-          );
-          // No new refresh token minted and no cookie rewrite - the successor's cookie,
-          // already set by whichever request won the race, must not be clobbered.
-          return { accessToken, refreshToken: presentedToken, user: { id: user.id, email: user.email }, skipCookie: true };
-        }
+      if (!session) {
+        throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
       }
 
-      // Beyond the grace window (or successor missing/revoked): treat as genuine reuse of a
-      // stale token - likely theft - revoke the whole session family.
-      await this.prisma.session.updateMany({
-        where: { userId: session.userId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-      throw new AppError('REFRESH_TOKEN_REUSED', HttpStatus.UNAUTHORIZED);
-    }
+      if (session.supersededAt) {
+        // Resolved outside: the reuse path revokes the family, which must survive its throw.
+        return { superseded: session };
+      }
 
-    if (session.revokedAt) {
-      throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
-    }
-    if (session.expiresAt < new Date()) {
-      throw new AppError('REFRESH_TOKEN_EXPIRED', HttpStatus.UNAUTHORIZED);
-    }
-    if (!refreshTokenMatches(presentedToken, session.refreshTokenHash)) {
-      throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
-    }
+      if (session.revokedAt) {
+        throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
+      }
+      if (session.expiresAt < new Date()) {
+        throw new AppError('REFRESH_TOKEN_EXPIRED', HttpStatus.UNAUTHORIZED);
+      }
+      if (!refreshTokenMatches(presentedToken, session.refreshTokenHash)) {
+        throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
+      }
 
-    const user = await this.users.findById(session.userId);
-    if (!user) {
-      throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
-    }
+      const user = await this.users.findById(session.userId);
+      if (!user) {
+        throw new AppError('INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
+      }
 
-    const newSessionId = randomUUID();
-    const { accessToken, refreshToken } = this.issueTokens(user.id, newSessionId);
+      const newSessionId = randomUUID();
+      const { accessToken, refreshToken } = this.issueTokens(user.id, newSessionId);
 
-    await this.prisma.$transaction([
-      this.prisma.session.update({
-        where: { id: session.id },
+      // Conditional close: only wins if no concurrent request already superseded or revoked
+      // this very row between the lookup above and now.
+      const closed = await tx.session.updateMany({
+        where: { id: session.id, revokedAt: null, supersededAt: null },
         data: { supersededAt: new Date(), successorId: newSessionId },
-      }),
-      this.prisma.session.create({
+      });
+      if (closed.count === 0) {
+        // Lost the race: re-read the row as the winner left it and defer to the shared path.
+        const winner = await tx.session.findUnique({ where: { id: session.id } });
+        return { superseded: winner ?? session };
+      }
+
+      await tx.session.create({
         data: {
           id: newSessionId,
           userId: user.id,
@@ -242,10 +238,47 @@ export class AuthService {
           userAgent,
           lastUsedAt: new Date(),
         },
-      }),
-    ]);
+      });
 
-    return { accessToken, refreshToken, user: { id: user.id, email: user.email } };
+      return { accessToken, refreshToken, user: { id: user.id, email: user.email } };
+    });
+
+    if ('superseded' in outcome) {
+      return this.resolveSuperseded(outcome.superseded, presentedToken);
+    }
+    return outcome;
+  }
+
+  /** Grace window / theft handling for a token whose session was already superseded. */
+  private async resolveSuperseded(session: Session, presentedToken: string): Promise<AuthResult> {
+    const supersededAt = session.supersededAt;
+    const withinGrace =
+      supersededAt !== null && Date.now() - supersededAt.getTime() <= REFRESH_REUSE_GRACE_MS;
+    const successor = session.successorId
+      ? await this.prisma.session.findUnique({ where: { id: session.successorId } })
+      : null;
+
+    if (withinGrace && successor && !successor.revokedAt) {
+      const user = await this.users.findById(successor.userId);
+      if (user) {
+        const accessToken = signAccessToken(
+          { sub: user.id, sessionId: successor.id },
+          this.config.getOrThrow('JWT_SECRET'),
+          this.config.get('JWT_ACCESS_TTL') ?? '15m',
+        );
+        // No new refresh token minted and no cookie rewrite - the successor's cookie,
+        // already set by whichever request won the race, must not be clobbered.
+        return { accessToken, refreshToken: presentedToken, user: { id: user.id, email: user.email }, skipCookie: true };
+      }
+    }
+
+    // Beyond the grace window (or successor missing/revoked): treat as genuine reuse of a
+    // stale token - likely theft - revoke the whole session family.
+    await this.prisma.session.updateMany({
+      where: { userId: session.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    throw new AppError('REFRESH_TOKEN_REUSED', HttpStatus.UNAUTHORIZED);
   }
 
   async logout(sessionId: string): Promise<void> {
