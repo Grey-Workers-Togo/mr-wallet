@@ -1,10 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { defer, Observable } from 'rxjs';
+import { concatMap } from 'rxjs/operators';
 import { RawPrismaService } from '../prisma/prisma.service';
-import { AUDIT_METADATA_KEY, AuditMetadata } from './audit.decorator';
+import { AUDIT_LOAD_BEFORE_KEY, AUDIT_METADATA_KEY, AuditBeforeLoader, AuditMetadata } from './audit.decorator';
 
 /** Never persisted in `before`/`after`, whatever the entity (docs/03 §14). */
 const SENSITIVE_FIELDS = new Set(['passwordHash', 'refreshTokenHash', 'tokenHash', 'token', 'accessToken', 'refreshToken']);
@@ -31,6 +31,7 @@ interface RequestWithContext extends Request {
   requestId?: string;
   user?: { id: string };
   ipHash?: string;
+  __auditBefore?: unknown;
 }
 
 /**
@@ -40,6 +41,8 @@ interface RequestWithContext extends Request {
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AuditInterceptor.name);
+
   constructor(
     private readonly reflector: Reflector,
     private readonly raw: RawPrismaService,
@@ -52,25 +55,39 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     const request = context.switchToHttp().getRequest<RequestWithContext>();
-    const before = redact(request.body?.__auditBefore ?? null);
+    const loadBefore = this.reflector.get<AuditBeforeLoader | undefined>(AUDIT_LOAD_BEFORE_KEY, context.getHandler());
 
-    return next.handle().pipe(
-      tap(async (result) => {
-        await this.raw.auditLog.create({
-          data: {
-            userId: request.user?.id ?? null,
-            actorType: 'USER',
-            action: metadata.action,
-            entityType: metadata.entityType,
-            entityId: (result as { id?: string })?.id ?? null,
-            before: before as object | undefined,
-            after: redact(result) as object | undefined,
-            metadata: { path: request.originalUrl, method: request.method },
-            ipHash: request.ipHash ?? null,
-            userAgent: request.headers['user-agent'] ?? null,
-            requestId: request.requestId ?? null,
-          },
-        });
+    // The pre-mutation snapshot must be read BEFORE the handler runs, or it captures the "after" state.
+    return defer(async () => {
+      request.__auditBefore = loadBefore ? await loadBefore(request) : null;
+    }).pipe(
+      concatMap(() => next.handle()),
+      concatMap(async (result) => {
+        try {
+          await this.raw.auditLog.create({
+            data: {
+              userId: request.user?.id ?? null,
+              actorType: 'USER',
+              action: metadata.action,
+              entityType: metadata.entityType,
+              entityId: (result as { id?: string })?.id ?? null,
+              before: redact(request.__auditBefore ?? null) as object | undefined,
+              after: redact(result) as object | undefined,
+              metadata: { path: request.originalUrl, method: request.method },
+              ipHash: request.ipHash ?? null,
+              userAgent: request.headers['user-agent'] ?? null,
+              requestId: request.requestId ?? null,
+            },
+          });
+        } catch (error) {
+          // The mutation is already committed and cannot be rolled back — surface the failure
+          // instead of swallowing it (docs/03 §14). Log the code/message only, never a payload.
+          const code = (error as { code?: string }).code ?? 'UNKNOWN';
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.error(`audit_write_failed code=${code} message=${message}`);
+          throw error;
+        }
+        return result;
       }),
     );
   }
