@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { Banknote, TrendingDown, PiggyBank, Gauge, Flame } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
