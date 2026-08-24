@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Trash2, Search, SlidersHorizontal, TrendingUp, TrendingDown, ArrowLeftRight, Scale, BookmarkPlus, Bookmark } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, SlidersHorizontal, TrendingUp, TrendingDown, ArrowLeftRight, Scale, BookmarkPlus, Bookmark, Paperclip } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { getAccessToken } from '@/lib/auth-store';
 import { Card } from '@/components/ui/card';
 import {
   Dialog,
@@ -99,6 +100,16 @@ interface SavedSearch {
   };
 }
 
+interface AttachmentItem {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+const ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic';
+
 const PAGE_SIZE = 20;
 
 const fadeUp = {
@@ -174,6 +185,10 @@ export default function TransactionsPage() {
   const [notes, setNotes] = useState('');
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [confirmDeleteAttachment, setConfirmDeleteAttachment] = useState<{ id: string; name: string } | null>(null);
+
   async function loadStatic() {
     const [accountList, categoryList, tagList] = await Promise.all([
       apiClient.get<Account[]>('/accounts'),
@@ -248,6 +263,7 @@ export default function TransactionsPage() {
     setCategoryId('');
     setOccurredAt(new Date().toISOString().slice(0, 10));
     setNotes('');
+    setAttachments([]);
     setDialogOpen(true);
   }
 
@@ -261,6 +277,65 @@ export default function TransactionsPage() {
     setOccurredAt(tx.occurredAt.slice(0, 10));
     setNotes(tx.description ?? '');
     setDialogOpen(true);
+    loadAttachments(tx.id).catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
+  }
+
+  async function loadAttachments(transactionId: string) {
+    const list = await apiClient.get<AttachmentItem[]>(`/transactions/${transactionId}/attachments`);
+    setAttachments(list);
+  }
+
+  async function onUploadAttachment(file: File) {
+    if (!editingId) return;
+    setUploadingAttachment(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const token = getAccessToken();
+      const response = await fetch(`${API_BASE}/transactions/${editingId}/attachments`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        const code = body.code ?? 'INTERNAL_ERROR';
+        toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+        return;
+      }
+      await loadAttachments(editingId);
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
+  async function onViewAttachment(attachment: AttachmentItem) {
+    if (!editingId) return;
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE}/transactions/${editingId}/attachments/${attachment.id}`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!response.ok) {
+      toast({ title: tCommon('actionErrorTitle'), description: tError('INTERNAL_ERROR' as never), variant: 'destructive' });
+      return;
+    }
+    const blob = await response.blob();
+    window.open(URL.createObjectURL(blob), '_blank');
+  }
+
+  async function onDeleteAttachment(id: string) {
+    if (!editingId) return;
+    try {
+      await apiClient.delete(`/transactions/${editingId}/attachments/${id}`);
+      await loadAttachments(editingId);
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    }
   }
 
   async function onSubmit(e: FormEvent) {
@@ -786,6 +861,48 @@ export default function TransactionsPage() {
               <Label htmlFor="notes">{t('noteLabel')}</Label>
               <Textarea id="notes" placeholder={t('notePlaceholder')} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
+            {editingId && (
+              <div>
+                <Label>{t('attachmentsLabel')}</Label>
+                <div className="mt-1 space-y-2">
+                  {attachments.length === 0 && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('noAttachments')}</p>
+                  )}
+                  {attachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => onViewAttachment(attachment)}
+                        className="flex flex-1 items-center gap-2 truncate text-left text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-neutral-50"
+                      >
+                        <Paperclip className="size-3.5 shrink-0" />
+                        <span className="truncate">{attachment.originalName}</span>
+                      </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t('delete')}
+                        onClick={() => setConfirmDeleteAttachment({ id: attachment.id, name: attachment.originalName })}
+                      >
+                        <Trash2 className="size-3.5 text-red-600" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Input
+                    type="file"
+                    accept={ATTACHMENT_ACCEPT}
+                    disabled={uploadingAttachment}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) onUploadAttachment(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('attachmentHint')}</p>
+                </div>
+              </div>
+            )}
             <DialogFooter>
               <Button type="submit" loading={isSubmitting}>
                 {t('submit')}
@@ -980,6 +1097,29 @@ export default function TransactionsPage() {
                 if (!confirmDeleteSearch) return;
                 await onDeleteSavedSearch(confirmDeleteSearch.id);
                 setConfirmDeleteSearch(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!confirmDeleteAttachment} onOpenChange={(open) => !open && setConfirmDeleteAttachment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDeleteAttachment?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDeleteAttachment) return;
+                await onDeleteAttachment(confirmDeleteAttachment.id);
+                setConfirmDeleteAttachment(null);
               }}
             >
               {tConfirm('confirm')}
