@@ -9,12 +9,14 @@ import { CategoriesFacade } from '../categories/categories.facade';
 import { RulesFacade } from '../rules/rules.facade';
 import { balanceDelta } from './domain/balance-delta';
 import { computeFingerprint, normalizeLabel } from './domain/normalize';
+import { SavedSearchesService } from './saved-searches.service';
 import {
   BulkIdsDto,
   BulkUpdateDto,
   CreateTransactionDto,
   CreateTransferDto,
   ListTransactionsDto,
+  TransactionFilter,
   UpdateTransactionDto,
 } from './dto/transaction.dto';
 
@@ -28,6 +30,7 @@ export class TransactionsService {
     private readonly categoriesFacade: CategoriesFacade,
     private readonly rulesFacade: RulesFacade,
     private readonly events: EventEmitter2,
+    private readonly savedSearches: SavedSearchesService,
   ) {}
 
   /** No Prisma relation on `TransactionTag` (schema uses flat FK columns) — joined manually. */
@@ -49,26 +52,45 @@ export class TransactionsService {
   }
 
   async list(userId: string, query: ListTransactionsDto) {
+    // A saved search reproduces its stored criteria exactly — explicit filter params are ignored
+    // in its favor (docs/12 Lot 8 exit criterion), pagination (cursor/limit) still comes from the query.
+    const filters: TransactionFilter = query.savedSearchId
+      ? await this.savedSearches.getFilters(userId, query.savedSearchId)
+      : query;
+
+    // No Prisma relation for tags (flat FK table) — resolve matching transaction ids first.
+    // Multiple tags match on ANY of them (OR), the more inclusive/common convention for tag filters.
+    let taggedTransactionIds: string[] | undefined;
+    if (filters.tagId && filters.tagId.length > 0) {
+      const links = await this.prisma.transactionTag.findMany({
+        where: { tagId: { in: filters.tagId } },
+        select: { transactionId: true },
+      });
+      taggedTransactionIds = [...new Set(links.map((l) => l.transactionId))];
+    }
+
     const where: Prisma.TransactionWhereInput = {
       userId,
-      ...(query.accountId && { accountId: query.accountId }),
-      ...(query.categoryId && { categoryId: query.categoryId }),
-      ...(query.type === 'TRANSFER' && { transferGroupId: { not: null } }),
-      ...(query.type && query.type !== 'TRANSFER' && { type: query.type, transferGroupId: null }),
-      ...((query.from || query.to) && {
-        occurredAt: { ...(query.from && { gte: query.from }), ...(query.to && { lte: query.to }) },
+      ...(filters.accountId && filters.accountId.length > 0 && { accountId: { in: filters.accountId } }),
+      ...(filters.categoryId && filters.categoryId.length > 0 && { categoryId: { in: filters.categoryId } }),
+      ...(taggedTransactionIds && { id: { in: taggedTransactionIds } }),
+      ...(filters.type === 'TRANSFER' && { transferGroupId: { not: null } }),
+      ...(filters.type && filters.type !== 'TRANSFER' && { type: filters.type, transferGroupId: null }),
+      ...((filters.from || filters.to) && {
+        occurredAt: { ...(filters.from && { gte: filters.from }), ...(filters.to && { lte: filters.to }) },
       }),
-      ...((query.minAmountMinor || query.maxAmountMinor) && {
+      ...((filters.minAmountMinor || filters.maxAmountMinor) && {
         amountMinor: {
-          ...(query.minAmountMinor && { gte: BigInt(query.minAmountMinor) }),
-          ...(query.maxAmountMinor && { lte: BigInt(query.maxAmountMinor) }),
+          ...(filters.minAmountMinor && { gte: BigInt(filters.minAmountMinor) }),
+          ...(filters.maxAmountMinor && { lte: BigInt(filters.maxAmountMinor) }),
         },
       }),
-      ...(query.q && {
+      ...(filters.payee && { payee: { contains: filters.payee, mode: 'insensitive' } }),
+      ...(filters.q && {
         OR: [
-          { description: { contains: query.q, mode: 'insensitive' } },
-          { notes: { contains: query.q, mode: 'insensitive' } },
-          { payee: { contains: query.q, mode: 'insensitive' } },
+          { description: { contains: filters.q, mode: 'insensitive' } },
+          { notes: { contains: filters.q, mode: 'insensitive' } },
+          { payee: { contains: filters.q, mode: 'insensitive' } },
         ],
       }),
     };
