@@ -8,6 +8,8 @@ export const envSchema = z.object({
   ARGON_MEMORY_COST: z.coerce.number().int().positive().default(19456),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(10_485_760),
   UPLOAD_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+  /** Local-disk root for attachment files (docs/12 Lot 13). Relative paths resolve from the process cwd. */
+  STORAGE_DIR: z.string().default('./storage/attachments'),
   AUDIT_RETENTION_MONTHS: z.coerce.number().int().positive().default(24),
   EXCHANGE_RATE_PROVIDER: z.string().default(''),
   VAPID_PUBLIC_KEY: z.string().default(''),

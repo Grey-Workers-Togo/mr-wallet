@@ -8,6 +8,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './common/config/env.schema';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { MailModule } from './common/mail/mail.module';
+import { StorageModule } from './common/storage/storage.module';
 import { GlobalExceptionFilter } from './common/errors/global-exception.filter';
 import { AuditInterceptor } from './common/audit/audit.interceptor';
 import { RequestIdMiddleware } from './common/request-id.middleware';
@@ -42,6 +43,7 @@ import { HealthModule } from './modules/health/health.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
     MailModule,
+    StorageModule,
     UsersModule,
     AuthModule,
     CurrencyModule,
