@@ -67,6 +67,7 @@ Non-negotiable: isolation test per endpoint, no monetary test through a `number`
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(debts): ...`, `fix(transactions): ...`, `test(money): ...`, `docs(api): ...`, `refactor(budgets): ...`, `chore(deps): ...`). One commit = one coherent change. No "wip" on `main`/`develop`.
 - Documentation and commit messages are written in **French** (`docs/10-conventions-dev.md` §1); code, identifiers, and UI strings follow the language rules in that same section.
 - Pull requests: **always target `develop`**, never `main` directly — CI (`pr-base-branch.yml`) rejects any other base except a `develop → main` release PR. Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md); describe what changes, why, how to test it; reference the lot and the `RG-xx` rules covered; green CI mandatory.
+- Releases: [release-please](https://github.com/googleapis/release-please) watches `main`. Every merge to `main` updates (or opens) a standing release PR that bumps `package.json` and `CHANGELOG.md` from Conventional Commit history; merging that PR tags the release and publishes a GitHub Release. Nothing is tagged automatically outside that PR.
 
 ## Definition of done
 
