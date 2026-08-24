@@ -9,6 +9,7 @@ import { RulesService } from '../../rules/rules.service';
 import { RulesFacade } from '../../rules/rules.facade';
 import { TransactionsService } from '../../transactions/transactions.service';
 import { TransactionsFacade } from '../../transactions/transactions.facade';
+import { SavedSearchesService } from '../../transactions/saved-searches.service';
 import { CurrencyService } from '../../currency/currency.service';
 import { CurrencyFacade } from '../../currency/currency.facade';
 import { DebtsService } from '../../debts/debts.service';
@@ -27,7 +28,7 @@ function buildForecastingService(prisma: PrismaService) {
   const categoriesFacade = new CategoriesFacade(new CategoriesService(prisma));
   const rulesFacade = new RulesFacade(new RulesService(prisma));
   const events = new EventEmitter2();
-  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events);
+  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events, new SavedSearchesService(prisma));
   const transactionsFacade = new TransactionsFacade(transactionsService);
   const currencyFacade = new CurrencyFacade(new CurrencyService(prisma));
   const debtsFacade = new DebtsFacade(new DebtsService(prisma, accountsFacade, transactionsFacade, events));

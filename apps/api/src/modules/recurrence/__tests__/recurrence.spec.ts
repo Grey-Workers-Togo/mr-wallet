@@ -10,13 +10,14 @@ import { RulesService } from '../../rules/rules.service';
 import { RulesFacade } from '../../rules/rules.facade';
 import { TransactionsService } from '../../transactions/transactions.service';
 import { TransactionsFacade } from '../../transactions/transactions.facade';
+import { SavedSearchesService } from '../../transactions/saved-searches.service';
 import { RecurrenceService } from '../recurrence.service';
 
 function buildRecurrenceService(prisma: PrismaService) {
   const accountsFacade = new AccountsFacade(new AccountsService(prisma));
   const categoriesFacade = new CategoriesFacade(new CategoriesService(prisma));
   const rulesFacade = new RulesFacade(new RulesService(prisma));
-  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2());
+  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2(), new SavedSearchesService(prisma));
   const transactionsFacade = new TransactionsFacade(transactionsService);
   return { service: new RecurrenceService(prisma, transactionsFacade), accountsService: new AccountsService(prisma) };
 }

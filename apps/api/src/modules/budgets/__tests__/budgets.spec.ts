@@ -9,6 +9,7 @@ import { CategoriesFacade } from '../../categories/categories.facade';
 import { RulesService } from '../../rules/rules.service';
 import { RulesFacade } from '../../rules/rules.facade';
 import { TransactionsService } from '../../transactions/transactions.service';
+import { SavedSearchesService } from '../../transactions/saved-searches.service';
 import { BudgetsService } from '../budgets.service';
 
 describe('budgets', () => {
@@ -19,7 +20,7 @@ describe('budgets', () => {
   const categoriesFacade = new CategoriesFacade(categoriesService);
   const rulesFacade = new RulesFacade(new RulesService(prisma));
   const events = new EventEmitter2();
-  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events);
+  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events, new SavedSearchesService(prisma));
   const budgetsService = new BudgetsService(prisma, categoriesFacade, events);
   events.on('transaction.created', (payload) => budgetsService.onTransactionCreated(payload));
   events.on('transaction.updated', (payload) => budgetsService.onTransactionUpdated(payload));
