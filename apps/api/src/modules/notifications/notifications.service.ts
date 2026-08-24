@@ -6,6 +6,7 @@ import { NotificationType, Prisma, Severity } from '@prisma/client';
 import * as webpush from 'web-push';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundAppError } from '../../common/errors/app-error';
+import { MailService } from '../../common/mail/mail.service';
 import { RecurrenceFacade } from '../recurrence/recurrence.facade';
 import { SubscribePushDto, UnsubscribePushDto, UpdatePreferencesDto } from './dto/notification.dto';
 import { pushContentFor } from './domain/push-content';
@@ -63,6 +64,7 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     private readonly recurrenceFacade: RecurrenceFacade,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {
     const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
     const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
@@ -90,7 +92,7 @@ export class NotificationsService {
   async preferences(userId: string) {
     const stored = await this.prisma.notificationPreference.findMany({ where: { userId } });
     const byType = new Map(stored.map((p) => [p.type, p]));
-    // RG-N8/docs §17: absence of a row = in-app on, push off (default).
+    // RG-N8/docs §17: absence of a row = in-app on, push/email off (default).
     return DEFAULT_TYPES.map(
       (type) =>
         byType.get(type) ?? {
@@ -112,10 +114,12 @@ export class NotificationsService {
           type: update.type,
           inAppEnabled: update.inAppEnabled ?? true,
           pushEnabled: update.pushEnabled ?? false,
+          emailEnabled: update.emailEnabled ?? false,
         },
         update: {
           ...(update.inAppEnabled !== undefined && { inAppEnabled: update.inAppEnabled }),
           ...(update.pushEnabled !== undefined && { pushEnabled: update.pushEnabled }),
+          ...(update.emailEnabled !== undefined && { emailEnabled: update.emailEnabled }),
         },
       });
     }
@@ -130,6 +134,11 @@ export class NotificationsService {
   private async isPushEnabled(userId: string, type: NotificationType): Promise<boolean> {
     const pref = await this.prisma.notificationPreference.findUnique({ where: { userId_type: { userId, type } } });
     return pref?.pushEnabled ?? false;
+  }
+
+  private async isEmailEnabled(userId: string, type: NotificationType): Promise<boolean> {
+    const pref = await this.prisma.notificationPreference.findUnique({ where: { userId_type: { userId, type } } });
+    return pref?.emailEnabled ?? false;
   }
 
   publicKey(): string {
@@ -212,6 +221,17 @@ export class NotificationsService {
     }
   }
 
+  /** Content is the same generic (type, locale) pair as push (CLAUDE.md "Langues"/"Sécurité") — no amount, no label. */
+  private async sendEmailToUser(userId: string, type: NotificationType): Promise<void> {
+    if (!(await this.isEmailEnabled(userId, type))) return;
+
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    if (!user || !user.emailVerifiedAt) return;
+
+    const { title, body } = pushContentFor(type, user.locale ?? 'fr');
+    await this.mail.send({ to: user.email, subject: title, text: body });
+  }
+
   async sendTestPush(userId: string): Promise<void> {
     const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
     const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
@@ -265,6 +285,12 @@ export class NotificationsService {
       await this.sendPushToUser(input.userId, input.type);
     } catch (error) {
       this.logger.warn(`Push dispatch failed for user ${input.userId}, type ${input.type}: ${error}`);
+    }
+
+    try {
+      await this.sendEmailToUser(input.userId, input.type);
+    } catch (error) {
+      this.logger.warn(`Email dispatch failed for user ${input.userId}, type ${input.type}: ${error}`);
     }
   }
 

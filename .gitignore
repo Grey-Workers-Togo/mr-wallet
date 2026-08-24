@@ -10,6 +10,7 @@ coverage/
 *.log
 .DS_Store
 apps/api/generated/
+apps/api/storage/
 *.tsbuildinfo
 
 # Bubblewrap/TWA build output (regenerate via `npx @bubblewrap/cli build`)

@@ -1,0 +1,10 @@
+# Normalize line endings to LF in the repo regardless of the contributor's OS/git config.
+* text=auto eol=lf
+
+# Binary assets - never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary

@@ -1,0 +1,21 @@
+name: PR base branch check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  check-base:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require base branch to be develop (unless targeting main from develop)
+        run: |
+          if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
+            if [ "${{ github.event.pull_request.head.ref }}" != "develop" ]; then
+              echo "PRs into main are only allowed from develop (release merges). Target develop instead."
+              exit 1
+            fi
+          elif [ "${{ github.event.pull_request.base.ref }}" != "develop" ]; then
+            echo "PRs must target develop, not ${{ github.event.pull_request.base.ref }}."
+            exit 1
+          fi

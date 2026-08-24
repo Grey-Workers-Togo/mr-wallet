@@ -31,6 +31,16 @@ export class TransactionsFacade {
     return this.transactionsService.remove(userId, id, { allowDebtPayment: true });
   }
 
+  /** A debt linked to an account books its principal as a transaction — never written to the DB directly. */
+  createFromDebtCreation(userId: string, dto: CreateTransactionDto, debtId: string) {
+    return this.transactionsService.create(userId, dto, { source: 'DEBT_CREATION', debtId });
+  }
+
+  /** Deleting a debt cascades to the transaction that booked its principal — the only caller allowed to bypass the guard. */
+  removeDebtCreationTransaction(userId: string, id: string) {
+    return this.transactionsService.remove(userId, id, { allowDebtCreation: true });
+  }
+
   listForDedupe(userId: string, accountIds: string[]) {
     return this.transactionsService.listForDedupe(userId, accountIds);
   }

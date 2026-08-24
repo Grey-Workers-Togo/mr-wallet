@@ -196,7 +196,14 @@ export class RecurrenceService {
   /** docs/04 §I: recurring income/expense occurrences with their amount, for `forecasting`. */
   async forecastOccurrences(userId: string, until: Date) {
     const rules = await this.prisma.recurrenceRule.findMany({ where: { userId, isActive: true, deletedAt: null } });
-    const results: { type: 'EXPENSE' | 'INCOME' | 'TRANSFER'; amountMinor: bigint; currency: string; occurrenceDate: Date }[] = [];
+    const results: {
+      ruleId: string;
+      name: string;
+      type: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+      amountMinor: bigint;
+      currency: string;
+      occurrenceDate: Date;
+    }[] = [];
     for (const rule of rules) {
       const skipped = new Set(rule.skippedOccurrences.map((d) => d.toISOString()));
       const occurrences = computeOccurrences(
@@ -211,7 +218,14 @@ export class RecurrenceService {
         until,
       ).filter((date) => date.getTime() >= Date.now() && !skipped.has(date.toISOString()));
       for (const occurrenceDate of occurrences) {
-        results.push({ type: rule.type, amountMinor: rule.amountMinor, currency: rule.currency, occurrenceDate });
+        results.push({
+          ruleId: rule.id,
+          name: rule.name,
+          type: rule.type,
+          amountMinor: rule.amountMinor,
+          currency: rule.currency,
+          occurrenceDate,
+        });
       }
     }
     return results;

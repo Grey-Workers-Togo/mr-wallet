@@ -48,18 +48,32 @@ export const createTransferSchema = z
   .refine((dto) => dto.fromAccountId !== dto.toAccountId, { message: 'SAME_ACCOUNT' });
 export type CreateTransferDto = z.infer<typeof createTransferSchema>;
 
-export const listTransactionsSchema = z
-  .object({
+/** Query params arrive as a single value or repeated (`?categoryId=a&categoryId=b`, qs extended parser) — normalize both to an array. */
+const uuidListSchema = () =>
+  z.preprocess(
+    (val) => (val === undefined ? undefined : Array.isArray(val) ? val : [val]),
+    z.array(z.string().uuid()).optional(),
+  );
+
+export const transactionFilterSchema = z.object({
+  accountId: uuidListSchema(),
+  categoryId: uuidListSchema(),
+  tagId: uuidListSchema(),
+  type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  minAmountMinor: unsignedAmountMinor().optional(),
+  maxAmountMinor: unsignedAmountMinor().optional(),
+  payee: z.string().max(120).optional(),
+  q: z.string().max(200).optional(),
+});
+export type TransactionFilter = z.infer<typeof transactionFilterSchema>;
+
+export const listTransactionsSchema = transactionFilterSchema
+  .extend({
     cursor: z.string().uuid().optional(),
     limit: z.coerce.number().int().min(1).max(200).default(50),
-    accountId: z.string().uuid().optional(),
-    categoryId: z.string().uuid().optional(),
-    type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
-    from: z.coerce.date().optional(),
-    to: z.coerce.date().optional(),
-    minAmountMinor: unsignedAmountMinor().optional(),
-    maxAmountMinor: unsignedAmountMinor().optional(),
-    q: z.string().max(200).optional(),
+    savedSearchId: z.string().uuid().optional(),
   })
   .strict();
 export type ListTransactionsDto = z.infer<typeof listTransactionsSchema>;
