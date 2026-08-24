@@ -1,14 +1,14 @@
 # Build context must be the repo root (npm workspaces monorepo):
 #   docker build -f apps/api/Dockerfile -t budget-manager-api .
 
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --include-workspace-root --ignore-scripts
 
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 RUN apk add --no-cache openssl
 WORKDIR /repo
 COPY --from=deps /repo/node_modules ./node_modules
@@ -18,7 +18,7 @@ COPY packages/contracts packages/contracts
 RUN npm run prisma:generate -w apps/api
 RUN npm run build -w apps/api
 
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 RUN apk add --no-cache openssl curl
 ENV NODE_ENV=production
 WORKDIR /repo
