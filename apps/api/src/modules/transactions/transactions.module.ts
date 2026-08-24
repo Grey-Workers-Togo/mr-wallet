@@ -7,11 +7,13 @@ import { TransactionsService } from './transactions.service';
 import { TransactionsFacade } from './transactions.facade';
 import { SavedSearchesController } from './saved-searches.controller';
 import { SavedSearchesService } from './saved-searches.service';
+import { AttachmentsController } from './attachments.controller';
+import { AttachmentsService } from './attachments.service';
 
 @Module({
   imports: [AccountsModule, CategoriesModule, RulesModule],
-  controllers: [TransactionsController, SavedSearchesController],
-  providers: [TransactionsService, TransactionsFacade, SavedSearchesService],
+  controllers: [TransactionsController, SavedSearchesController, AttachmentsController],
+  providers: [TransactionsService, TransactionsFacade, SavedSearchesService, AttachmentsService],
   exports: [TransactionsFacade],
 })
 export class TransactionsModule {}
