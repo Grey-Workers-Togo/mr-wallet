@@ -176,6 +176,6 @@ export class AuthController {
     @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(changePasswordSchema)) dto: ChangePasswordDto,
   ) {
-    await this.authService.changePassword(user.id, dto);
+    await this.authService.changePassword(user.id, user.sessionId, dto);
   }
 }
