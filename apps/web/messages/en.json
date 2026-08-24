@@ -862,7 +862,21 @@
     "netWorth": "Projected net worth",
     "cashWarning": "Projected balance is negative",
     "historyIncomplete": "Not enough history to estimate non-recurring expenses.",
-    "disclaimer": "These projections are estimates based on history, not guaranteed predictions."
+    "disclaimer": "These projections are estimates based on history, not guaranteed predictions.",
+    "baselineLabel": "Baseline",
+    "scenarioLabel": "Scenario",
+    "scenarioTitle": "What if?",
+    "scenarioDescription": "Try hypothetical changes and compare the resulting curve against the baseline above. Nothing here is saved or applied to your real recurrences.",
+    "scenarioOverridesLabel": "Change a recurring amount",
+    "scenarioCurrentAmount": "Currently {amount} {currency}",
+    "scenarioOneOffsLabel": "One-off future amounts",
+    "scenarioAddOneOff": "Add",
+    "scenarioRemoveOneOff": "Remove",
+    "scenarioNoOneOffs": "No one-off amounts added.",
+    "scenarioOneOffExpense": "Expense",
+    "scenarioOneOffIncome": "Income",
+    "scenarioRun": "Run scenario",
+    "scenarioReset": "Reset"
   },
   "notifications": {
     "title": "Notifications",

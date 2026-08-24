@@ -862,7 +862,21 @@
     "netWorth": "Patrimoine net projeté",
     "cashWarning": "Solde projeté négatif",
     "historyIncomplete": "Historique insuffisant pour estimer les dépenses non récurrentes.",
-    "disclaimer": "Ces projections sont des estimations basées sur l'historique, pas des prédictions garanties."
+    "disclaimer": "Ces projections sont des estimations basées sur l'historique, pas des prédictions garanties.",
+    "baselineLabel": "Référence",
+    "scenarioLabel": "Scénario",
+    "scenarioTitle": "Et si ?",
+    "scenarioDescription": "Testez des changements hypothétiques et comparez la courbe obtenue à la référence ci-dessus. Rien ici n'est enregistré ni appliqué à vos récurrences réelles.",
+    "scenarioOverridesLabel": "Modifier un montant récurrent",
+    "scenarioCurrentAmount": "Actuellement {amount} {currency}",
+    "scenarioOneOffsLabel": "Montants ponctuels futurs",
+    "scenarioAddOneOff": "Ajouter",
+    "scenarioRemoveOneOff": "Retirer",
+    "scenarioNoOneOffs": "Aucun montant ponctuel ajouté.",
+    "scenarioOneOffExpense": "Dépense",
+    "scenarioOneOffIncome": "Revenu",
+    "scenarioRun": "Lancer le scénario",
+    "scenarioReset": "Réinitialiser"
   },
   "notifications": {
     "title": "Notifications",
