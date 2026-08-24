@@ -181,6 +181,23 @@ model SavedSearch {
   @@index([userId])
 }
 
+// docs/12 Lot 13: a receipt photo (or other proof) attached to a transaction.
+model Attachment {
+  id           String    @id @default(uuid())
+  userId       String
+  transactionId String
+  storageKey   String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([transactionId])
+}
+
 // ---------------------------------------------------------------------------
 // Transactions
 // ---------------------------------------------------------------------------
