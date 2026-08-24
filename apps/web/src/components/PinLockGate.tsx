@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { apiClient } from '@/lib/api-client';
 import { clearLocalPin, hasLocalPin, verifyLocalPin } from '@/lib/local-pin';
 import { purgeOfflineCache } from '@/lib/offline-cache';
 import { setAccessToken } from '@/lib/auth-store';
@@ -63,6 +64,13 @@ export function PinLockGate() {
     setAttempts(next);
     setPin('');
     if (next >= MAX_ATTEMPTS) {
+      // /auth/logout requires auth, so it must run while the access token is still set —
+      // otherwise the 30-day refresh cookie survives and the app re-authenticates on next load.
+      try {
+        await apiClient.post('/auth/logout', {});
+      } catch {
+        // best-effort
+      }
       await clearLocalPin();
       await purgeOfflineCache();
       setAccessToken(null);

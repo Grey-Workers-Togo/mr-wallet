@@ -32,3 +32,18 @@ spec doesn't pin exact numbers").
 
 Impact: a receipt saved as PDF or over 10 MB is rejected with a clear validation error rather than
 silently accepted. Revisit if users report either limit as too tight.
+
+## Audit interceptor — behavior when the audit write fails
+
+The rules require one audit entry per mutation (docs/10-conventions-dev.md §6), but when the `audit_log`
+INSERT fails after the business mutation already committed (connection drop, constraint error), the
+interceptor cannot roll the mutation back.
+
+**Implemented behavior (conservative):** the interceptor awaits the write as part of the response stream and
+rethrows the failure after logging it (`audit_write_failed code=… message=…`, payload never logged). The client
+gets an error even though the change is committed; the opposite trade-off (return 200 with a hole in the trail)
+would silently violate the one-entry-per-mutation rule.
+
+Impact: rare transient failures surface as errors on already-applied mutations, so clients retrying must
+tolerate replayed writes (idempotent POST replay is already required by docs/10 §6). Revisit if audit-table
+availability becomes an operational concern.

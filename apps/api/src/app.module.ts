@@ -12,6 +12,7 @@ import { StorageModule } from './common/storage/storage.module';
 import { GlobalExceptionFilter } from './common/errors/global-exception.filter';
 import { AuditInterceptor } from './common/audit/audit.interceptor';
 import { RequestIdMiddleware } from './common/request-id.middleware';
+import { IpHashMiddleware } from './common/security/ip-hash.middleware';
 import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -74,5 +75,6 @@ import { HealthModule } from './modules/health/health.module';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(RequestIdMiddleware).forRoutes('*');
+    consumer.apply(IpHashMiddleware).forRoutes('*');
   }
 }
