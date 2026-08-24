@@ -168,6 +168,19 @@ model TransactionTag {
   @@id([transactionId, tagId])
 }
 
+// docs/12 Lot 8: a saved multi-criteria transaction filter, reapplied via `?savedSearchId=`.
+model SavedSearch {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  filterJson Json
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt  DateTime? @db.Timestamptz(6)
+
+  @@index([userId])
+}
+
 // ---------------------------------------------------------------------------
 // Transactions
 // ---------------------------------------------------------------------------
