@@ -8,11 +8,12 @@ jobs:
   check-base:
     runs-on: ubuntu-latest
     steps:
-      - name: Require base branch to be develop (unless targeting main from develop)
+      - name: Require base branch to be develop (unless targeting main from develop or a release-please release PR)
         run: |
+          HEAD_REF="${{ github.event.pull_request.head.ref }}"
           if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
-            if [ "${{ github.event.pull_request.head.ref }}" != "develop" ]; then
-              echo "PRs into main are only allowed from develop (release merges). Target develop instead."
+            if [ "$HEAD_REF" != "develop" ] && [[ "$HEAD_REF" != release-please--* ]]; then
+              echo "PRs into main are only allowed from develop (release merges) or a release-please release PR. Target develop instead."
               exit 1
             fi
           elif [ "${{ github.event.pull_request.base.ref }}" != "develop" ]; then
