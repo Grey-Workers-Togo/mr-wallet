@@ -51,7 +51,12 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
       WEB_APP_URL: ${WEB_APP_URL}
+      STORAGE_DIR: ${STORAGE_DIR:-/repo/apps/api/storage/attachments}
       PORT: 3000
+    # Persists uploaded receipt photos across container replacement - without this mount,
+    # STORAGE_DIR would live in the container's writable layer and vanish on redeploy.
+    volumes:
+      - attachment_storage:/repo/apps/api/storage/attachments
     # No published port - only reachable through the caddy reverse proxy below.
     expose:
       - "3000"
@@ -98,3 +103,4 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  attachment_storage:
