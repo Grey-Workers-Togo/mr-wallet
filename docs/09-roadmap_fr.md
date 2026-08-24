@@ -128,6 +128,8 @@ Par ordre de priorité décroissante :
 7. **Import OFX/QIF**.
 8. **Application mobile** (React Native ou PWA installable) — décision à prendre selon les retours.
 9. **Tableau de bord personnalisable** (widgets déplaçables).
+10. **Constructeur de budget from-scratch** : saisir le revenu total d'une période, le répartir
+    entre catégories avec un reste à allouer en direct, créer les budgets résultants en une étape.
 
 ---
 

@@ -1,6 +1,6 @@
 # 12 — Roadmap V2 (détaillée)
 
-Détail des 9 chantiers V2 listés dans `09-roadmap_fr.md § V2`, dans le même ordre de priorité,
+Détail des 10 chantiers V2 listés dans `09-roadmap_fr.md § V2`, dans le même ordre de priorité,
 sous forme de lots séquentiels continuant la numérotation du MVP (lots 0–7). Mêmes règles :
 chaque lot se termine fonctionnel et testé, definition of done selon `10-conventions-dev.md`, ne
 pas sauter de lot.
@@ -27,6 +27,11 @@ Ancré sur l'état réel du code (vérifié avant rédaction) :
   parseur OFX/QIF n'existe.
 - Aucune route de tableau de bord authentifié n'existe. Après connexion, l'utilisateur arrive sur
   `/accounts` ; chaque fonctionnalité est une page indépendante, rien n'agrège en widgets.
+- `budgets` modélise déjà `Budget` (plafond par catégorie, période, report, seuils d'alerte) et
+  `BudgetPeriod` (alloué vs dépensé) — la création se fait un budget à la fois via `POST
+  /budgets`. Aucun endpoint de création en masse/plan, et la page front `/budgets` n'a aucune
+  saisie de revenu ni reste-à-allouer — chaque budget de catégorie est créé indépendamment, sans
+  vue d'ensemble du revenu de la période.
 
 ---
 
@@ -201,6 +206,34 @@ et persiste entre sessions sur le même appareil.
 
 ---
 
+## Lot 17 — Constructeur de budget from-scratch (≈ 3 jours)
+
+- `budgets` : nouvel endpoint `POST /budgets/plan` — prend une période (`startsOn`/`endsOn`/
+  `period`) et une liste d'allocations `{ categoryId, amountMinor }`, crée un `Budget` (+ son
+  premier `BudgetPeriod`) par allocation de façon atomique (une seule transaction DB — un échec
+  partiel ne doit jamais laisser un plan à moitié construit). Réutilise le chemin de création
+  d'un budget unique déjà existant dans `budgets.service.ts` plutôt que de dupliquer sa
+  validation.
+- Le revenu total de la période est un nombre saisi par l'utilisateur, pas dérivé de
+  `recurrence` — préremplir depuis les occurrences de revenus récurrents est une amélioration
+  raisonnable mais non requise pour le critère de sortie ; si ajouté, doit rester modifiable (le
+  revenu réel d'une période donnée peut différer du modèle récurrent).
+- Front : parcours guidé sur `/budgets/plan` — étape 1, saisir le revenu total de la période ;
+  étape 2, une liste de catégories où chaque ligne prend un montant alloué, avec un indicateur
+  « alloué / revenu total / reste à allouer » qui se met à jour en direct pendant la saisie ;
+  étape 3, confirmer et soumettre. Une sur-allocation (somme > revenu) est un avertissement
+  visible, pas un blocage — choix conservateur par défaut selon la règle d'ambiguïté de
+  CLAUDE.md (à remonter dans `docs/QUESTIONS.md` si un blocage strict s'avère nécessaire).
+- Tests : allouer tout le revenu entre catégories laisse un reste à zéro et crée exactement une
+  paire `Budget`/`BudgetPeriod` par catégorie allouée ; un cas d'échec partiel (ex. un
+  `categoryId` invalide parmi plusieurs) n'en crée aucun, pas un sous-ensemble ; test d'isolation
+  (le plan de l'utilisateur A ne crée jamais de budget visible par l'utilisateur B).
+
+**Critère de sortie** : un revenu total, alloué entre catégories via le parcours guidé, produit
+exactement l'ensemble de budgets attendu avec un reste à zéro, ou la soumission échoue en bloc.
+
+---
+
 ## Jalons de vérification
 
 | Jalon | Vérification |
@@ -210,3 +243,4 @@ et persiste entre sessions sur le même appareil.
 | Fin du lot 13 | Test d'isolation des pièces jointes passant (aucun accès inter-utilisateur) |
 | Fin du lot 14 | Fichiers OFX et QIF réels importés sans correction manuelle |
 | Fin du lot 16 | Personnalisation de la disposition du tableau de bord couverte de bout en bout |
+| Fin du lot 17 | Un plan de budget soumis est tout-ou-rien et laisse un reste à allouer nul |

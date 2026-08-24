@@ -128,6 +128,8 @@ In descending order of priority:
 7. **OFX/QIF import**.
 8. **Mobile application** (React Native or installable PWA) — decision to be made based on feedback.
 9. **Customizable dashboard** (movable widgets).
+10. **From-scratch budget builder**: enter a period's total income, allocate it across categories
+    with a live running remainder, create the resulting budgets in one step.
 
 ---
 
