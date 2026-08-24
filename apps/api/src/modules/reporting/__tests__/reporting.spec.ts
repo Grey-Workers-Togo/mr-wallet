@@ -13,6 +13,7 @@ import { CurrencyFacade } from '../../currency/currency.facade';
 import { DebtsService } from '../../debts/debts.service';
 import { DebtsFacade } from '../../debts/debts.facade';
 import { TransactionsFacade } from '../../transactions/transactions.facade';
+import { SavedSearchesService } from '../../transactions/saved-searches.service';
 import { BudgetsService } from '../../budgets/budgets.service';
 import { BudgetsFacade } from '../../budgets/budgets.facade';
 import { ReportingService } from '../reporting.service';
@@ -23,7 +24,7 @@ function buildReportingService(prisma: PrismaService) {
   const categoriesFacade = new CategoriesFacade(new CategoriesService(prisma));
   const rulesFacade = new RulesFacade(new RulesService(prisma));
   const events = new EventEmitter2();
-  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events);
+  const transactionsService = new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, events, new SavedSearchesService(prisma));
   const transactionsFacade = new TransactionsFacade(transactionsService);
   const currencyFacade = new CurrencyFacade(new CurrencyService(prisma));
   const debtsFacade = new DebtsFacade(new DebtsService(prisma, accountsFacade, transactionsFacade, events));

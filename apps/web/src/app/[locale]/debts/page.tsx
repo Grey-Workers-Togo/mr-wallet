@@ -113,6 +113,7 @@ export default function DebtsPage() {
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [direction, setDirection] = useState<(typeof DIRECTIONS)[number]>('OWED_BY_ME');
@@ -154,6 +155,7 @@ export default function DebtsPage() {
   }, []);
 
   function openCreateDialog() {
+    setFormStep(1);
     setEditingId(null);
     setName('');
     setDirection('OWED_BY_ME');
@@ -171,6 +173,7 @@ export default function DebtsPage() {
   }
 
   function openEditDialog(debt: Debt) {
+    setFormStep(1);
     setEditingId(debt.id);
     setName(debt.name);
     setDirection(debt.direction);
@@ -199,8 +202,20 @@ export default function DebtsPage() {
     setManualInstallments((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
+  function goToNextStep() {
+    setFormStep(2);
+  }
+
+  function goToPreviousStep() {
+    setFormStep(1);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (formStep === 1) {
+      goToNextStep();
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -452,43 +467,76 @@ export default function DebtsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+            <DialogTitle>
+              {editingId ? t('edit') : t('create')} · {formStep === 1 ? t('stepMainInfoTitle') : t('stepDatesTitle')} (
+              {formStep}/2)
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="name" required>{t('nameLabel')}</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div>
-              <Label htmlFor="direction" required>{t('directionLabel')}</Label>
-              <Select
-                items={directionItems}
-                value={direction}
-                onValueChange={(value) => setDirection(value as (typeof DIRECTIONS)[number])}
-                disabled={!!editingId}
-              >
-                <SelectTrigger id="direction" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIRECTIONS.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {tDirection(value)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="principalMinor" required>{t('principalLabel')}</Label>
-              <AmountInput
-                id="principalMinor"
-                value={principalMinor}
-                onValueChange={setPrincipalMinor}
-                disabled={!!editingId}
-                required
-              />
-            </div>
+            {formStep === 1 && (
+              <>
+                <div>
+                  <Label htmlFor="name" required>{t('nameLabel')}</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div>
+                  <Label htmlFor="direction" required>{t('directionLabel')}</Label>
+                  <Select
+                    items={directionItems}
+                    value={direction}
+                    onValueChange={(value) => setDirection(value as (typeof DIRECTIONS)[number])}
+                    disabled={!!editingId}
+                  >
+                    <SelectTrigger id="direction" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIRECTIONS.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {tDirection(value)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="principalMinor" required>{t('principalLabel')}</Label>
+                  <AmountInput
+                    id="principalMinor"
+                    value={principalMinor}
+                    onValueChange={setPrincipalMinor}
+                    disabled={!!editingId}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkedAccountId">{t('linkedAccountLabel')}</Label>
+                  <Select
+                    items={{
+                      '': t('noLinkedAccountOption'),
+                      ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+                    }}
+                    value={linkedAccountId}
+                    onValueChange={(value) => setLinkedAccountId(value ?? '')}
+                  >
+                    <SelectTrigger id="linkedAccountId" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">{t('noLinkedAccountOption')}</SelectItem>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {formStep === 2 && (
+              <>
             <div>
               <Label htmlFor="startedOn" required>{t('startedOnLabel')}</Label>
               <Input
@@ -652,34 +700,22 @@ export default function DebtsPage() {
                 </p>
               </div>
             )}
+              </>
+            )}
 
-            <div>
-              <Label htmlFor="linkedAccountId">{t('linkedAccountLabel')}</Label>
-              <Select
-                items={{
-                  '': t('noLinkedAccountOption'),
-                  ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
-                }}
-                value={linkedAccountId}
-                onValueChange={(value) => setLinkedAccountId(value ?? '')}
-              >
-                <SelectTrigger id="linkedAccountId" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t('noLinkedAccountOption')}</SelectItem>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <DialogFooter>
-              <Button type="submit" loading={isSubmitting}>
-                {editingId ? t('saveChanges') : t('submit')}
-              </Button>
+              {formStep === 2 && (
+                <Button type="button" variant="secondary" onClick={goToPreviousStep}>
+                  {tCommon('back')}
+                </Button>
+              )}
+              {formStep === 1 ? (
+                <Button type="submit">{tCommon('next')}</Button>
+              ) : (
+                <Button type="submit" loading={isSubmitting}>
+                  {editingId ? t('saveChanges') : t('submit')}
+                </Button>
+              )}
             </DialogFooter>
             <SubmitShortcutHint />
           </form>

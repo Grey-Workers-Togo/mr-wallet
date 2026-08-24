@@ -1,6 +1,6 @@
 # 12 — V2 roadmap (detailed)
 
-Detailed breakdown of the 9 V2 items listed in `09-roadmap.md § V2`, in the same priority
+Detailed breakdown of the 10 V2 items listed in `09-roadmap.md § V2`, in the same priority
 order, as sequential lots continuing the MVP numbering (lots 0–7). Same rules apply: each lot
 ends functional and tested, definition of done per `10-conventions-dev.md`, do not skip a lot.
 
@@ -23,6 +23,10 @@ Grounded against current code state (checked before writing this doc):
   OFX/QIF parser exists.
 - No authenticated dashboard route exists. Users land on `/accounts` after login; each feature
   is its own top-level page, nothing aggregates them into widgets.
+- `budgets` already models `Budget` (per-category cap, period, rollover, alert thresholds) and
+  `BudgetPeriod` (allocated vs spent) — creation is one budget at a time via `POST /budgets`. No
+  bulk/plan endpoint, and the frontend `/budgets` page has no income-entry or allocation-remainder
+  UI — each category budget is created independently with no view of the whole period's income.
 
 ---
 
@@ -186,6 +190,34 @@ the same device.
 
 ---
 
+## Lot 17 — Budget builder, from-scratch (≈ 3 days)
+
+- `budgets`: new `POST /budgets/plan` endpoint — takes a period (`startsOn`/`endsOn`/`period`)
+  and a list of `{ categoryId, amountMinor }` allocations, creates one `Budget` (+ its first
+  `BudgetPeriod`) per allocation atomically (single DB transaction — a partial failure must not
+  leave a half-built plan). Reuses `budgets.service.ts`'s existing single-budget creation path
+  internally rather than duplicating its validation.
+- Total income for the period is a plain user-entered number, not derived from `recurrence` —
+  reading live recurring-income occurrences as a prefill is a reasonable enhancement but not
+  required for the exit criterion; if added, it must stay editable (the user's actual income for
+  a specific period can differ from the recurring template).
+- Frontend: a guided flow at `/budgets/plan` — step 1, enter total income for the period; step 2,
+  a category list where each row takes an allocation amount, with a running "allocated / total
+  income / remaining" readout that updates live as the user types; step 3, confirm and submit.
+  Over-allocation (sum > income) is a visible warning, not a hard block — conservative default
+  per CLAUDE.md's ambiguity rule (log to `docs/QUESTIONS.md` if this needs to become a hard
+  block).
+- Tests: allocating the full income across categories leaves zero remaining and creates exactly
+  one `Budget`/`BudgetPeriod` pair per allocated category; a partial-failure case (e.g. one
+  invalid `categoryId` among several) creates none of them, not a partial set; isolation test
+  (user A's plan never creates a budget visible to user B).
+
+**Exit criterion**: a full income amount, allocated across categories through the guided flow,
+produces exactly the expected set of budgets with zero unallocated remainder, or the whole
+submission fails together.
+
+---
+
 ## Verification milestones
 
 | Milestone | Verification |
@@ -195,3 +227,4 @@ the same device.
 | End of lot 13 | Attachment isolation test passes (no cross-user access) |
 | End of lot 14 | Real OFX and QIF sample files import without manual correction |
 | End of lot 16 | Dashboard layout customization covered end-to-end |
+| End of lot 17 | A submitted budget plan is all-or-nothing and leaves zero unallocated remainder |

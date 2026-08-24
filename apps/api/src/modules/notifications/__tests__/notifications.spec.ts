@@ -10,8 +10,10 @@ import { RulesService } from '../../rules/rules.service';
 import { RulesFacade } from '../../rules/rules.facade';
 import { TransactionsService } from '../../transactions/transactions.service';
 import { TransactionsFacade } from '../../transactions/transactions.facade';
+import { SavedSearchesService } from '../../transactions/saved-searches.service';
 import { RecurrenceService } from '../../recurrence/recurrence.service';
 import { RecurrenceFacade } from '../../recurrence/recurrence.facade';
+import { MailService } from '../../../common/mail/mail.service';
 import { NotificationsService } from '../notifications.service';
 
 describe('notifications', () => {
@@ -20,10 +22,10 @@ describe('notifications', () => {
   const categoriesFacade = new CategoriesFacade(new CategoriesService(prisma));
   const rulesFacade = new RulesFacade(new RulesService(prisma));
   const transactionsFacade = new TransactionsFacade(
-    new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2()),
+    new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2(), new SavedSearchesService(prisma)),
   );
   const recurrenceFacade = new RecurrenceFacade(new RecurrenceService(prisma, transactionsFacade));
-  const service = new NotificationsService(prisma, recurrenceFacade, new ConfigService());
+  const service = new NotificationsService(prisma, recurrenceFacade, new ConfigService(), new MailService(new ConfigService({ SMTP_FROM: 'test@example.com' })));
 
   let userId: string;
 

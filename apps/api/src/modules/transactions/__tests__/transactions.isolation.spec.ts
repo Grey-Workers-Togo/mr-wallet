@@ -9,12 +9,13 @@ import { CategoriesFacade } from '../../categories/categories.facade';
 import { RulesService } from '../../rules/rules.service';
 import { RulesFacade } from '../../rules/rules.facade';
 import { TransactionsService } from '../transactions.service';
+import { SavedSearchesService } from '../saved-searches.service';
 
 function buildService(prisma: PrismaService) {
   const accountsFacade = new AccountsFacade(new AccountsService(prisma));
   const categoriesFacade = new CategoriesFacade(new CategoriesService(prisma));
   const rulesFacade = new RulesFacade(new RulesService(prisma));
-  return new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2());
+  return new TransactionsService(prisma, accountsFacade, categoriesFacade, rulesFacade, new EventEmitter2(), new SavedSearchesService(prisma));
 }
 
 describe('transactions isolation (userId scoping)', () => {

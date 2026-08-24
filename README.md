@@ -61,7 +61,7 @@ The architecture decisions already made are recorded in [docs/adr/](docs/adr/):
 - **Front-end**: Next.js (App Router), TypeScript, TailwindCSS, TanStack Query — responsive-first, installable as a PWA
 - **Auth**: JWT access token in memory, rotating refresh token in an `HttpOnly` cookie, Argon2id
 - **Push**: Web Push API (VAPID), without a proprietary third-party service
-- **Tests**: Vitest (unit), Supertest (API), Playwright (e2e)
+- **Tests**: Vitest (unit), Supertest (API); Playwright (e2e) is planned but not yet wired up
 
 The justifications for these choices are in [docs/02-architecture.md](docs/02-architecture.md).
 
@@ -85,7 +85,7 @@ npm run prisma:migrate -w apps/api -- --name init
 # and paste the content of apps/api/prisma/sql/audit_log_immutable.sql into the generated migration.sql.
 
 npm run dev:api   # NestJS on :3000
-npm run dev:web   # Next.js on :3000 (adjust ports locally)
+npm run dev:web   # Next.js on :3001
 npm run test       # money kernel + unit tests
 npm run lint && npm run typecheck
 ```

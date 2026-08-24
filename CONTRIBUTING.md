@@ -63,10 +63,10 @@ Non-negotiable: isolation test per endpoint, no monetary test through a `number`
 
 ## Git
 
-- Branches: `main` (protected) ← `feat/<lot>-<subject>` | `fix/<subject>` | `chore/<subject>`.
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(debts): ...`, `fix(transactions): ...`, `test(money): ...`, `docs(api): ...`, `refactor(budgets): ...`, `chore(deps): ...`). One commit = one coherent change. No "wip" on `main`.
+- Branches: `main` (protected, releases only) ← `develop` (protected, integration) ← `feat/<lot>-<subject>` | `fix/<subject>` | `chore/<subject>`.
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(debts): ...`, `fix(transactions): ...`, `test(money): ...`, `docs(api): ...`, `refactor(budgets): ...`, `chore(deps): ...`). One commit = one coherent change. No "wip" on `main`/`develop`.
 - Documentation and commit messages are written in **French** (`docs/10-conventions-dev.md` §1); code, identifiers, and UI strings follow the language rules in that same section.
-- Pull requests: describe what changes, why, how to test it; reference the lot and the `RG-xx` rules covered; green CI mandatory.
+- Pull requests: **always target `develop`**, never `main` directly — CI (`pr-base-branch.yml`) rejects any other base except a `develop → main` release PR. Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md); describe what changes, why, how to test it; reference the lot and the `RG-xx` rules covered; green CI mandatory.
 
 ## Definition of done
 

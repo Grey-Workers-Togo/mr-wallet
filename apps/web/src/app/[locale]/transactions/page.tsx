@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Trash2, Search, SlidersHorizontal, TrendingUp, TrendingDown, ArrowLeftRight, Scale } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, SlidersHorizontal, TrendingUp, TrendingDown, ArrowLeftRight, Scale, BookmarkPlus, Bookmark, Paperclip } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { getAccessToken } from '@/lib/auth-store';
 import { Card } from '@/components/ui/card';
 import {
   Dialog,
@@ -32,6 +33,7 @@ import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { toast } from '@/hooks/useToast';
 import { PageLoader } from '@/components/shared/PageLoader';
@@ -75,6 +77,38 @@ interface Summary {
   totalTransferMinor: string;
   transferTransactionCount: number;
 }
+
+interface TagItem {
+  id: string;
+  name: string;
+}
+
+interface SavedSearch {
+  id: string;
+  name: string;
+  filterJson: {
+    accountId?: string[];
+    categoryId?: string[];
+    tagId?: string[];
+    type?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+    from?: string;
+    to?: string;
+    minAmountMinor?: string;
+    maxAmountMinor?: string;
+    payee?: string;
+    q?: string;
+  };
+}
+
+interface AttachmentItem {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+const ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic';
 
 const PAGE_SIZE = 20;
 
@@ -123,13 +157,21 @@ export default function TransactionsPage() {
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<(typeof FILTER_TYPES)[number]>('ALL');
-  const [filterAccountId, setFilterAccountId] = useState('__all__');
-  const [filterCategoryId, setFilterCategoryId] = useState('__all__');
+  const [filterAccountIds, setFilterAccountIds] = useState<string[]>([]);
+  const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([]);
+  const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
+  const [filterPayee, setFilterPayee] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
   const [filterMin, setFilterMin] = useState('');
   const [filterMax, setFilterMax] = useState('');
   const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
+
+  const [tags, setTags] = useState<TagItem[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [newSearchName, setNewSearchName] = useState('');
+  const [isSavingSearch, setIsSavingSearch] = useState(false);
+  const [confirmDeleteSearch, setConfirmDeleteSearch] = useState<{ id: string; name: string } | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,13 +185,19 @@ export default function TransactionsPage() {
   const [notes, setNotes] = useState('');
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [confirmDeleteAttachment, setConfirmDeleteAttachment] = useState<{ id: string; name: string } | null>(null);
+
   async function loadStatic() {
-    const [accountList, categoryList] = await Promise.all([
+    const [accountList, categoryList, tagList] = await Promise.all([
       apiClient.get<Account[]>('/accounts'),
       apiClient.get<Category[]>('/categories'),
+      apiClient.get<TagItem[]>('/tags'),
     ]);
     setAccounts(accountList);
     setCategories(categoryList);
+    setTags(tagList);
     const firstAccount = accountList[0];
     if (firstAccount) {
       setAccountId((current) => current || firstAccount.id);
@@ -157,13 +205,20 @@ export default function TransactionsPage() {
     }
   }
 
+  async function loadSavedSearches() {
+    const list = await apiClient.get<SavedSearch[]>('/saved-searches');
+    setSavedSearches(list);
+  }
+
   function buildQuery(cursor: string | null) {
     const params = new URLSearchParams();
     params.set('limit', String(PAGE_SIZE));
     if (cursor) params.set('cursor', cursor);
     if (filterType !== 'ALL') params.set('type', filterType);
-    if (filterAccountId !== '__all__') params.set('accountId', filterAccountId);
-    if (filterCategoryId !== '__all__') params.set('categoryId', filterCategoryId);
+    filterAccountIds.forEach((id) => params.append('accountId', id));
+    filterCategoryIds.forEach((id) => params.append('categoryId', id));
+    filterTagIds.forEach((id) => params.append('tagId', id));
+    if (filterPayee.trim()) params.set('payee', filterPayee.trim());
     if (filterFrom) params.set('from', filterFrom);
     if (filterTo) params.set('to', filterTo);
     if (filterMin) params.set('minAmountMinor', filterMin);
@@ -186,12 +241,13 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadStatic().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
+    loadSavedSearches().catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
   }, []);
 
   useEffect(() => {
     setCursorStack([]);
     loadPage(null).catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
-  }, [filterType, filterAccountId, filterCategoryId, filterFrom, filterTo, filterMin, filterMax, search]);
+  }, [filterType, filterAccountIds, filterCategoryIds, filterTagIds, filterPayee, filterFrom, filterTo, filterMin, filterMax, search]);
 
   function resolveCategoryName(category: Category): string {
     if (category.name) return category.name;
@@ -207,6 +263,7 @@ export default function TransactionsPage() {
     setCategoryId('');
     setOccurredAt(new Date().toISOString().slice(0, 10));
     setNotes('');
+    setAttachments([]);
     setDialogOpen(true);
   }
 
@@ -220,6 +277,65 @@ export default function TransactionsPage() {
     setOccurredAt(tx.occurredAt.slice(0, 10));
     setNotes(tx.description ?? '');
     setDialogOpen(true);
+    loadAttachments(tx.id).catch((err) => setError(err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR'));
+  }
+
+  async function loadAttachments(transactionId: string) {
+    const list = await apiClient.get<AttachmentItem[]>(`/transactions/${transactionId}/attachments`);
+    setAttachments(list);
+  }
+
+  async function onUploadAttachment(file: File) {
+    if (!editingId) return;
+    setUploadingAttachment(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const token = getAccessToken();
+      const response = await fetch(`${API_BASE}/transactions/${editingId}/attachments`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        const code = body.code ?? 'INTERNAL_ERROR';
+        toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+        return;
+      }
+      await loadAttachments(editingId);
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
+  async function onViewAttachment(attachment: AttachmentItem) {
+    if (!editingId) return;
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE}/transactions/${editingId}/attachments/${attachment.id}`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!response.ok) {
+      toast({ title: tCommon('actionErrorTitle'), description: tError('INTERNAL_ERROR' as never), variant: 'destructive' });
+      return;
+    }
+    const blob = await response.blob();
+    window.open(URL.createObjectURL(blob), '_blank');
+  }
+
+  async function onDeleteAttachment(id: string) {
+    if (!editingId) return;
+    try {
+      await apiClient.delete(`/transactions/${editingId}/attachments/${id}`);
+      await loadAttachments(editingId);
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    }
   }
 
   async function onSubmit(e: FormEvent) {
@@ -297,8 +413,10 @@ export default function TransactionsPage() {
 
   function resetFilters() {
     setFilterType('ALL');
-    setFilterAccountId('__all__');
-    setFilterCategoryId('__all__');
+    setFilterAccountIds([]);
+    setFilterCategoryIds([]);
+    setFilterTagIds([]);
+    setFilterPayee('');
     setFilterFrom('');
     setFilterTo('');
     setFilterMin('');
@@ -306,9 +424,67 @@ export default function TransactionsPage() {
     setFiltersDialogOpen(false);
   }
 
+  function toggleInArray(list: string[], id: string, setter: (next: string[]) => void) {
+    setter(list.includes(id) ? list.filter((v) => v !== id) : [...list, id]);
+  }
+
+  function currentFilterPayload() {
+    return {
+      ...(filterAccountIds.length > 0 && { accountId: filterAccountIds }),
+      ...(filterCategoryIds.length > 0 && { categoryId: filterCategoryIds }),
+      ...(filterTagIds.length > 0 && { tagId: filterTagIds }),
+      ...(filterType !== 'ALL' && { type: filterType }),
+      ...(filterFrom && { from: filterFrom }),
+      ...(filterTo && { to: filterTo }),
+      ...(filterMin && { minAmountMinor: filterMin }),
+      ...(filterMax && { maxAmountMinor: filterMax }),
+      ...(filterPayee.trim() && { payee: filterPayee.trim() }),
+    };
+  }
+
+  async function onSaveSearch() {
+    if (!newSearchName.trim()) return;
+    setIsSavingSearch(true);
+    try {
+      await apiClient.post('/saved-searches', { name: newSearchName.trim(), filter: currentFilterPayload() });
+      setNewSearchName('');
+      await loadSavedSearches();
+      toast({ title: tCommon('createSuccessTitle'), variant: 'success' });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsSavingSearch(false);
+    }
+  }
+
+  function onApplySavedSearch(saved: SavedSearch) {
+    const filter = saved.filterJson;
+    setFilterAccountIds(filter.accountId ?? []);
+    setFilterCategoryIds(filter.categoryId ?? []);
+    setFilterTagIds(filter.tagId ?? []);
+    setFilterType((filter.type ?? 'ALL') as (typeof FILTER_TYPES)[number]);
+    setFilterFrom(filter.from ? filter.from.slice(0, 10) : '');
+    setFilterTo(filter.to ? filter.to.slice(0, 10) : '');
+    setFilterMin(filter.minAmountMinor ?? '');
+    setFilterMax(filter.maxAmountMinor ?? '');
+    setFilterPayee(filter.payee ?? '');
+    setFiltersDialogOpen(false);
+  }
+
+  async function onDeleteSavedSearch(id: string) {
+    try {
+      await apiClient.delete(`/saved-searches/${id}`);
+      await loadSavedSearches();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    }
+  }
+
   const availableCategories = categories.filter((c) => c.kind === (type === 'TRANSFER' ? 'EXPENSE' : type));
   const accountsInCurrency = accounts.filter((a) => a.currency === currency);
-  const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
   const createAccountItems = Object.fromEntries(accountsInCurrency.map((a) => [a.id, a.name]));
   const typeItems = Object.fromEntries(CREATE_TYPES.map((value) => [value, tType(value)]));
   const filterTypeItems = Object.fromEntries(FILTER_TYPES.map((value) => [value, value === 'ALL' ? t('filtersAllTypes') : tType(value)]));
@@ -685,6 +861,48 @@ export default function TransactionsPage() {
               <Label htmlFor="notes">{t('noteLabel')}</Label>
               <Textarea id="notes" placeholder={t('notePlaceholder')} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
+            {editingId && (
+              <div>
+                <Label>{t('attachmentsLabel')}</Label>
+                <div className="mt-1 space-y-2">
+                  {attachments.length === 0 && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('noAttachments')}</p>
+                  )}
+                  {attachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => onViewAttachment(attachment)}
+                        className="flex flex-1 items-center gap-2 truncate text-left text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-neutral-50"
+                      >
+                        <Paperclip className="size-3.5 shrink-0" />
+                        <span className="truncate">{attachment.originalName}</span>
+                      </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t('delete')}
+                        onClick={() => setConfirmDeleteAttachment({ id: attachment.id, name: attachment.originalName })}
+                      >
+                        <Trash2 className="size-3.5 text-red-600" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Input
+                    type="file"
+                    accept={ATTACHMENT_ACCEPT}
+                    disabled={uploadingAttachment}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) onUploadAttachment(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('attachmentHint')}</p>
+                </div>
+              </div>
+            )}
             <DialogFooter>
               <Button type="submit" loading={isSubmitting}>
                 {t('submit')}
@@ -696,10 +914,42 @@ export default function TransactionsPage() {
       </Dialog>
 
       <Dialog open={filtersDialogOpen} onOpenChange={setFiltersDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('filters')}</DialogTitle>
           </DialogHeader>
+
+          {savedSearches.length > 0 && (
+            <div className="rounded-md border p-3">
+              <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400 uppercase">
+                {t('savedSearchesTitle')}
+              </p>
+              <ul className="space-y-1">
+                {savedSearches.map((saved) => (
+                  <li key={saved.id} className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onApplySavedSearch(saved)}
+                      className="flex flex-1 items-center gap-2 truncate text-left text-sm text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-neutral-50"
+                    >
+                      <Bookmark className="size-3.5 shrink-0" />
+                      <span className="truncate">{saved.name}</span>
+                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t('delete')}
+                      onClick={() => setConfirmDeleteSearch({ id: saved.id, name: saved.name })}
+                    >
+                      <Trash2 className="size-3.5 text-red-600" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="filterType">{t('typeLabel')}</Label>
@@ -717,45 +967,54 @@ export default function TransactionsPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="filterCategoryId">{t('categoryLabel')}</Label>
-              <Select
-                items={{ __all__: t('filtersAllCategories'), ...Object.fromEntries(categories.map((c) => [c.id, resolveCategoryName(c)])) }}
-                value={filterCategoryId}
-                onValueChange={(value) => setFilterCategoryId(value ?? '__all__')}
-              >
-                <SelectTrigger id="filterCategoryId" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('filtersAllCategories')}</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {resolveCategoryName(category)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="filterPayee">{t('payeeLabel')}</Label>
+              <Input id="filterPayee" value={filterPayee} onChange={(e) => setFilterPayee(e.target.value)} placeholder={t('payeePlaceholder')} />
             </div>
-            <div>
-              <Label htmlFor="filterAccountId">{t('accountLabel')}</Label>
-              <Select
-                items={{ __all__: t('filtersAllAccounts'), ...accountItems }}
-                value={filterAccountId}
-                onValueChange={(value) => setFilterAccountId(value ?? '__all__')}
-              >
-                <SelectTrigger id="filterAccountId" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('filtersAllAccounts')}</SelectItem>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="col-span-2">
+              <Label>{t('categoryLabel')}</Label>
+              <div className="mt-1 max-h-32 overflow-y-auto rounded-md border p-2 space-y-1">
+                {categories.length === 0 && <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('filtersAllCategories')}</p>}
+                {categories.map((category) => (
+                  <label key={category.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={filterCategoryIds.includes(category.id)}
+                      onCheckedChange={() => toggleInArray(filterCategoryIds, category.id, setFilterCategoryIds)}
+                    />
+                    {resolveCategoryName(category)}
+                  </label>
+                ))}
+              </div>
             </div>
+            <div className="col-span-2">
+              <Label>{t('accountLabel')}</Label>
+              <div className="mt-1 max-h-32 overflow-y-auto rounded-md border p-2 space-y-1">
+                {accounts.map((account) => (
+                  <label key={account.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={filterAccountIds.includes(account.id)}
+                      onCheckedChange={() => toggleInArray(filterAccountIds, account.id, setFilterAccountIds)}
+                    />
+                    {account.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {tags.length > 0 && (
+              <div className="col-span-2">
+                <Label>{t('tagsLabel')}</Label>
+                <div className="mt-1 max-h-32 overflow-y-auto rounded-md border p-2 space-y-1">
+                  {tags.map((tag) => (
+                    <label key={tag.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={filterTagIds.includes(tag.id)}
+                        onCheckedChange={() => toggleInArray(filterTagIds, tag.id, setFilterTagIds)}
+                      />
+                      {tag.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <Label>{t('periodLabel')}</Label>
               <div className="flex gap-2">
@@ -772,6 +1031,20 @@ export default function TransactionsPage() {
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t('amountRangeHint')}</p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 border-t pt-3">
+            <Input
+              value={newSearchName}
+              onChange={(e) => setNewSearchName(e.target.value)}
+              placeholder={t('saveSearchNamePlaceholder')}
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" size="sm" disabled={!newSearchName.trim()} loading={isSavingSearch} onClick={onSaveSearch}>
+              <BookmarkPlus className="size-4" />
+              {t('saveSearchAction')}
+            </Button>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={resetFilters}>
               {t('resetFilters')}
@@ -800,6 +1073,53 @@ export default function TransactionsPage() {
                 if (!confirmDelete) return;
                 await onDelete(confirmDelete.id);
                 setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmDeleteSearch} onOpenChange={(open) => !open && setConfirmDeleteSearch(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDeleteSearch?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDeleteSearch) return;
+                await onDeleteSavedSearch(confirmDeleteSearch.id);
+                setConfirmDeleteSearch(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!confirmDeleteAttachment} onOpenChange={(open) => !open && setConfirmDeleteAttachment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', { name: confirmDeleteAttachment?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (!confirmDeleteAttachment) return;
+                await onDeleteAttachment(confirmDeleteAttachment.id);
+                setConfirmDeleteAttachment(null);
               }}
             >
               {tConfirm('confirm')}
