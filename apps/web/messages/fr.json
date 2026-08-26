@@ -760,6 +760,13 @@
     "extraPaymentLabel": "Paiement anticipé (non lié à une échéance)",
     "noInstallmentsOption": "Aucune échéance à venir",
     "recordPaymentSubmit": "Enregistrer le paiement",
+    "viewPayments": "Historique",
+    "paymentsHistoryTitle": "Historique des paiements",
+    "noPaymentsYet": "Aucun paiement enregistré pour l'instant.",
+    "extraPaymentBadge": "Anticipé",
+    "revertPayment": "Annuler",
+    "revertPaymentConfirmTitle": "Annuler ce paiement ?",
+    "revertPaymentConfirmDescription": "Ceci annule le paiement, restaure le capital restant dû et, si liée, supprime la transaction correspondante.",
     "direction": {
       "OWED_BY_ME": "Je dois",
       "OWED_TO_ME": "On me doit"
