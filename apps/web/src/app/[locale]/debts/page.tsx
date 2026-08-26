@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Banknote, X } from 'lucide-react';
+import { Plus, Pencil, Banknote, X, History, Undo2 } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import {
@@ -74,6 +74,14 @@ interface DebtInstallment {
   status: 'SCHEDULED' | 'PAID' | 'PARTIAL' | 'LATE' | 'SKIPPED';
 }
 
+interface DebtPayment {
+  id: string;
+  paidAt: string;
+  amountMinor: string;
+  isExtraPayment: boolean;
+  installmentId: string | null;
+}
+
 interface Debt {
   id: string;
   name: string;
@@ -140,6 +148,11 @@ export default function DebtsPage() {
   const [isExtraPayment, setIsExtraPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
+  const [paymentsHistoryDebt, setPaymentsHistoryDebt] = useState<Debt | null>(null);
+  const [debtPayments, setDebtPayments] = useState<DebtPayment[]>([]);
+  const [confirmRevertPayment, setConfirmRevertPayment] = useState<{ debtId: string; paymentId: string } | null>(null);
+  const [isRevertingPayment, setIsRevertingPayment] = useState(false);
 
   async function loadAll() {
     const [debtsList, accountsList] = await Promise.all([
@@ -323,6 +336,40 @@ export default function DebtsPage() {
     }
   }
 
+  async function openPaymentsHistory(debt: Debt) {
+    setPaymentsHistoryDebt(debt);
+    try {
+      const list = await apiClient.get<DebtPayment[]>(`/debts/${debt.id}/payments`);
+      setDebtPayments(list);
+    } catch (err) {
+      toast({
+        title: tCommon('actionErrorTitle'),
+        description: tError((err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR') as never),
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function onRevertPayment() {
+    if (!confirmRevertPayment) return;
+    setIsRevertingPayment(true);
+    try {
+      await apiClient.delete(`/debts/${confirmRevertPayment.debtId}/payments/${confirmRevertPayment.paymentId}`);
+      setDebtPayments((rows) => rows.filter((p) => p.id !== confirmRevertPayment.paymentId));
+      await loadAll();
+      toast({ title: tCommon('deleteSuccessTitle'), variant: 'success' });
+    } catch (err) {
+      toast({
+        title: tCommon('actionErrorTitle'),
+        description: tError((err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR') as never),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRevertingPayment(false);
+      setConfirmRevertPayment(null);
+    }
+  }
+
   const displayCurrency = debts?.[0]?.currency ?? 'XOF';
   const displayMinorUnits = minorUnitsByCode[displayCurrency] ?? 0;
   const owedToMeMinor = (debts ?? [])
@@ -447,16 +494,22 @@ export default function DebtsPage() {
               <p className="mt-3 text-neutral-900 dark:text-neutral-100">
                 {t('outstanding')}: {debt.outstandingPrincipalMinor} {debt.currency}
               </p>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4 w-full"
-                onClick={() => openPaymentDialog(debt)}
-                disabled={debt.status !== 'ACTIVE'}
-              >
-                <Banknote className="size-3.5" />
-                {t('recordPayment')}
-              </Button>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => openPaymentDialog(debt)}
+                  disabled={debt.status !== 'ACTIVE'}
+                >
+                  <Banknote className="size-3.5" />
+                  {t('recordPayment')}
+                </Button>
+                <Button type="button" variant="secondary" size="sm" onClick={() => openPaymentsHistory(debt)}>
+                  <History className="size-3.5" />
+                  {t('viewPayments')}
+                </Button>
+              </div>
             </Card>
             </motion.div>
           ))}
@@ -790,6 +843,67 @@ export default function DebtsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!paymentsHistoryDebt} onOpenChange={(open) => !open && setPaymentsHistoryDebt(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('paymentsHistoryTitle')}</DialogTitle>
+          </DialogHeader>
+          {debtPayments.length === 0 ? (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('noPaymentsYet')}</p>
+          ) : (
+            <ul className="max-h-96 space-y-2 overflow-y-auto">
+              {debtPayments.map((payment) => (
+                <li
+                  key={payment.id}
+                  className="flex items-center justify-between gap-2 rounded-md border border-neutral-200 p-3 dark:border-neutral-800"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      {formatMinor(
+                        payment.amountMinor,
+                        paymentsHistoryDebt?.currency ?? 'XOF',
+                        minorUnitsByCode[paymentsHistoryDebt?.currency ?? 'XOF'] ?? 0,
+                      )}
+                    </p>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                      {payment.paidAt.slice(0, 10)}
+                      {payment.isExtraPayment ? ` · ${t('extraPaymentBadge')}` : ''}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() =>
+                      paymentsHistoryDebt &&
+                      setConfirmRevertPayment({ debtId: paymentsHistoryDebt.id, paymentId: payment.id })
+                    }
+                  >
+                    <Undo2 className="size-3.5" />
+                    {t('revertPayment')}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmRevertPayment} onOpenChange={(open) => !open && setConfirmRevertPayment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('revertPaymentConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('revertPaymentConfirmDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" loading={isRevertingPayment} onClick={onRevertPayment}>
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
         <AlertDialogContent>
