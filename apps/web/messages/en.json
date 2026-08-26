@@ -760,6 +760,13 @@
     "extraPaymentLabel": "Extra payment (not tied to a scheduled installment)",
     "noInstallmentsOption": "No upcoming installment",
     "recordPaymentSubmit": "Record payment",
+    "viewPayments": "History",
+    "paymentsHistoryTitle": "Payment history",
+    "noPaymentsYet": "No payments recorded yet.",
+    "extraPaymentBadge": "Extra",
+    "revertPayment": "Revert",
+    "revertPaymentConfirmTitle": "Revert this payment?",
+    "revertPaymentConfirmDescription": "This will undo the payment, restore the outstanding principal and, if linked, delete the corresponding transaction.",
     "direction": {
       "OWED_BY_ME": "I owe",
       "OWED_TO_ME": "Owed to me"
