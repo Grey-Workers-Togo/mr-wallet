@@ -31,7 +31,7 @@ An application that answers four questions, in this order:
 
 These points are **out of scope**, and this is not an oversight:
 
-- **Offline-first.** Connected application. Decision made to avoid the effort of building a synchronization engine and multi-device conflict resolution.
+- ~~**Offline-first.**~~ **No longer a non-goal since 2026-09-03** ([ADR-0010](adr/0010-offline-first-mobile.md)): the mobile application is offline-first, including writes. The web front stays connected with a read-only consultation cache ([ADR-0008](adr/0008-cache-lecture-seule.md)).
 - **Connectors to third-party services** (banks, Gozem, Deliveroo, aggregators). This access requires business partnerships, not a simple OAuth flow. Ingestion happens via file import.
 - **Paid exchange rate API as a hard dependency.** See `08-devises.md`.
 - **Business accounting**: no VAT, no chart of accounts, no invoicing, no regulatory bank reconciliation.
@@ -80,11 +80,18 @@ Few transactions, mainly in cash and mobile money. Goal: save for a specific pro
 | UC-15 | Manage accounts in different currencies and consolidate | B | V2 |
 | UC-16 | Cancel an entire import batch | A, B | V2 |
 | UC-17 | Advanced multi-criteria search on transactions | B | V2 |
+| UC-18 | Enter an operation with its fee in a single entry, and see the fee in expense reports | A, C | V2 |
+| UC-19 | Declare an account's actual balance and have the difference recorded as an adjustment | A, C | V2 |
+| UC-20 | Be reminded when entry has stalled for several days | C | V2 |
+| UC-21 | Enter an expense offline and have it synchronized on reconnection | All | Mobile |
+| UC-22 | Feed a transaction from a statement or a receipt without typing it | A, C | Mobile |
 
 ## 7. Constraints
 
 - **Primary usage context West Africa and Europe**: XOF (0 decimals) and EUR (2 decimals) must both work correctly. The code must never assume 2 decimals.
-- **Sometimes slow connection**: the application is not offline-first, but screens must remain usable on a high-latency connection (pagination, progressive loading, no request blocking the entire display).
+- **Sometimes slow connection**: on the web, screens must remain usable on a high-latency connection (pagination, progressive loading, no request blocking the entire display). On mobile, this is handled at the root: the application works offline (ADR-0010).
+- **Fees on every operation**: in the primary market, mobile money operations carry a fee on nearly every transaction. It is modeled as a first-class expense (`04-modules.md § D`), never absorbed into a transfer.
+- **Manual entry drifts**: cash and mobile money balances diverge from reality within days. Reconciliation against a declared actual balance is a core function, not a convenience (`04-modules.md § B`).
 - **Personal financial data**: encryption in transit and at rest, strict per-user isolation, log minimization. See `07-securite-audit.md`.
 - **A single developer/implementation agent at the outset**: favor a unified stack (TypeScript end-to-end) and a modular monolith rather than microservices.
 
@@ -93,6 +100,6 @@ Few transactions, mainly in cash and mobile money. Goal: save for a specific pro
 These points are not settled and will need to be confirmed in real-world usage:
 
 1. Will users accept the effort of monthly manual import, or is this the main drop-off point? *(To measure: D+30 return rate.)*
-2. Is the statement format available from target banks and mobile money operators usable in CSV/Excel? *(To verify on real samples before locking down the import pipeline.)*
+2. Is the statement format available from target banks and mobile money operators usable in CSV/Excel? *(To verify on real samples before locking down the import pipeline.)* **Still open, and now blocking**: [ADR-0013](adr/0013-native-ingestion-channels.md) makes collecting real Flooz / T-Money / Moov Money and local bank samples a prerequisite to any new ingestion work. The current evidence suggests the real channels are transaction SMS and PDF, neither of which the pipeline handles.
 3. Is the default categorization granularity sufficient, or do users immediately create their own categories?
 </content>

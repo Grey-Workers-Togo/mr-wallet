@@ -83,17 +83,14 @@ The critical lot.
 
 ---
 
-## M6 — Local reports and forecasts (≈ 2 weeks)
+## M6 — Local reports and forecasts (≈ 1 week)
 
-The lot to schedule generously. It carries the duplication ADR-0010 accepted.
-
-- `packages/analytics-core`: pure reference implementation of every report and forecast.
-- SQLite implementation of each, alongside the existing Postgres one.
-- Parity suite on shared fixtures — XOF (0 decimals), multi-currency, timezone boundaries, soft deletes (RG-MR2, RG-MR3).
+- `packages/analytics-core`: pure implementation of every report and forecast — it is both the mobile implementation and the oracle for the server's SQL (`13-mobile-offline-first.md § 6.2`).
+- Parity suite, two branches: server SQL against `analytics-core`, on shared fixtures — XOF (0 decimals), multi-currency, timezone boundaries, soft deletes (RG-MR2, RG-MR3).
 - Report and forecast screens, `victory-native` charts.
-- Volume threshold measured, above which computation falls back to the server (RG-MR5).
+- Volume threshold measured on a **low-end Android device**, above which computation falls back to the server (RG-MR5). Measure before optimizing: a dedicated SQLite query for one report is allowed only if the measurement demands it.
 
-**Exit criterion**: every offline report matches its server counterpart to the minor unit on the full fixture set, and the parity suite is wired into CI as a blocking check.
+**Exit criterion**: every offline report matches its server counterpart to the minor unit on the full fixture set, the parity suite is blocking in CI, and the slowest report is measured on real low-end hardware.
 
 ---
 
@@ -122,6 +119,25 @@ The lot to schedule generously. It carries the duplication ADR-0010 accepted.
 
 ---
 
+## M9 — Native ingestion (≈ 1 week + a spike), [ADR-0013](adr/0013-native-ingestion-channels.md)
+
+Scheduled after M8 because it depends on a published application, and because its first deliverable is an
+answer, not code.
+
+- **Prerequisite, before any code**: collect real Flooz, T-Money, Moov Money and local bank samples, and
+  settle assumption `01-vision-perimetre.md § 8.2`. A few days, and they decide the rest of the lot.
+- Share sheet on both platforms: receive a PDF, a screenshot or a text selection into the application.
+- Camera + OCR of a receipt, extending lot 13's attachments.
+- **Spike, not a lot**: Android SMS permission eligibility for a personal-finance application, checked
+  against the policy in force. Deliverable is a go/no-go, and a `QUESTIONS.md` entry either way.
+- Whatever the channel, the existing pipeline is reused: mapping, deduplication, preview validated by the
+  user (RG-I1). No channel writes to the database without review.
+
+**Exit criterion**: a bank PDF shared into the application reaches the existing preview screen with its
+fields correctly mapped, and the SMS eligibility question has a documented answer.
+
+---
+
 ## Verification milestones
 
 | Milestone | Verification |
@@ -132,9 +148,10 @@ The lot to schedule generously. It carries the duplication ADR-0010 accepted.
 | End of M6 | Report parity blocking in CI, zero discrepancy |
 | End of M7 | Local data unreadable without unlocking |
 | End of M8 | Full offline flow green e2e on a real device |
+| End of M9 | A shared PDF reaches the standard import preview; SMS eligibility answered |
 
 ---
 
 ## Overall estimate
 
-Roughly **11 to 12 weeks** for one full-time developer, M6 being the least predictable. This does not overlap the V2 lots of `12-roadmap-v2.md`; if both tracks run at once, M0 must land before any V2 lot touching a business module, so that the client-supplied-id change is made once rather than retrofitted.
+Roughly **11 to 12 weeks** for one full-time developer (M0–M8), M3 and M4 being the least predictable now that M6 is simplified. M9 adds about a week plus the sample collection. This does not overlap the V2 lots of `12-roadmap-v2.md`; if both tracks run at once, M0 must land before any V2 lot touching a business module, so that the client-supplied-id change is made once rather than retrofitted.
