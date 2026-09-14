@@ -8,10 +8,12 @@
 |---|---|
 | Code, identifiers, table and field names | **English** |
 | Error codes, `i18nKey`, notification types | **English**, stable, never translated |
-| Code comments | French or English, but consistent per file |
-| Documentation, commits | **French** |
+| Code comments | **English** |
+| Documentation, ADRs, commits, `QUESTIONS.md` | **English** ([ADR-0014](adr/0014-english-as-sole-documentation-language.md)) |
 | User interface | **French and English** (ADR-0009) |
 | Data entered by the user | Their language, never translated |
+
+Documentation exists **once**, in English ([ADR-0014](adr/0014-english-as-sole-documentation-language.md)). There are no `*_fr.md` twins: a second copy that nobody is accountable for keeping in step diverges, and it did. This says nothing about the product, which stays bilingual — the rules below are unchanged.
 
 ## 1 bis. Internationalization
 
