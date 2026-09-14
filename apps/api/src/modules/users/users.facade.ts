@@ -4,10 +4,14 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 export interface CreateUserInput {
   email: string;
-  passwordHash: string;
+  /** Null for a social-only account created via OAuth signup (no password set). */
+  passwordHash: string | null;
   baseCurrency: string;
+  displayName?: string;
   locale?: string;
   timezone?: string;
+  /** Set for an OAuth signup: the provider already vouched for the address, no verification email needed. */
+  emailVerifiedAt?: Date;
 }
 
 /**
@@ -32,8 +36,10 @@ export class UsersFacade {
         email: input.email,
         passwordHash: input.passwordHash,
         baseCurrency: input.baseCurrency,
+        displayName: input.displayName,
         locale: input.locale ?? 'fr-FR',
         timezone: input.timezone ?? 'Africa/Porto-Novo',
+        emailVerifiedAt: input.emailVerifiedAt,
       },
     });
   }
