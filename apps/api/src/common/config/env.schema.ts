@@ -31,7 +31,24 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().default(''),
   /** Comma-separated allowed origins for CORS. Empty in dev only (falls back to reflecting the request origin). */
   CORS_ORIGIN: z.string().default(''),
-});
+  /** Empty disables Google social login (its /auth/google route 404s with OAUTH_PROVIDER_DISABLED). */
+  GOOGLE_CLIENT_ID: z.string().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().default(''),
+  /** Empty disables GitHub social login, same as GOOGLE_CLIENT_ID above. */
+  GITHUB_CLIENT_ID: z.string().default(''),
+  GITHUB_CLIENT_SECRET: z.string().default(''),
+  /** This API's own public base URL, used to build the exact redirect_uri registered with each OAuth provider. */
+  API_PUBLIC_URL: z.string().default(''),
+})
+  .refine((env) => (env.GOOGLE_CLIENT_ID === '') === (env.GOOGLE_CLIENT_SECRET === ''), {
+    message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be both set or both empty',
+  })
+  .refine((env) => (env.GITHUB_CLIENT_ID === '') === (env.GITHUB_CLIENT_SECRET === ''), {
+    message: 'GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be both set or both empty',
+  })
+  .refine((env) => env.API_PUBLIC_URL !== '' || (env.GOOGLE_CLIENT_ID === '' && env.GITHUB_CLIENT_ID === ''), {
+    message: 'API_PUBLIC_URL is required when a social login provider is configured',
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
