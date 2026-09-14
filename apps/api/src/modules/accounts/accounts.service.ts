@@ -45,6 +45,12 @@ export class AccountsService {
   }
 
   async create(userId: string, dto: CreateAccountDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.account.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     const currency = await this.prisma.currency.findUnique({ where: { code: dto.currency } });
     if (!currency) {
       throw new NotFoundAppError('CURRENCY_NOT_FOUND', { code: dto.currency });
@@ -53,6 +59,7 @@ export class AccountsService {
     const openingBalanceMinor = BigInt(dto.openingBalanceMinor);
     return this.prisma.account.create({
       data: {
+        id: dto.id,
         userId,
         name: dto.name,
         type: dto.type,

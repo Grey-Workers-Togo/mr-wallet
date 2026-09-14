@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { signedAmountMinor, unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const accountTypeEnum = z.enum(['CASH', 'BANK', 'MOBILE_MONEY', 'CREDIT_CARD', 'SAVINGS', 'WALLET', 'OTHER']);
@@ -6,6 +7,8 @@ const nameField = z.string().trim().min(1).max(100);
 
 export const createAccountSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     name: nameField,
     type: accountTypeEnum,
     currency: z.string().length(3),
