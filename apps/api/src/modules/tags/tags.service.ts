@@ -20,11 +20,16 @@ export class TagsService {
   }
 
   async create(userId: string, dto: CreateTagDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existingById = await this.prisma.tag.findFirst({ where: { userId, id: dto.id } });
+      if (existingById) return existingById;
+    }
     const existing = await this.prisma.tag.findUnique({ where: { userId_name: { userId, name: dto.name } } });
     if (existing) {
       throw new ConflictAppError('TAG_NAME_TAKEN', { name: dto.name });
     }
-    return this.prisma.tag.create({ data: { userId, name: dto.name, color: dto.color } });
+    return this.prisma.tag.create({ data: { id: dto.id, userId, name: dto.name, color: dto.color } });
   }
 
   async update(userId: string, id: string, dto: UpdateTagDto) {
