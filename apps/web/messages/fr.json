@@ -432,6 +432,20 @@
       "backToLogin": "Retour à la connexion",
       "successTitle": "Vérifiez votre boîte mail",
       "successBody": "Si un compte existe pour cette adresse, vous recevrez un lien de réinitialisation dans quelques minutes."
+    },
+    "oauth": {
+      "continueWithGoogle": "Continuer avec Google",
+      "continueWithGithub": "Continuer avec GitHub",
+      "orDivider": "ou"
+    },
+    "oauthComplete": {
+      "title": "Presque terminé",
+      "subtitle": "Choisissez la devise dans laquelle suivre votre argent — vous ne pourrez plus la changer ensuite.",
+      "baseCurrencyLabel": "Devise de référence",
+      "submit": "Terminer la création du compte",
+      "submitting": "Création du compte...",
+      "missingToken": "Ce lien est invalide ou a expiré. Merci de vous reconnecter.",
+      "loginLink": "Retour à la connexion"
     }
   },
   "accounts": {
@@ -938,6 +952,9 @@
     "pushEnable": "Activer les notifications sur cet appareil",
     "pushRemove": "Retirer",
     "pushTest": "Envoyer une notification de test",
+    "connectedAccountsSection": "Comptes liés",
+    "connectedAccountsEmpty": "Aucun compte social lié.",
+    "connectedAccountsUnlink": "Dissocier",
     "deleteAccountSection": "Supprimer mon compte",
     "deleteAccount": "Supprimer définitivement mon compte",
     "exportSection": "Export intégral",
@@ -980,6 +997,12 @@
     "INVALID_VERIFICATION_TOKEN": "Ce lien de confirmation est invalide ou a expiré.",
     "CURRENCY_UNKNOWN": "Devise inconnue.",
     "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard.",
+    "OAUTH_FAILED": "Une erreur est survenue lors de la connexion — veuillez réessayer.",
+    "OAUTH_EMAIL_UNAVAILABLE": "Ce fournisseur n'a pas communiqué d'adresse e-mail vérifiée, la connexion n'est pas possible ainsi.",
+    "OAUTH_EMAIL_UNVERIFIED_CONFLICT": "Cette adresse e-mail est déjà utilisée par un compte, mais le fournisseur ne l'a pas vérifiée — connectez-vous avec votre mot de passe.",
+    "OAUTH_LAST_AUTH_METHOD": "Impossible de dissocier ce compte — c'est votre seul moyen de connexion. Définissez d'abord un mot de passe.",
+    "OAUTH_PROVIDER_DISABLED": "Ce moyen de connexion n'est pas disponible pour le moment.",
+    "INVALID_OAUTH_SIGNUP_TOKEN": "Ce lien est invalide ou a expiré. Merci de vous reconnecter.",
     "CATEGORY_NOT_FOUND": "Catégorie introuvable.",
     "CATEGORY_NAME_TAKEN": "Une catégorie avec ce nom existe déjà.",
     "CATEGORY_MAX_DEPTH_EXCEEDED": "Une sous-catégorie ne peut pas avoir d'enfant.",

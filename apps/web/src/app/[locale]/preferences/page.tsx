@@ -46,6 +46,13 @@ interface PushDevice {
   createdAt: string;
 }
 
+interface OAuthAccountSummary {
+  id: string;
+  provider: 'GOOGLE' | 'GITHUB';
+  email: string;
+  createdAt: string;
+}
+
 /** Maps the profile's saved locale (fr-FR/en-US) to next-intl's routing locale segment (fr/en). */
 const LOCALE_TO_ROUTE: Record<string, 'fr' | 'en'> = { 'fr-FR': 'fr', 'en-US': 'en' };
 
@@ -67,24 +74,28 @@ export default function PreferencesPage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [devices, setDevices] = useState<PushDevice[] | null>(null);
+  const [oauthAccounts, setOauthAccounts] = useState<OAuthAccountSummary[] | null>(null);
   const [pin, setPin] = useState('');
   const [pinLockMinutes, setPinLockMinutes] = useState(5);
   const [locale, setLocale] = useState('fr-FR');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
   const [confirmAction, setConfirmAction] = useState<'removePin' | 'deleteAccount' | null>(null);
+  const [confirmUnlink, setConfirmUnlink] = useState<OAuthAccountSummary | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [removingDeviceId, setRemovingDeviceId] = useState<string | null>(null);
 
   async function loadAll() {
-    const [me, deviceList] = await Promise.all([
+    const [me, deviceList, oauthList] = await Promise.all([
       apiClient.get<Profile>('/me'),
       apiClient.get<PushDevice[]>('/notifications/push/devices'),
+      apiClient.get<OAuthAccountSummary[]>('/auth/oauth-accounts'),
     ]);
     setProfile(me);
     setPinLockMinutes(me.pinLockMinutes);
     setLocale(me.locale);
     setDevices(deviceList);
+    setOauthAccounts(oauthList);
   }
 
   useEffect(() => {
@@ -181,6 +192,13 @@ export default function PreferencesPage() {
     await run('testPush', () => apiClient.post('/notifications/push/test', {}));
   }
 
+  async function onUnlinkOAuthAccount(provider: OAuthAccountSummary['provider']) {
+    await run('unlinkOAuth', async () => {
+      await apiClient.delete(`/auth/oauth-accounts/${provider.toLowerCase()}`);
+      await loadAll();
+    });
+  }
+
   async function onDeleteAccount() {
     await run('deleteAccount', async () => {
       await apiClient.delete('/me');
@@ -255,6 +273,40 @@ export default function PreferencesPage() {
                   <SubmitShortcutHint />
                 </div>
               </form>
+            </CardContent>
+          </Card>
+
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle>{t('connectedAccountsSection')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 space-y-3">
+              {oauthAccounts?.length === 0 && (
+                <p className="text-neutral-600 dark:text-neutral-400">{t('connectedAccountsEmpty')}</p>
+              )}
+              {oauthAccounts && oauthAccounts.length > 0 && (
+                <div className="space-y-2">
+                  {oauthAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex flex-col items-start gap-2 border-b border-border pb-2 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {account.provider === 'GOOGLE' ? 'Google' : 'GitHub'} — {account.email}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="w-full shrink-0 sm:w-auto"
+                        onClick={() => setConfirmUnlink(account)}
+                      >
+                        {t('connectedAccountsUnlink')}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -371,6 +423,33 @@ export default function PreferencesPage() {
                 if (!confirmDelete) return;
                 await onRemoveDevice(confirmDelete.id);
                 setConfirmDelete(null);
+              }}
+            >
+              {tConfirm('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmUnlink} onOpenChange={(open) => !open && setConfirmUnlink(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tConfirm('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tConfirm('deleteDescription', {
+                name: confirmUnlink ? (confirmUnlink.provider === 'GOOGLE' ? 'Google' : 'GitHub') : '',
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tConfirm('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              loading={pending === 'unlinkOAuth'}
+              onClick={async () => {
+                if (!confirmUnlink) return;
+                await onUnlinkOAuthAccount(confirmUnlink.provider);
+                setConfirmUnlink(null);
               }}
             >
               {tConfirm('confirm')}

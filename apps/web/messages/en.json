@@ -432,6 +432,20 @@
       "backToLogin": "Back to login",
       "successTitle": "Check your inbox",
       "successBody": "If an account exists for this address, you'll receive a reset link within a few minutes."
+    },
+    "oauth": {
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "orDivider": "or"
+    },
+    "oauthComplete": {
+      "title": "Almost there",
+      "subtitle": "Pick the currency you'll track your money in — you can't change it later.",
+      "baseCurrencyLabel": "Base currency",
+      "submit": "Finish creating my account",
+      "submitting": "Creating account...",
+      "missingToken": "This link is invalid or has expired. Please sign in again.",
+      "loginLink": "Back to login"
     }
   },
   "accounts": {
@@ -938,6 +952,9 @@
     "pushEnable": "Enable push notifications on this device",
     "pushRemove": "Remove",
     "pushTest": "Send a test notification",
+    "connectedAccountsSection": "Connected accounts",
+    "connectedAccountsEmpty": "No social account linked.",
+    "connectedAccountsUnlink": "Unlink",
     "deleteAccountSection": "Delete my account",
     "deleteAccount": "Permanently delete my account",
     "exportSection": "Full export",
@@ -980,6 +997,12 @@
     "INVALID_VERIFICATION_TOKEN": "This confirmation link is invalid or has expired.",
     "CURRENCY_UNKNOWN": "Unknown currency.",
     "LOGIN_LOCKED": "Too many attempts, try again later.",
+    "OAUTH_FAILED": "Something went wrong signing you in — please try again.",
+    "OAUTH_EMAIL_UNAVAILABLE": "This provider didn't share a verified email address, so we can't sign you in this way.",
+    "OAUTH_EMAIL_UNVERIFIED_CONFLICT": "This email is already used by an account, but the provider hasn't verified it — log in with your password instead.",
+    "OAUTH_LAST_AUTH_METHOD": "You can't unlink this account — it's your only way to sign in. Set a password first.",
+    "OAUTH_PROVIDER_DISABLED": "This sign-in method isn't available right now.",
+    "INVALID_OAUTH_SIGNUP_TOKEN": "This link is invalid or has expired. Please sign in again.",
     "CATEGORY_NOT_FOUND": "Category not found.",
     "CATEGORY_NAME_TAKEN": "A category with this name already exists.",
     "CATEGORY_MAX_DEPTH_EXCEEDED": "A sub-category cannot have children.",

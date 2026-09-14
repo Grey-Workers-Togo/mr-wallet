@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { setAccessToken } from '@/lib/auth-store';
@@ -11,10 +12,26 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { OAuthButtons } from '@/components/shared/OAuthButtons';
 import { EMAIL_PATTERN } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { SubmitShortcutHint } from '@/components/shared/SubmitShortcutHint';
+
+/** Surfaces `?error=<code>` from the OAuth callback redirect, once, then leaves it alone. */
+function OAuthErrorToast() {
+  const tError = useTranslations('error');
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+
+  useEffect(() => {
+    if (error) {
+      toast({ title: tError(error as never), variant: 'destructive' });
+    }
+  }, [error, tError]);
+
+  return null;
+}
 
 interface LoginResponse {
   accessToken: string;
@@ -55,10 +72,15 @@ export default function LoginView() {
 
   return (
     <AuthLayout>
+      <Suspense fallback={null}>
+        <OAuthErrorToast />
+      </Suspense>
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{t('title')}</h1>
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
       </div>
+
+      <OAuthButtons />
 
       <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
         <div className="space-y-1.5">
