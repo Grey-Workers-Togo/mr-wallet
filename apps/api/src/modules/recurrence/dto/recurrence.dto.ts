@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const transactionTypeEnum = z.enum(['EXPENSE', 'INCOME']);
@@ -6,6 +7,8 @@ const frequencyEnum = z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTER
 
 export const createRecurrenceSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     name: z.string().trim().min(1).max(120),
     type: transactionTypeEnum,
     accountId: z.string().uuid(),
