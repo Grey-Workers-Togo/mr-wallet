@@ -137,44 +137,66 @@ A projection = replica rows + replay of pending outbox operations for the same s
 
 ## 6. Reports and forecasts computed locally
 
-ADR-0010 extends offline mode to reports. This is the most demanding part of the design, and the one that deserves the least optimism.
+ADR-0010 extends offline mode to reports. That sounds like the most expensive part of the design. It is not, and the reason is worth stating precisely, because the obvious implementation — porting the server's aggregation queries to SQLite — is the expensive one and is **not** what is specified here.
 
-### 6.1 The problem
+### 6.1 The eight reports need no second aggregation engine
 
-The server computes reports in aggregated SQL over PostgreSQL (RG-RP1, `04-modules.md § J`). The device must produce **the same figures** over SQLite. Two implementations, two SQL dialects, two date-function sets. Left to discipline alone, they will drift — and a report that disagrees with itself between the phone and the web destroys trust in the product faster than any missing feature.
+Taking the reports of `04-modules.md § J` one by one, each decomposes into something the device already holds:
 
-### 6.2 The mechanism: a shared oracle
+| Report | What it actually is on the device |
+|---|---|
+| 1. Expenses by category | Sum over replicated rows |
+| 2. Monthly trend | Sum over replicated rows |
+| 3. Net worth over time | Cumulative sums + the amortization engine (a pure function, already shared) |
+| 4. Cash flow | Sum over replicated rows |
+| 5. Period comparison | Two slices of the above |
+| 6. Top expenses | Not an aggregate at all — a row query, `ORDER BY … LIMIT n` |
+| 7. Budget vs actual | Replicated budget rows against the sums above |
+| 8. Debts | Pure domain functions, already shared (lot 5) |
 
-`packages/analytics-core` (ADR-0012) holds a **pure TypeScript reference implementation** of every report and forecast. It is not what runs in production on either side. It is the oracle both are tested against.
+Not one requires porting a PostgreSQL aggregation query to SQLite.
+
+RG-RP1 — *all aggregates in SQL, never loaded in memory* — is a **server** rule, and a correct one: it exists because the server handles many users concurrently over an unbounded history. On a device holding one user's few thousand rows (RG-MD8), aggregating in memory takes milliseconds. Applying a server constraint to a client with different properties would buy nothing and cost a second implementation.
+
+### 6.2 `analytics-core` is executed, not merely tested against
 
 ```
-                  packages/analytics-core
-                  (pure TS reference impl.)
-                            │
-              ┌─────────────┴─────────────┐
-              ▼                           ▼
-      PostgreSQL SQL                 SQLite SQL
-      (apps/api)                     (apps/mobile)
-              └─────────────┬─────────────┘
-                            ▼
-              parity suite — shared fixtures
-              any discrepancy fails CI
+              packages/analytics-core
+              pure TypeScript, no I/O
+                        │
+          ┌─────────────┴──────────────┐
+          │                            │
+   test oracle for              THE mobile
+   PostgreSQL SQL               implementation
+   (apps/api)                   (apps/mobile,
+          │                      over SQLite rows)
+          ▼
+   parity suite — two branches
 ```
+
+The device does not reimplement the reports. It **runs the reference implementation** over rows read from its local database. The consequence is the important part: the mobile client is removed from the divergence surface by construction, not by discipline. There is nothing on the device that could drift from the reference, because it *is* the reference.
+
+The parity suite therefore compares two branches, not three: the server's SQL against `analytics-core`. That check is worth keeping regardless — it is what guarantees the server's optimized SQL still means what the reference says it means.
 
 ### 6.3 Rules
 
 | Rule | Statement |
 |---|---|
-| RG-MR1 | Every report available offline exists in three forms: reference (TS), server (Postgres SQL), device (SQLite SQL). |
-| RG-MR2 | The parity suite runs on a shared fixture set — including edge cases: 0-decimal currency (XOF), multi-currency, period boundaries across a timezone offset, transactions on the exact boundary, soft-deleted rows. |
-| RG-MR3 | **Any discrepancy fails the build.** Not a warning, not a tolerance. Equality is exact, to the minor unit. |
-| RG-MR4 | A report that cannot be made parity-verified is **server-only**, and shown offline as requiring a connection. Better an unavailable report than a wrong one — this is the same principle as RG-OF2. |
-| RG-MR5 | Local computation is capped: beyond a documented volume threshold, the screen offers server computation rather than freezing the device. Measured at lot M6, not guessed. |
+| RG-MR1 | Every report available offline is computed by `packages/analytics-core`, over rows read from the local database. No aggregation SQL is written for SQLite. |
+| RG-MR2 | The same `analytics-core` functions are the oracle for the server's SQL. The parity suite runs on shared fixtures, including the edge cases: 0-decimal currency (XOF), multi-currency, period boundaries across a timezone offset, transactions exactly on a boundary, soft-deleted rows. |
+| RG-MR3 | **Any discrepancy between server SQL and `analytics-core` fails the build.** Not a warning, not a tolerance. Equality is exact, to the minor unit. |
+| RG-MR4 | A report that cannot be expressed in `analytics-core` is server-only, and shown offline as requiring a connection. Better an unavailable report than a wrong one — same principle as RG-OF2. |
+| RG-MR5 | Local computation is capped: beyond a volume threshold **measured at lot M6 on a low-end Android device**, the screen offers server computation rather than freezing. If a specific report proves too slow, it — and it alone — may receive a dedicated SQLite query, which then re-enters a three-branch parity check. That is an exception justified by a measurement, never a default. |
 | RG-MR6 | Multi-currency conversion follows the same conservative rule as the server (`QUESTIONS.md`, RG-RP2), using the replicated rate table. A conversion whose rate is missing locally is displayed as unavailable, never with a stale rate. |
+| RG-MR7 | Reports are computed on read, never persisted locally. A cached report would be a fourth plane of state to keep coherent, and § 1 already says the device holds no truth of its own. |
 
 ### 6.4 Server-only in all cases
 
-Full multi-year net-worth history beyond the replicated scope, cross-user comparisons (none exist today), and anything requiring the audit log.
+History beyond the replicated scope, and anything requiring the audit log.
+
+### 6.5 The assumption this rests on
+
+This works because each user's dataset is small and fully replicated (RG-MD8). If either changes — a much larger history, a shared household dataset, partial replication — full local reporting stops being viable and RG-MR4 becomes the general case rather than the exception. This is the condition to re-examine first if the design ever feels strained.
 
 ---
 
