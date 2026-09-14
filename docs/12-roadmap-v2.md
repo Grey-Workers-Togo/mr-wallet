@@ -158,16 +158,26 @@ duplicates against a prior CSV import of the same data are correctly detected.
 
 ---
 
-## Lot 15 — Mobile application decision (≈ 1–2 days, spike not build)
+## Lot 15 — Mobile application decision — **CLOSED 2026-09-03**
 
-- This lot is a decision, not an implementation: evaluate installable-PWA-only vs React Native
-  against actual post-MVP usage data (device mix, retention, push-notification reliability gaps
-  on iOS observed in lot 7), per the roadmap's explicit "decision to be made based on feedback".
-- Deliverable: an ADR in `docs/adr/` recording the decision and rationale.
-- If React Native is chosen, its implementation is scoped as a separate, later effort — not part
-  of this V2 pass.
+Decided ahead of schedule, without waiting for post-MVP usage data: the read-only offline cache
+(ADR-0008) disables the primary mobile journey (UC-02, quick entry) precisely when a phone is
+most likely to be used. That is a design fact, not something usage statistics were needed to
+establish.
 
-**Exit criterion**: ADR merged with a clear go/no-go and rationale.
+Outcome — three ADRs instead of one:
+
+- [ADR-0010](adr/0010-offline-first-mobile.md) — offline-first on mobile, server remains the sole
+  authority. Supersedes ADR-0004 for the mobile client.
+- [ADR-0011](adr/0011-stack-mobile-expo-react-native.md) — Expo / React Native.
+- [ADR-0012](adr/0012-mobile-in-the-existing-monorepo.md) — `apps/mobile` in the existing monorepo.
+
+Implementation is scoped as a separate track: `15-roadmap-mobile.md` (lots M0–M8, ≈ 11–12 weeks).
+It is not part of this V2 pass, but **lot M0 (server groundwork) must land before any V2 lot
+touching a business module**, so that client-supplied entity ids are introduced once rather than
+retrofitted module by module.
+
+**Exit criterion**: met — ADRs merged, mobile roadmap written.
 
 ---
 

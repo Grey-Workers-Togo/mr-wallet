@@ -1,8 +1,11 @@
 # ADR-0008 — Cache de consultation hors ligne, en lecture seule
 
 ## Statut
-Accepté — 2026-07-28
-Nuance l'[ADR-0004](0004-abandon-offline-first.md), qui reste en vigueur.
+Accepté — 2026-07-28. **Périmètre restreint au web depuis le 2026-09-03** ([ADR-0010](0010-offline-first-mobile.md)).
+
+Ce cache de consultation reste la stratégie du front web Next.js. Il ne s'applique **pas** au client mobile, qui est offline-first : sur mobile, RG-OF1 (aucune écriture bufferisée) est explicitement levée et remplacée par le protocole de `14-sync-protocol.md`.
+
+Nuance l'[ADR-0004](0004-abandon-offline-first.md), lui aussi restreint au web.
 
 ## Contexte
 

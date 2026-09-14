@@ -1,8 +1,11 @@
 # ADR-0004 — Abandon de l'offline-first
 
 ## Statut
-Accepté — 2026-07-28
-Nuancé par l'[ADR-0008](0008-cache-lecture-seule.md) : un cache de **consultation** hors ligne est ajouté. L'écriture hors ligne reste écartée.
+**Remplacé pour le client mobile — 2026-09-03** par l'[ADR-0010](0010-offline-first-mobile.md), qui adopte l'offline-first sur mobile.
+
+Reste **en vigueur pour le front web** : le web est une PWA à cache de consultation en lecture seule, il ne bufferise aucune écriture.
+
+Historique : nuancé par l'[ADR-0008](0008-cache-lecture-seule.md), qui avait ajouté le cache de consultation hors ligne sans autoriser l'écriture.
 
 ## Contexte
 L'offline-first était envisagé pour un contexte d'usage à connectivité irrégulière. Il implique une base locale, un moteur de synchronisation bidirectionnel, un versionnement du schéma local, et surtout une stratégie de résolution de conflits quand deux appareils modifient la même donnée hors ligne. Sur des données financières, un conflit mal résolu produit un solde faux.

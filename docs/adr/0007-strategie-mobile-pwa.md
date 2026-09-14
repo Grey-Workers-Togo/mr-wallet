@@ -1,7 +1,11 @@
 # ADR-0007 — Mobile par PWA installable, pas d'application native
 
 ## Statut
-Accepté — 2026-07-28
+**Remplacé — 2026-09-03** par l'[ADR-0011](0011-stack-mobile-expo-react-native.md) : une application native Expo / React Native s'ajoute, décidée par l'[ADR-0010](0010-offline-first-mobile.md).
+
+La PWA installable **n'est pas supprimée** : elle reste le client web, avec son cache de consultation (ADR-0008). Ce qui change, c'est qu'elle cesse d'être la *seule* stratégie mobile.
+
+La clause de réexamen en fin de document a joué : elle est la raison de ce changement. La règle qu'elle imposait — toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans un composant React — a rendu ce passage possible à coût raisonnable, et reste en vigueur.
 
 ## Contexte
 
@@ -45,6 +49,6 @@ Conséquences directes sur la conception :
 
 Le passage à React Native reste ouvert. Pour le garder peu coûteux, la règle suivante s'applique dès maintenant : **toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans les composants React.** Si une application native est décidée plus tard, seule la couche de présentation est à réécrire.
 
-## Réexamen
+## Réexamen — déclenché
 
-À reconsidérer si l'un de ces signaux apparaît : demande récurrente de présence en store, besoin de notifications push fiables sur iOS, ou usage mobile dépassant nettement l'usage desktop dans les statistiques réelles.
+Les signaux prévus ici (présence en store, push iOS fiable, usage mobile dominant) ont été rejoints par un quatrième, non anticipé et décisif : **le besoin d'écriture hors ligne**. Le parcours mobile principal (UC-02, saisie rapide) est une écriture, et l'[ADR-0008](0008-cache-lecture-seule.md) la désactive hors réseau. Voir l'[ADR-0010](0010-offline-first-mobile.md).

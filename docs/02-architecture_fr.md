@@ -39,7 +39,7 @@ Pourquoi pas des microservices : un utilisateur unique consulte ses propres donn
 | Framework API | **NestJS** | Le système de modules de Nest correspond exactement au découpage voulu : injection de dépendances, modules encapsulés avec exports explicites, intercepteurs globaux (indispensables pour l'audit automatique). |
 | Base de données | **PostgreSQL 16** | Transactions ACID (obligatoire pour les mouvements d'argent), `numeric`/`bigint` exacts, triggers (pour rendre `audit_log` append-only), `jsonb` pour les diffs d'audit, bonnes fonctions de date. |
 | ORM | **Prisma** | Migrations versionnées et lisibles, typage fort généré. Les requêtes analytiques lourdes (rapports, prévisions) se font en SQL brut via `$queryRaw`, pas via l'ORM. |
-| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first et installable (PWA)** | Rendu serveur pour les écrans de consultation, bon comportement sur connexion lente. Un seul front sert le web et le mobile (ADR-0007). |
+| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first et installable (PWA)** | Rendu serveur pour les écrans de consultation, bon comportement sur connexion lente. Sert le web, et le mobile via le navigateur (ADR-0007). Depuis l'ADR-0011, un client natif `apps/mobile` (Expo / React Native, offline-first) s'y ajoute. |
 | Service worker | Workbox | Cache de consultation hors ligne en lecture seule (ADR-0008) et réception du push web. |
 | Push | Web Push API (VAPID) | Aucun service tiers propriétaire requis. Voir `04-modules.md § K`. |
 | État serveur (front) | **TanStack Query** | Cache, invalidation, retry — suffisant sans Redux. |
@@ -161,13 +161,16 @@ budget-manager/
 │   │           │   └── __tests__/
 │   │           ├── transactions/
 │   │           └── ...
-│   └── web/
-│       ├── app/
-│       ├── components/
-│       ├── lib/
-│       └── features/            # miroir des modules back
+│   ├── web/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── lib/
+│   │   └── features/            # miroir des modules back
+│   └── mobile/                  # Expo / React Native (ADR-0011)
 ├── packages/
-│   └── contracts/               # types partagés API ↔ front
+│   ├── contracts/               # schémas Zod, types partagés, kernel money
+│   ├── sync-protocol/           # catalogue d'opérations, DTO de sync, codes
+│   └── analytics-core/          # impl. de référence pure des rapports (oracle)
 ├── docs/
 ├── CLAUDE.md
 └── README.md
@@ -189,7 +192,9 @@ Les endpoints de création acceptent un en-tête `Idempotency-Key`. Une clé dé
 
 ### Clients et compatibilité
 
-L'API est agnostique du client : elle n'utilise ni session serveur, ni rendu HTML, ni dépendance à l'origine de la requête (à l'exception du cookie de refresh, restreint à un seul endpoint). Un client natif pourrait la consommer sans modification si l'ADR-0007 était réexaminée.
+L'API est agnostique du client : elle n'utilise ni session serveur, ni rendu HTML, ni dépendance à l'origine de la requête (à l'exception du cookie de refresh, restreint à un seul endpoint). C'est ce qui a permis d'ajouter le client natif de l'ADR-0011 sans remodeler l'API : les ajouts qu'impose l'offline-first (`14-sync-protocol.md` § 5) sont strictement additifs, aucun endpoint existant ne change de forme.
+
+Une hypothèse tombe en revanche : depuis l'ADR-0010, **les clients ne sont plus uniformes**. Une version mobile publiée en store reste des mois sur un appareil. L'API doit donc rester compatible avec les deux dernières versions mobiles publiées (RG-RE5), et le protocole porte une version minimale supportée avec écran de mise à jour forcée (RG-SY14).
 
 Corollaire à respecter dès maintenant : **toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans un composant React.** C'est ce qui garde le coût d'une éventuelle application native limité à la couche de présentation.
 

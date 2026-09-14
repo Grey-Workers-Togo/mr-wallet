@@ -172,17 +172,26 @@ détectés.
 
 ---
 
-## Lot 15 — Décision application mobile (≈ 1-2 jours, étude non implémentation)
+## Lot 15 — Décision application mobile — **CLOS le 2026-09-03**
 
-- Ce lot est une décision, pas une implémentation : évaluer PWA installable seule vs React
-  Native selon les retours d'usage réels post-MVP (répartition des appareils, rétention, limites
-  de fiabilité du push observées sur iOS au lot 7), conformément à la roadmap (« décision à
-  prendre selon les retours »).
-- Livrable : un ADR dans `docs/adr/` consignant la décision et sa justification.
-- Si React Native est retenu, son implémentation est planifiée comme un chantier séparé, ultérieur
-  — hors de ce passage V2.
+Décidé par anticipation, sans attendre les retours d'usage post-MVP : le cache de consultation en
+lecture seule (ADR-0008) désactive le parcours mobile principal (UC-02, saisie rapide) précisément
+quand le téléphone est l'appareil le plus probable. C'est un constat de conception, pas une
+statistique d'usage à collecter.
 
-**Critère de sortie** : ADR fusionné avec une décision claire et sa justification.
+Résultat — trois ADR au lieu d'une :
+
+- [ADR-0010](adr/0010-offline-first-mobile.md) — offline-first sur mobile, le serveur reste seul
+  juge. Remplace l'ADR-0004 pour le client mobile.
+- [ADR-0011](adr/0011-stack-mobile-expo-react-native.md) — Expo / React Native.
+- [ADR-0012](adr/0012-mobile-in-the-existing-monorepo.md) — `apps/mobile` dans le monorepo existant.
+
+L'implémentation est un chantier séparé : `15-roadmap-mobile.md` (lots M0–M8, ≈ 11–12 semaines).
+Elle ne fait pas partie de ce passage V2, mais **le lot M0 (fondations serveur) doit précéder tout
+lot V2 touchant un module métier**, pour que les identifiants fournis par le client soient
+introduits une fois et non rétro-ajoutés module par module.
+
+**Critère de sortie** : atteint — ADR fusionnées, roadmap mobile rédigée.
 
 ---
 
