@@ -1,14 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto, CreateTransferDto } from './dto/transaction.dto';
+import {
+  BulkUpdateDto,
+  CreateTransactionDto,
+  CreateTransferDto,
+  UpdateTransactionDto,
+} from './dto/transaction.dto';
 
-/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`. */
+/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`, `sync`. */
 @Injectable()
 export class TransactionsFacade {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   getById(userId: string, id: string) {
     return this.transactionsService.getById(userId, id);
+  }
+
+  create(userId: string, dto: CreateTransactionDto) {
+    return this.transactionsService.create(userId, dto);
+  }
+
+  update(userId: string, id: string, dto: UpdateTransactionDto) {
+    return this.transactionsService.update(userId, id, dto);
+  }
+
+  bulkUpdate(userId: string, dto: BulkUpdateDto) {
+    return this.transactionsService.bulkUpdate(userId, dto);
   }
 
   /** docs/06 §9: `import` never writes to the DB directly — always through this facade (docs/02 §4). */

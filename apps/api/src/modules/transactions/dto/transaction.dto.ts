@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const transactionTypeEnum = z.enum(['EXPENSE', 'INCOME']);
@@ -6,6 +7,8 @@ const txStatusEnum = z.enum(['PENDING', 'CLEARED', 'RECONCILED', 'VOID']);
 
 export const createTransactionSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     accountId: z.string().uuid(),
     type: transactionTypeEnum,
     amountMinor: unsignedAmountMinor(),
@@ -37,6 +40,8 @@ export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 
 export const createTransferSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7 for the outbound leg, for sync.
+    id: clientSuppliedId().optional(),
     fromAccountId: z.string().uuid(),
     toAccountId: z.string().uuid(),
     amountMinor: unsignedAmountMinor(),

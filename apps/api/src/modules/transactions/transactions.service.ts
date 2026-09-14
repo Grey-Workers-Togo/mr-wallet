@@ -157,6 +157,12 @@ export class TransactionsService {
       debtId?: string;
     },
   ) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.transaction.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return this.attachTagsOne(existing);
+    }
+
     const amountMinor = BigInt(dto.amountMinor);
     const account = await this.validateAgainstAccount(userId, dto.accountId, amountMinor, dto.occurredAt);
 
@@ -200,6 +206,7 @@ export class TransactionsService {
     const transaction = await this.prisma.$transaction(async (tx) => {
       const created = await tx.transaction.create({
         data: {
+          id: dto.id,
           userId,
           accountId: dto.accountId,
           type: dto.type,
@@ -357,6 +364,17 @@ export class TransactionsService {
 
   /** RG-T4: two legs sharing a `transferGroupId`, excluded from spend/income totals (RG-T5). */
   async transfer(userId: string, dto: CreateTransferDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.transaction.findFirst({ where: { userId, id: dto.id } });
+      if (existing) {
+        const toLeg = await this.prisma.transaction.findFirstOrThrow({
+          where: { userId, transferGroupId: existing.transferGroupId ?? undefined, id: { not: existing.id } },
+        });
+        return { fromLeg: existing, toLeg };
+      }
+    }
+
     const amountMinor = BigInt(dto.amountMinor);
     const fromAccount = await this.validateAgainstAccount(userId, dto.fromAccountId, amountMinor, dto.occurredAt);
     const toAccount = await this.validateAgainstAccount(userId, dto.toAccountId, amountMinor, dto.occurredAt);
@@ -367,6 +385,7 @@ export class TransactionsService {
     const [fromLeg, toLeg] = await this.prisma.$transaction(async (tx) => {
       const outLeg = await tx.transaction.create({
         data: {
+          id: dto.id,
           userId,
           accountId: dto.fromAccountId,
           type: 'EXPENSE',
