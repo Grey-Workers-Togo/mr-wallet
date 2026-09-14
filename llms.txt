@@ -17,7 +17,11 @@ Read the docs in this order: glossary → vision/scope → architecture → data
 - [Currencies](docs/08-devises.md): Multi-currency model and exchange rate strategy
 - [Roadmap](docs/09-roadmap.md): MVP / V2 / V3 breakdown, implementation order
 - [Dev conventions](docs/10-conventions-dev.md): Code style, tests, folder structure, CI, definition of done
-- [ADRs](docs/adr/): Architecture decision records (modular monolith, minor-unit amounts, stored balance, no offline-first, no third-party connectors, no paid FX API, PWA over native, read-only cache, i18n)
+- [Roadmap V2](docs/12-roadmap-v2.md): Post-MVP lots, implementation order
+- [Mobile client (offline-first)](docs/13-mobile-offline-first.md): Mobile client design — read-only reference, not yet built
+- [Sync protocol](docs/14-sync-protocol.md): Client/server sync contract — read-only reference, not yet built
+- [Mobile roadmap](docs/15-roadmap-mobile.md): Mobile lots M0-M9 — read-only reference, not yet built
+- [ADRs](docs/adr/): Architecture decision records (modular monolith, minor-unit amounts, stored balance, offline-first abandonment/mobile exception, no third-party connectors, no paid FX API, PWA/mobile strategy, read-only cache, i18n, English as sole documentation language)
 
 ## Root files
 
@@ -25,8 +29,3 @@ Read the docs in this order: glossary → vision/scope → architecture → data
 - [CONTRIBUTING](CONTRIBUTING.md): Absolute rules summary for contributors
 - [CLAUDE.md](CLAUDE.md): Instructions for the implementation agent
 - [SECURITY](SECURITY.md): Vulnerability disclosure policy
-
-## Optional
-
-- [README_fr.md](README_fr.md): French version of the README
-- `docs/*_fr.md`: French translations of each numbered doc

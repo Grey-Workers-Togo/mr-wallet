@@ -322,7 +322,7 @@
 
 ---
 
-## V2 — Après retours d'usage (détail : `docs/12-roadmap-v2_fr.md`)
+## V2 — Après retours d'usage (détail : `docs/12-roadmap-v2.md`)
 
 ### Lot 8 — Recherche avancée (semaine 0.5)
 
