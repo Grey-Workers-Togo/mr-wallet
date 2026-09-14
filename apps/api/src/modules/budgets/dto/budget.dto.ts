@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const budgetPeriodTypeEnum = z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']);
@@ -6,6 +7,8 @@ const nameField = z.string().trim().min(1).max(120);
 
 export const createBudgetSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     name: nameField,
     categoryId: z.string().uuid().optional(),
     amountMinor: unsignedAmountMinor(),
