@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 
 const categoryKindEnum = z.enum(['EXPENSE', 'INCOME', 'TRANSFER']);
 
 export const createCategorySchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     parentId: z.string().uuid().optional(),
     name: z.string().min(1).max(80),
     kind: categoryKindEnum,

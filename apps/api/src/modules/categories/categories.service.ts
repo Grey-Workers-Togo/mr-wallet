@@ -64,6 +64,12 @@ export class CategoriesService {
   }
 
   async create(userId: string, dto: CreateCategoryDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.category.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     if (dto.parentId) {
       const parent = await this.getById(userId, dto.parentId);
       if (parent.parentId) {
@@ -81,6 +87,7 @@ export class CategoriesService {
 
     return this.prisma.category.create({
       data: {
+        id: dto.id,
         userId,
         parentId: dto.parentId,
         name: dto.name,
