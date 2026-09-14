@@ -1,5 +1,50 @@
 # Open questions
 
+## `attachment.create` excluded from the M0 sync catalogue
+
+`docs/14-sync-protocol.md § 2.1` lists `attachment.create` as metadata-only — the binary is
+uploaded separately on reconnection. But the only existing creation path
+(`AttachmentsService.upload()`) requires an actual `Express.Multer.File` and derives
+`storageKey`/`mimeType`/`sizeBytes` from it; `Attachment.storageKey` is `NOT NULL` in the schema
+today, with no metadata-only row ever created. Adding that path means guessing a schema shape
+(nullable `storageKey`? a placeholder value?) for a consumer that doesn't exist yet — attachment
+sync is mobile lot M5, explicitly out of scope for this pass.
+
+**Implemented behavior (conservative):** `attachment.create` is left out of
+`packages/sync-protocol`'s `OPERATION_NAMES` for now. `POST /sync/push` never sees it. Adding it
+back is M5's job, in the same commit as whatever schema change it actually needs once there's a
+real client to validate the shape against (RG-SY5).
+
+Impact: none today — no client exists to send this operation. Revisit when M5 is actually built.
+
+## Idempotency scope for `Operation.id` (M0)
+
+`docs/02-architecture.md § 7`'s "creation endpoints accept an `Idempotency-Key` header... reuses
+the existing mechanism" describes something that was never actually built: only the
+`IdempotencyKey` Prisma model exists, unread and unwritten anywhere before this lot.
+
+**Implemented behavior (conservative):** idempotency-key read/write is implemented **inside the
+sync module only**, scoped to `endpoint: 'sync.push'`. RG-SY2 only requires it for sync;
+retrofitting a generic interceptor onto every existing plain-REST POST endpoint is materially
+larger scope than M0 asks for.
+
+Impact: plain REST creation endpoints (`POST /accounts`, `POST /transactions`, …) still rely only
+on the client-supplied `id` for replay safety (RG-SY3), not on the `Idempotency-Key` header the
+architecture doc describes. Revisit if a generic idempotency interceptor is wanted for the plain
+REST API later.
+
+## RG-A14 deferred (lot 19)
+
+"Large/recurring adjustment flagged plainly" (`docs/04-modules.md § B`) is a UI-facing rule with
+no consumer while the web front is out of scope for this pass.
+
+**Implemented behavior (conservative):** deferred entirely — no API field added for it yet.
+Building one with nothing to read it is speculative.
+
+Impact: none observable today. Revisit once a front-end change for reconciliation is actually
+planned.
+
+
 ## Social login — auto-link vs. conflict when the provider doesn't vouch for the email (Lot 21)
 
 The user confirmed auto-linking an OAuth login onto an existing password account when the emails
