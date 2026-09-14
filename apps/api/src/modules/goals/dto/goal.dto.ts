@@ -1,10 +1,13 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const nameField = z.string().trim().min(1).max(120);
 
 export const createGoalSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     name: nameField,
     targetMinor: unsignedAmountMinor(),
     currency: z.string().length(3),
@@ -32,6 +35,8 @@ export type UpdateGoalDto = z.infer<typeof updateGoalSchema>;
 
 export const createContributionSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     amountMinor: unsignedAmountMinor(),
     contributedAt: z.coerce.date(),
     notes: z.string().max(2000).optional(),

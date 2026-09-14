@@ -27,11 +27,17 @@ export class GoalsService {
   }
 
   async create(userId: string, dto: CreateGoalDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.savingsGoal.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
     if (dto.linkedAccountId) {
       await this.accountsFacade.getById(userId, dto.linkedAccountId);
     }
     return this.prisma.savingsGoal.create({
       data: {
+        id: dto.id,
         userId,
         name: dto.name,
         targetMinor: BigInt(dto.targetMinor),
@@ -98,6 +104,12 @@ export class GoalsService {
 
   /** RG-G5: a contribution may stay a simple marking, or generate a real transfer when `fromAccountId` is given. */
   async addContribution(userId: string, goalId: string, dto: CreateContributionDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.goalContribution.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     const goal = await this.getById(userId, goalId);
     const amountMinor = BigInt(dto.amountMinor);
     if (amountMinor <= 0n) {
@@ -122,6 +134,7 @@ export class GoalsService {
 
     const contribution = await this.prisma.goalContribution.create({
       data: {
+        id: dto.id,
         userId,
         goalId,
         amountMinor,
