@@ -1,19 +1,19 @@
-# ADR-0004 — Abandon de l'offline-first
+# ADR-0004 — Dropping offline-first
 
-## Statut
-**Remplacé pour le client mobile — 2026-09-03** par l'[ADR-0010](0010-offline-first-mobile.md), qui adopte l'offline-first sur mobile.
+## Status
+**Superseded for the mobile client — 2026-09-03** by [ADR-0010](0010-offline-first-mobile.md), which adopts offline-first on mobile.
 
-Reste **en vigueur pour le front web** : le web est une PWA à cache de consultation en lecture seule, il ne bufferise aucune écriture.
+Still **in force for the web front**: the web is a PWA with a read-only consultation cache; it buffers no writes.
 
-Historique : nuancé par l'[ADR-0008](0008-cache-lecture-seule.md), qui avait ajouté le cache de consultation hors ligne sans autoriser l'écriture.
+History: qualified by [ADR-0008](0008-cache-lecture-seule.md), which added the offline consultation cache without permitting writes.
 
-## Contexte
-L'offline-first était envisagé pour un contexte d'usage à connectivité irrégulière. Il implique une base locale, un moteur de synchronisation bidirectionnel, un versionnement du schéma local, et surtout une stratégie de résolution de conflits quand deux appareils modifient la même donnée hors ligne. Sur des données financières, un conflit mal résolu produit un solde faux.
+## Context
+Offline-first was considered for a usage context with irregular connectivity. It implies a local database, a bidirectional synchronization engine, local schema versioning, and above all a conflict-resolution strategy for when two devices modify the same data offline. On financial data, a badly resolved conflict produces a wrong balance.
 
-## Décision
-Application connectée classique (client/serveur). Pas de base locale synchronisée.
+## Decision
+A conventional connected application (client/server). No synchronized local database.
 
-## Conséquences
-- **Bénéfice** : suppression du chantier le plus complexe du projet, cohérence des données garantie par PostgreSQL, mise sur le marché nettement plus rapide.
-- **Coût** : l'application est inutilisable sans connexion. À compenser par une bonne tolérance à la latence : pagination, chargement progressif, états de chargement explicites, réessai automatique.
-- **Réversible** : un cache en lecture seule (PWA) reste envisageable sans remettre en cause l'architecture ; l'écriture hors ligne, non. C'est précisément ce qu'a acté l'ADR-0008.
+## Consequences
+- **Benefit**: removal of the project's most complex piece of work, data consistency guaranteed by PostgreSQL, a markedly faster time to market.
+- **Cost**: the application is unusable without a connection. To be offset by good latency tolerance: pagination, progressive loading, explicit loading states, automatic retry.
+- **Reversible**: a read-only cache (PWA) remains conceivable without questioning the architecture; offline writes do not. That is precisely what ADR-0008 settled.

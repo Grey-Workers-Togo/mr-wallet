@@ -1,54 +1,54 @@
-# ADR-0007 — Mobile par PWA installable, pas d'application native
+# ADR-0007 — Mobile via an installable PWA, no native application
 
-## Statut
-**Remplacé — 2026-09-03** par l'[ADR-0011](0011-stack-mobile-expo-react-native.md) : une application native Expo / React Native s'ajoute, décidée par l'[ADR-0010](0010-offline-first-mobile.md).
+## Status
+**Superseded — 2026-09-03** by [ADR-0011](0011-stack-mobile-expo-react-native.md): a native Expo / React Native application is added, decided by [ADR-0010](0010-offline-first-mobile.md).
 
-La PWA installable **n'est pas supprimée** : elle reste le client web, avec son cache de consultation (ADR-0008). Ce qui change, c'est qu'elle cesse d'être la *seule* stratégie mobile.
+The installable PWA is **not removed**: it remains the web client, with its consultation cache (ADR-0008). What changes is that it ceases to be the *only* mobile strategy.
 
-La clause de réexamen en fin de document a joué : elle est la raison de ce changement. La règle qu'elle imposait — toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans un composant React — a rendu ce passage possible à coût raisonnable, et reste en vigueur.
+The re-examination clause at the end of this document did its job: it is the reason for this change. The rule it imposed — all reusable business logic lives in `packages/contracts` or in `domain/` folders, never in a React component — is what made the transition affordable, and it stays in force.
 
-## Contexte
+## Context
 
-L'API conçue en ADR-0001 est déjà agnostique du client : REST/JSON, authentification `Bearer` stateless, pagination par curseur, clés d'idempotence, endpoint agrégé pour le tableau de bord. Un client mobile la consommerait sans modification. La question porte donc uniquement sur le **client**.
+The API designed in ADR-0001 is already client-agnostic: REST/JSON, stateless `Bearer` authentication, cursor pagination, idempotency keys, an aggregated endpoint for the dashboard. A mobile client would consume it without modification. The question therefore concerns only the **client**.
 
-Trois options étaient sur la table :
+Three options were on the table:
 
-1. **PWA installable** — un seul front Next.js, rendu responsive et installable sur l'écran d'accueil.
-2. **React Native en V2** — le web reste en Next.js, une application native s'ajoute après le MVP.
-3. **Mobile-first** — React Native d'abord, web ensuite.
+1. **Installable PWA** — a single Next.js front, rendered responsively and installable on the home screen.
+2. **React Native in V2** — the web stays on Next.js, a native application is added after the MVP.
+3. **Mobile-first** — React Native first, web afterwards.
 
-Le code de présentation React de Next.js n'est **pas** réutilisable en React Native. Seule la logique partagée (`packages/contracts` : schémas Zod, types, kernel `money`) l'est. Une application native est donc un second front à construire et à maintenir, pas une adaptation du premier.
+Next.js's React presentation code is **not** reusable in React Native. Only shared logic (`packages/contracts`: Zod schemas, types, the `money` kernel) is. A native application is therefore a second front to build and maintain, not an adaptation of the first.
 
-## Décision
+## Decision
 
-**PWA installable.** Un seul front Next.js, conçu en responsive-first (le mobile est la largeur de référence, pas une adaptation après coup), avec manifeste d'application, service worker et installation sur l'écran d'accueil.
+**Installable PWA.** A single Next.js front, designed responsive-first (mobile is the reference width, not an afterthought), with an application manifest, a service worker and home-screen installation.
 
-Conséquences directes sur la conception :
+Direct design consequences:
 
-- Les écrans sont pensés d'abord pour un écran de téléphone, puis élargis.
-- La saisie manuelle rapide (UC-02, objectif < 15 s) est le parcours mobile principal ; l'import de fichier est traité comme un usage majoritairement desktop.
-- Un service worker fournit un **cache en lecture seule** (voir ADR-0008).
-- Les notifications push passent par la Web Push API (voir `04-modules.md § K`).
+- Screens are designed for a phone screen first, then widened.
+- Quick manual entry (UC-02, target < 15 s) is the primary mobile journey; file import is treated as a mostly desktop use.
+- A service worker provides a **read-only cache** (see ADR-0008).
+- Push notifications go through the Web Push API (see `04-modules.md § K`).
 
-## Conséquences
+## Consequences
 
-**Bénéfices**
+**Benefits**
 
-- Un seul code base, un seul déploiement, aucun cycle de validation de store.
-- Pas de version cliente figée chez l'utilisateur : la correction d'un bug est immédiate, ce qui évite tout le problème de compatibilité ascendante des clients mobiles.
-- Coût marginal quasi nul par rapport au web seul.
+- One code base, one deployment, no store review cycle.
+- No frozen client version at the user's end: a bug fix is immediate, which avoids the whole backward-compatibility problem of mobile clients.
+- Near-zero marginal cost compared to web alone.
 
-**Coûts et limites assumés**
+**Accepted costs and limits**
 
-- **Pas de présence dans les stores.** L'acquisition passe par le web. Si la distribution en store devient un enjeu, il faudra reconsidérer.
-- **Push iOS limité.** Le support du Web Push sur iOS est plus contraint que sur Android : il exige que l'utilisateur ait installé la PWA sur son écran d'accueil, et les capacités restent inférieures à l'APNs natif. Il faut vérifier l'état exact du support au moment d'implémenter le lot correspondant, et ne pas construire de fonctionnalité critique qui en dépende.
-- **Pas d'accès aux API natives** (biométrie système, widgets, partage natif avancé). Le verrouillage applicatif reposera sur un PIN plutôt que sur la biométrie système sur une partie des appareils.
-- **Perception.** Une PWA reste perçue comme « moins une vraie app » par certains utilisateurs.
+- **No store presence.** Acquisition goes through the web. If store distribution becomes a concern, this has to be reconsidered.
+- **Limited push on iOS.** Web Push support on iOS is more constrained than on Android: it requires the user to have installed the PWA on their home screen, and capabilities remain below native APNs. The exact state of support must be verified when implementing the corresponding lot, and no critical feature should depend on it.
+- **No access to native APIs** (system biometrics, widgets, advanced native sharing). The application lock will rely on a PIN rather than system biometrics on some devices.
+- **Perception.** A PWA is still seen as "less of a real app" by some users.
 
-**Ce que ça n'interdit pas**
+**What this does not forbid**
 
-Le passage à React Native reste ouvert. Pour le garder peu coûteux, la règle suivante s'applique dès maintenant : **toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans les composants React.** Si une application native est décidée plus tard, seule la couche de présentation est à réécrire.
+A move to React Native remains open. To keep it cheap, the following rule applies from now on: **all reusable business logic lives in `packages/contracts` or in `domain/` folders, never in React components.** If a native application is decided later, only the presentation layer needs rewriting.
 
-## Réexamen — déclenché
+## Re-examination — triggered
 
-Les signaux prévus ici (présence en store, push iOS fiable, usage mobile dominant) ont été rejoints par un quatrième, non anticipé et décisif : **le besoin d'écriture hors ligne**. Le parcours mobile principal (UC-02, saisie rapide) est une écriture, et l'[ADR-0008](0008-cache-lecture-seule.md) la désactive hors réseau. Voir l'[ADR-0010](0010-offline-first-mobile.md).
+The signals anticipated here (store presence, reliable iOS push, dominant mobile usage) were joined by a fourth, unanticipated and decisive: **the need for offline writes**. The primary mobile journey (UC-02, quick entry) is a write, and [ADR-0008](0008-cache-lecture-seule.md) disables it without a network. See [ADR-0010](0010-offline-first-mobile.md).

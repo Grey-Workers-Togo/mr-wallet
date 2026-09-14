@@ -1,15 +1,15 @@
-# ADR-0002 — Montants en entiers d'unités mineures
+# ADR-0002 — Amounts as integers in minor units
 
-## Statut
-Accepté — 2026-07-28
+## Status
+Accepted — 2026-07-28
 
-## Contexte
-Les nombres flottants introduisent des erreurs d'arrondi inacceptables sur des données financières. Par ailleurs, les devises cibles n'ont pas toutes deux décimales : le XOF en a zéro, certaines devises en ont trois.
+## Context
+Floating-point numbers introduce rounding errors that are unacceptable on financial data. Furthermore, the target currencies do not all have two decimals: XOF has zero, some currencies have three.
 
-## Décision
-Tout montant est un entier (`BigInt`) exprimé en unité mineure, accompagné d'un code devise ISO 4217. La précision (`minorUnits`) est portée par la table `Currency` et lue au moment du formatage. Un kernel `money` sans dépendance centralise toute l'arithmétique.
+## Decision
+Every amount is an integer (`BigInt`) expressed in minor units, accompanied by an ISO 4217 currency code. Precision (`minorUnits`) is carried by the `Currency` table and read at formatting time. A dependency-free `money` kernel centralizes all arithmetic.
 
-## Conséquences
-- **Bénéfice** : exactitude garantie, support natif des devises à 0 ou 3 décimales, agrégations SQL exactes.
-- **Coût** : `BigInt` n'est pas sérialisable en JSON — les montants transitent en chaîne dans l'API. Le front doit convertir explicitement.
-- **Interdit** : toute constante `100` dans le code, tout `Number` appliqué à un montant.
+## Consequences
+- **Benefit**: guaranteed exactness, native support for 0- and 3-decimal currencies, exact SQL aggregations.
+- **Cost**: `BigInt` is not JSON-serializable — amounts travel as strings in the API. The front end must convert explicitly.
+- **Forbidden**: any `100` constant in the code, any `Number` applied to an amount.
