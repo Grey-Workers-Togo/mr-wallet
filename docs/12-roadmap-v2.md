@@ -142,7 +142,13 @@ visible cross-user.
 
 ---
 
-## Lot 14 — OFX/QIF import (≈ 3 days)
+## Lot 14 — OFX/QIF import (≈ 3 days) — **DEMOTED, see [ADR-0013](adr/0013-native-ingestion-channels.md)**
+
+> OFX and QIF are North American and European bank-export formats, close to nonexistent in the primary
+> market. ADR-0013 reprioritizes ingestion around what users there actually receive — transaction SMS
+> and PDF statements — and makes collecting real samples a prerequisite (assumption `01 § 8.2`, still
+> open). This lot is kept for persona B, but runs **after** lots 18–20 and after the sample collection.
+
 
 - `import`: new `domain/parse-ofx.ts` and `domain/parse-qif.ts`, feeding the existing
   `mapRow`/`dedupe`/preview/commit pipeline unchanged — same shape as the current CSV/XLSX path
@@ -228,6 +234,81 @@ submission fails together.
 
 ---
 
+## Lot 18 — Transaction fees (≈ 2 days)
+
+- `transactions`: `feeForTransactionId` on `Transaction`, `TxSource.FEE`, fee line created in the same SQL
+  transaction as its parent (RG-T11 to RG-T16, `04-modules.md § D`). Seed category
+  `category.transaction_fees`.
+- API: `feeMinor` on the transaction create/update DTO (input) and on the read DTO (computed from the
+  fee line, never stored — RG-T12a). Update `05-api.md` accordingly.
+- Entry form: **one optional field**, not a second entry — UC-02's 15-second target is the constraint
+  that shapes this lot.
+- Cascade on modify and delete, extending RG-T4 to the fee line.
+- Frontend: fee shown on the transaction detail, and counted like any expense in budgets and reports.
+- Tests: a transfer with a fee debits the source account by amount + fee and credits the destination by
+  amount; the fee appears in the expense total for its category while the transfer itself stays excluded
+  (RG-T5); deleting the parent deletes the fee line; setting `feeMinor` to 0 on an update removes it;
+  reading the parent back returns the same `feeMinor` that was sent.
+
+**Exit criterion**: a mobile money withdrawal with a fee, entered in one step, produces exact balances and
+a fee visible in "expenses by category".
+
+---
+
+## Lot 19 — Reconciliation against reality (≈ 2 days)
+
+- `accounts`: `POST /accounts/:id/reconcile` taking the **declared actual balance** and a date; the server
+  computes the difference and creates the `ADJUSTMENT` transaction (RG-A8 to RG-A14, `04-modules.md § B`).
+  `Account.lastReconciledAt`, kept distinct from `balanceCheckedAt`. Seed category `category.adjustment`.
+- `reporting`: adjustments excluded from category expense reports, shown as their own explicit
+  "unaccounted" line (RG-A10).
+- Frontend: reconciliation flow on the account screen, with the computed difference shown before
+  confirmation.
+- Tests: reconciling to a lower balance creates one `EXPENSE` adjustment of exactly the difference;
+  reconciling twice with no activity in between creates nothing the second time; the nightly job never
+  creates an adjustment (RG-A11).
+
+**Exit criterion**: a cash account whose real balance is below the computed one is trued up in one action,
+with the difference visible and reversible in history.
+
+---
+
+## Lot 20 — Entry reminders (≈ 1 day)
+
+- `notifications`: `ENTRY_REMINDER` and `RECONCILE_REMINDER`, `user.entryReminderDays` (default 3), daily
+  job (RG-N12 to RG-N16, `04-modules.md § K`).
+- One reminder per inactivity streak, re-armed only after the user enters something again — the rule that
+  separates a reminder from nagging.
+- Frontend: cadence setting on the preferences screen.
+- Tests: 5 days of inactivity produce exactly one notification, not five; entering a transaction re-arms
+  the streak; a reminder contains no amount (RG-N14).
+
+**Exit criterion**: an inactive user receives one reminder, and an active one receives none.
+
+---
+
+## Lot 21 — Social login, Google + GitHub (≈ 3 days)
+
+- `auth`: `User.passwordHash` made nullable; new `OAuthAccount` (linked identity) and
+  `PendingOAuthSignup` (brand-new identity awaiting a `baseCurrency` choice, since none is ever
+  defaulted) tables. `GET/DELETE /auth/oauth-accounts(/:provider)`, `GET /auth/:provider`,
+  `GET /auth/:provider/callback`, `POST /auth/oauth/complete` (`05-api.md § 2 bis`,
+  `07-securite-audit.md § 2`).
+- Provider adapters (`common/oauth/`) talk to Google/GitHub over plain `fetch` — no SDK, no
+  Passport, matching the module's existing zero-framework auth style.
+- Frontend: "Continue with Google/GitHub" on login and register, a `/register/oauth` step that
+  asks only for `baseCurrency` for a brand-new identity, a "connected accounts" list/unlink card
+  in preferences.
+- Tests: auto-link fires only when the provider reports the email verified; an already-linked
+  `OAuthAccount` logs in regardless of what the provider says about the email *today*; unlinking
+  the only remaining authentication method is refused; cross-user isolation on list/unlink.
+
+**Exit criterion**: a brand-new Google or GitHub identity reaches an authenticated session
+without ever creating a `User` row missing `baseCurrency`; an existing password account with a
+verified matching email auto-links on first social login.
+
+---
+
 ## Verification milestones
 
 | Milestone | Verification |
@@ -238,3 +319,7 @@ submission fails together.
 | End of lot 14 | Real OFX and QIF sample files import without manual correction |
 | End of lot 16 | Dashboard layout customization covered end-to-end |
 | End of lot 17 | A submitted budget plan is all-or-nothing and leaves zero unallocated remainder |
+| End of lot 18 | A fee is counted as an expense while its parent transfer stays excluded |
+| End of lot 19 | An adjustment is never created without an explicit user action |
+| End of lot 20 | An inactivity streak produces exactly one reminder |
+| End of lot 21 | Cross-user isolation test passes on `/auth/oauth-accounts` (no cross-user access) |

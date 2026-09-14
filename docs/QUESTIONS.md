@@ -1,5 +1,37 @@
 # Open questions
 
+## Social login — auto-link vs. conflict when the provider doesn't vouch for the email (Lot 21)
+
+The user confirmed auto-linking an OAuth login onto an existing password account when the emails
+match, but didn't specify what happens when the provider reports that email as **unverified**.
+Auto-linking anyway would let anyone take over an existing account just by registering its email
+address at Google or GitHub, without ever proving they own it.
+
+**Implemented behavior (conservative):** refuse — `OAUTH_EMAIL_UNVERIFIED_CONFLICT` — and tell the
+user to log in with their password instead. No account is silently linked or created.
+
+Impact: a user whose provider account has a genuinely unverified email at that provider cannot
+use social login for an account that already exists under the same address; they can still use
+their password, or verify the email at the provider and retry. Revisit only if this turns out to
+block a real, legitimate flow in practice.
+
+## Social login — no default `baseCurrency` for a brand-new OAuth identity (Lot 21)
+
+`register()` has always required the client to explicitly pick a `baseCurrency` — there is no
+default anywhere in the app, because guessing a financial invariant like the account's
+consolidation currency is exactly the kind of business rule this project refuses to invent
+silently. A brand-new Google/GitHub identity has no natural source for one either.
+
+**Implemented behavior (conservative):** don't create the `User` row on the OAuth callback at
+all. Instead, a short-lived, single-use `PendingOAuthSignup` token (opaque, same shape as
+`PasswordResetToken`/`EmailVerificationToken` — never a JWT) carries the provider identity to a
+one-field "pick a currency" step (`POST /auth/oauth/complete`), which only then creates the
+account — mirroring `register()`'s own explicit-currency requirement instead of guessing.
+
+Impact: a brand-new social signup takes one extra step compared to an existing account's social
+login. Revisit only if product feedback says this friction is worse than a guessed default would
+have been.
+
 ## RG-RP2 — multi-currency conversion in reports (batch 6)
 
 RG-RP2 (docs/04-modules.md §J) requires that conversion use **the rate at the date of each transaction**. An

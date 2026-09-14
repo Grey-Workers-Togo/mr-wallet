@@ -119,6 +119,17 @@ The client holds a `code → message` dictionary per language. An unknown `code`
 | POST | `/auth/password/forgot` | Sends a reset link. Response is always 204, even if the email doesn't exist. |
 | POST | `/auth/password/reset` | Reset via token. Revokes all sessions. |
 | POST | `/auth/password/change` | Change with current password. |
+| GET | `/auth/:provider` | Social login (`provider` = `google` \| `github`). Redirects (302) to the provider's consent screen. Sets a short-lived `oauth_state` CSRF cookie. |
+| GET | `/auth/:provider/callback` | Provider redirects the browser back here. Never returns JSON — always a 302: to `WEB_APP_URL/accounts` (already-linked or verified-email auto-link — the refresh cookie is set exactly like `/auth/login`), to `WEB_APP_URL/register/oauth?token=...` (brand-new identity, see below), or to `WEB_APP_URL/login?error=<code>` (see § 2 bis). |
+| POST | `/auth/oauth/complete` | Finishes a brand-new OAuth signup. Body: `token` (from the `pending` redirect above), `baseCurrency`. Returns `accessToken` + sets the refresh cookie, same shape as `/auth/login`. |
+| GET | `/auth/oauth-accounts` | Lists the caller's linked social accounts (`provider`, `email`, `createdAt`). |
+| DELETE | `/auth/oauth-accounts/:provider` | Unlinks one. Refused (`OAUTH_LAST_AUTH_METHOD`, 409) if it's the account's only way to log in (no password, no other provider). |
+
+### 2 bis. Social login (Google / GitHub)
+
+API-driven: the API owns the redirect and the callback, not a client-side SDK exchanging a raw `id_token`. A brand-new identity never gets a `User` row on the callback itself — `baseCurrency` has no default anywhere in the app (see `03-modele-donnees.md § 3`), so the callback issues a short-lived, single-use `PendingOAuthSignup` token instead and redirects to a one-field "pick a currency" step that calls `/auth/oauth/complete`. Full resolution order, error codes, and the CSRF/state cookie design are in `07-securite-audit.md § 2`.
+
+`?error=` codes the `/login` redirect can carry: `OAUTH_FAILED` (state mismatch, provider denied, exchange failed), `OAUTH_EMAIL_UNAVAILABLE` (no verified email at all), `OAUTH_EMAIL_UNVERIFIED_CONFLICT` (matches an existing account, but the provider didn't vouch for the email), `OAUTH_PROVIDER_DISABLED` (that provider has no client id/secret configured).
 
 ---
 

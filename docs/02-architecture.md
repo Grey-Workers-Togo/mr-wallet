@@ -92,7 +92,7 @@ Imported files are parsed server-side, not in the browser. Reasons: consistent v
 money        → (none)
 currency     → money
 users        → (none)
-auth         → users
+auth         → users, categories
 audit        → (none)
 categories   → (none)
 accounts     → money, currency
