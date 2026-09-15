@@ -25,6 +25,8 @@ model User {
   pinHash           String?
   pinLockMinutes    Int       @default(5)
   hasSeenOnboarding Boolean   @default(false)
+  // RG-N12 (docs/04 §K, lot 20): nudge after N days with no transaction entered; null disables.
+  entryReminderDays Int?      @default(3)
   emailVerifiedAt   DateTime? @db.Timestamptz(6)
   lastLoginAt       DateTime? @db.Timestamptz(6)
   createdAt         DateTime  @default(now()) @db.Timestamptz(6)
@@ -735,6 +737,9 @@ enum NotificationType {
   IMPORT_COMPLETED
   IMPORT_FAILED
   BALANCE_MISMATCH
+  // Lot 20 (docs/04 §K, RG-N12..RG-N16): the only proactive types — driven by a daily/monthly job, not an event.
+  ENTRY_REMINDER
+  RECONCILE_REMINDER
 }
 
 enum Severity {
