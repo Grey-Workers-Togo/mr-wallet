@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.1.0](https://github.com/Grey-Workers-Togo/mr-wallet/compare/budget-manager-v1.0.0...budget-manager-v1.1.0) (2026-09-15)
+
+
+### Features
+
+* **accounts:** accept a client-supplied id on create (RG-SY3) ([6b4d41f](https://github.com/Grey-Workers-Togo/mr-wallet/commit/6b4d41f7a1f1b514710d6af77274d45be7b8d7d5))
+* **api:** add OAuth data model and config for social login ([59e1e35](https://github.com/Grey-Workers-Togo/mr-wallet/commit/59e1e35454e69a852f7dacc61914cd97dd59b7d8))
+* **api:** implement Google/GitHub OAuth login flow ([082ccf6](https://github.com/Grey-Workers-Togo/mr-wallet/commit/082ccf6964e1b2f8f1d6212efe202944c611912e))
+* **audit:** tag audited mutations with deviceId when present (RG-SY10) ([efec62c](https://github.com/Grey-Workers-Togo/mr-wallet/commit/efec62c780e08b8e3e382c0740173972d2e0ff48))
+* **budgets:** accept a client-supplied id on create (RG-SY3) ([294872d](https://github.com/Grey-Workers-Togo/mr-wallet/commit/294872d26609695450adf0a9d60523d91ee8ce29))
+* **categories:** accept a client-supplied id on create (RG-SY3) ([818cbd8](https://github.com/Grey-Workers-Togo/mr-wallet/commit/818cbd8af01220a65221d9b133ef00237b218062))
+* **categories:** add transaction-fees system category + lookup ([87650f2](https://github.com/Grey-Workers-Togo/mr-wallet/commit/87650f2c595b3937a9a0105be1a2544292db5ff9))
+* **config:** add per-platform minimum client version settings ([c53a69b](https://github.com/Grey-Workers-Togo/mr-wallet/commit/c53a69bf584c09679578f0f3de41fad37b2bb605))
+* **contracts:** add clientSuppliedId UUIDv7 helper ([483dc59](https://github.com/Grey-Workers-Togo/mr-wallet/commit/483dc594b147d65dd61f5d55d31be6e086c89fa0))
+* **db:** composite (userId, updatedAt, id) index for the sync feed ([784094d](https://github.com/Grey-Workers-Togo/mr-wallet/commit/784094d568a2e59690ce51dab175cde7b85aa409))
+* **db:** fee-line schema for transactions (lot 18) ([7f6e98b](https://github.com/Grey-Workers-Togo/mr-wallet/commit/7f6e98b72e2d98ffc2529c06f22fc34ec89033ee))
+* **db:** schema + migration for entry reminders (lot 20) ([33076e4](https://github.com/Grey-Workers-Togo/mr-wallet/commit/33076e4c17d9d36ff1c810c63af2ecc674b54b39))
+* **db:** schema + migrations for reconciliation (lot 19) ([4e1c7dd](https://github.com/Grey-Workers-Togo/mr-wallet/commit/4e1c7dd2f850f94e28d67363c4046875599601ad))
+* **debts:** accept a client-supplied id on create/recordPayment (RG-SY3) ([f90691f](https://github.com/Grey-Workers-Togo/mr-wallet/commit/f90691fbbb468e7ec114619904e891068e5465b6))
+* **goals:** accept a client-supplied id on create/contribute (RG-SY3) ([6a22c27](https://github.com/Grey-Workers-Togo/mr-wallet/commit/6a22c27c1a16759d2f918394f82bbaffa2f8a83c))
+* **notifications:** entry and reconciliation reminders (lot 20, RG-N12..RG-N16) ([6dcf4f8](https://github.com/Grey-Workers-Togo/mr-wallet/commit/6dcf4f897cebf85bdc15d5e3ce83b5d5bf5e7551))
+* **notifications:** expose markRead via facade ([6278ad6](https://github.com/Grey-Workers-Togo/mr-wallet/commit/6278ad6d1b679d38fae5ae737fa616f46833dbd7))
+* **notifications:** react to account.balance_mismatch (lot 19, RG-N14) ([804b397](https://github.com/Grey-Workers-Togo/mr-wallet/commit/804b397d17bdd28c3651e09cda05dba57d4a379e))
+* **reconciliation:** declared-balance reconciliation + nightly drift check (lot 19) ([ede8b96](https://github.com/Grey-Workers-Togo/mr-wallet/commit/ede8b96829317c48517d4c97a2ce2b97a6f117ad))
+* **recurrence:** accept a client-supplied id on create (RG-SY3) ([b26e50b](https://github.com/Grey-Workers-Togo/mr-wallet/commit/b26e50bfd17a26c4597bbbcdf1b26452c0c3884b))
+* **reporting:** exclude adjustments from category breakdown (lot 19, RG-A10) ([7bdc7e8](https://github.com/Grey-Workers-Togo/mr-wallet/commit/7bdc7e8a4cd480a74de6182b4680ff504f94be6d))
+* **sync-protocol:** account.reconcile carries the declared balance (lot 19, RG-SY5) ([8345758](https://github.com/Grey-Workers-Togo/mr-wallet/commit/8345758605439195e9b4b1e9da6442bf263bcceb))
+* **sync-protocol:** add sync operation catalogue package ([2d4cf68](https://github.com/Grey-Workers-Togo/mr-wallet/commit/2d4cf683016b9fa3523479323de880370b1846d7))
+* **sync-protocol:** require platform on push requests (RG-SY14) ([0a36229](https://github.com/Grey-Workers-Togo/mr-wallet/commit/0a36229e2c831c978ac588679464f8628783a92b))
+* **sync-protocol:** restore feeMinor on transaction/transfer payloads ([bead623](https://github.com/Grey-Workers-Togo/mr-wallet/commit/bead623e3342a5a39e546d5546190ac4b17dd2d6))
+* **sync:** add the sync module — push/changes/snapshot ([de08891](https://github.com/Grey-Workers-Togo/mr-wallet/commit/de08891784f9ecaf2a4bb81249d2fcbab60a547e))
+* **sync:** expose getById on budgets/debts/goals/recurrence facades ([69bbefb](https://github.com/Grey-Workers-Togo/mr-wallet/commit/69bbefb06b798bea725f98f79641f060869bf240))
+* **sync:** wire account.reconcile to the reconciliation module (lot 19) ([090cd1d](https://github.com/Grey-Workers-Togo/mr-wallet/commit/090cd1d44382eb8db75affe212aeb5febbfa9b52))
+* **tags:** accept a client-supplied id on create (RG-SY3) ([f0297e8](https://github.com/Grey-Workers-Togo/mr-wallet/commit/f0297e8fc383985772147073b432d049ecc24e89))
+* **transactions:** accept a client-supplied id on create/transfer (RG-SY3) ([355ce9d](https://github.com/Grey-Workers-Togo/mr-wallet/commit/355ce9dd3e0d80f1c69893e19f9290e81dd6ad5e))
+* **transactions:** support ADJUSTMENT-source transactions (lot 19, RG-A9) ([4e7234e](https://github.com/Grey-Workers-Togo/mr-wallet/commit/4e7234ec1477341b1841739359ef179daf6afd1a))
+* **transactions:** transaction fees (lot 18, RG-T11..RG-T16) ([3fce6c0](https://github.com/Grey-Workers-Togo/mr-wallet/commit/3fce6c052a6e85631b6b5799d565b0ddde6b4699))
+* **web:** add social login UI (Google/GitHub) ([047412a](https://github.com/Grey-Workers-Togo/mr-wallet/commit/047412a50fe51a29e390e0e08bf555cc087bd069))
+* **web:** enter a transaction fee (lot 18, RG-T11..RG-T16) ([eed302f](https://github.com/Grey-Workers-Togo/mr-wallet/commit/eed302ff9b85dc6d4679c3b671ac35a7f7e1eb64))
+* **web:** entry reminder setting + render new reminder notifications (lot 20) ([558060f](https://github.com/Grey-Workers-Togo/mr-wallet/commit/558060f78ec501618fdec66471acb1689dd30a51))
+* **web:** reconcile an account against its real balance (lot 19, RG-A8..RG-A13) ([d567ac4](https://github.com/Grey-Workers-Togo/mr-wallet/commit/d567ac4435ccdf8be2e4b241eb386f11fb33ae5a))
+
+
+### Bug Fixes
+
+* **auth:** returning OAuth logins no longer break on third-party-cookie-blocking browsers ([bd1bf88](https://github.com/Grey-Workers-Togo/mr-wallet/commit/bd1bf883d9f3f363ff49494895706fa1decff504))
+* **sync-protocol:** correct transaction/transfer payload schemas ([3d4ae9a](https://github.com/Grey-Workers-Togo/mr-wallet/commit/3d4ae9a6e55cd0baf750ec5fc6bbd7ce825468a1))
+
 ## 1.0.0 (2026-08-24)
 
 
