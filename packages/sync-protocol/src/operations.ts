@@ -64,12 +64,13 @@ const accountCreateSchema = z.object({
 const accountUpdateSchema = z.object({ id: entityId }).and(accountCreateSchema.partial());
 const accountArchiveSchema = z.object({ id: entityId });
 const accountDeleteSchema = z.object({ id: entityId });
-// Mirrors accounts.service.ts's current reconcile(userId, id) (stored-vs-computed drift check,
-// docs/03 § 16) — no user-declared balance yet. Lot 19 (docs/12 § Lot 19) changes this payload to
-// carry the declared actual balance + date (docs/14 § 2.1) in the same commit as the endpoint's
-// new contract; not done yet, so the op keeps today's shape until then (RG-SY5).
+// RG-A8/RG-A13 (lot 19): the declared actual balance + date, never a pre-computed delta — matches
+// reconciliation/dto/reconcile.dto.ts's reconcileAccountSchema exactly (plus the target accountId,
+// which travels on the sync payload rather than the REST URL).
 const accountReconcileSchema = z.object({
   accountId: entityId,
+  actualBalanceMinor: moneySchema.shape.amountMinor,
+  asOfDate: z.string(),
 });
 
 // currency is inferred server-side from the account, never accepted from the client — matches
