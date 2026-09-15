@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ConfigService } from '@nestjs/config';
-import type { Session } from '@prisma/client';
+import type { Session } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AppError } from '../../../common/errors/app-error';
 import { MailService } from '../../../common/mail/mail.service';

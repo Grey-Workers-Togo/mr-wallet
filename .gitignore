@@ -9,7 +9,7 @@ build/
 coverage/
 *.log
 .DS_Store
-apps/api/generated/
+apps/api/src/generated/
 apps/api/storage/
 *.tsbuildinfo
 
