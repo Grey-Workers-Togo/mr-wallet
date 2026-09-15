@@ -25,7 +25,11 @@ const DEFAULT_TYPES: NotificationType[] = [
   'IMPORT_COMPLETED',
   'IMPORT_FAILED',
   'BALANCE_MISMATCH',
+  'ENTRY_REMINDER',
+  'RECONCILE_REMINDER',
 ];
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 interface BudgetThresholdCrossedPayload {
   userId: string;
@@ -413,6 +417,91 @@ export class NotificationsService {
         params: { recurrenceName: item.name, occurrenceDate: item.occurrenceDate.toISOString() },
         entityType: 'RecurrenceRule',
         entityId: `${item.recurrenceId}:${item.occurrenceDate.toISOString()}`,
+        severity: 'INFO',
+      });
+    }
+  }
+
+  /**
+   * RG-N12/RG-N13 (docs/04 §K, lot 20): daily sweep, one notification per inactivity streak.
+   * "Last entry" is when a transaction was recorded (`createdAt`), not its business date
+   * (`occurredAt`) — a backdated entry still counts as activity today. Re-arm state needs no new
+   * table: the most recent ENTRY_REMINDER's `createdAt` is the last-fired marker (mirrors
+   * RECURRENCE_DUE's per-occurrence dedupe), compared against the last entry rather than a fixed
+   * entityId, since the "entity" here is a moving streak, not a stable id.
+   *
+   * `now` and `onlyUserId` are test-only seams: tests run against the real shared dev database
+   * (docs/10-conventions-dev.md §6) — `onlyUserId` keeps an unscoped sweep from touching every
+   * real user (same reasoning as `ReconciliationService.runNightlyDriftChecks`), and `now` lets a
+   * test simulate the passage of days without sleeping. The real `@Cron` entry point omits both.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  async notifyEntryReminders(now: Date = new Date(), onlyUserId?: string): Promise<void> {
+    const users = await this.prisma.user.findMany({
+      where: { entryReminderDays: { not: null }, ...(onlyUserId && { id: onlyUserId }) },
+      select: { id: true, entryReminderDays: true, createdAt: true },
+    });
+
+    for (const user of users) {
+      const reminderDays = user.entryReminderDays;
+      if (reminderDays === null) continue;
+
+      const lastTransaction = await this.prisma.transaction.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      });
+      // A user who has never entered anything is maximally inactive since they registered —
+      // exactly the D+30 drop-off this reminder exists to catch (docs/04 §K), not an edge case to skip.
+      const lastEntryAt = lastTransaction?.createdAt ?? user.createdAt;
+
+      const daysSinceLastEntry = Math.floor((now.getTime() - lastEntryAt.getTime()) / MS_PER_DAY);
+      if (daysSinceLastEntry < reminderDays) continue;
+
+      const lastReminder = await this.prisma.notification.findFirst({
+        where: { userId: user.id, type: 'ENTRY_REMINDER' },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      });
+      // RG-N13: already reminded for this streak — re-arm only once a new entry postdates it.
+      if (lastReminder && lastReminder.createdAt > lastEntryAt) continue;
+
+      await this.create({
+        userId: user.id,
+        type: 'ENTRY_REMINDER',
+        params: { daysSinceLastEntry },
+        severity: 'INFO',
+      });
+    }
+  }
+
+  /**
+   * RG-N15 (docs/04 §K, lot 20): monthly, CASH/MOBILE_MONEY only — where drift is expected
+   * (RG-A8). Skips an account already reconciled this calendar month; `entityId` also dedupes
+   * per (account, month) as a safety net against a same-day rerun.
+   *
+   * `now` and `onlyUserId` are the same test-only seams as `notifyEntryReminders` above.
+   */
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_NOON)
+  async notifyReconcileReminders(now: Date = new Date(), onlyUserId?: string): Promise<void> {
+    const accounts = await this.prisma.account.findMany({
+      where: {
+        isArchived: false,
+        type: { in: ['CASH', 'MOBILE_MONEY'] },
+        ...(onlyUserId && { userId: onlyUserId }),
+      },
+    });
+    const monthKey = now.toISOString().slice(0, 7);
+
+    for (const account of accounts) {
+      if (account.lastReconciledAt && account.lastReconciledAt.toISOString().slice(0, 7) === monthKey) continue;
+
+      await this.create({
+        userId: account.userId,
+        type: 'RECONCILE_REMINDER',
+        params: { accountName: account.name },
+        entityType: 'Account',
+        entityId: `${account.id}:${monthKey}`,
         severity: 'INFO',
       });
     }
