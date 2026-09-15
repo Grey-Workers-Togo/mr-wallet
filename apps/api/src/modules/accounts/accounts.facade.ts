@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
-/** Public interface of the `accounts` module (docs/02-architecture.md §4) — consumed by `transactions`, `debts`, `goals`, `sync`. */
+/** Public interface of the `accounts` module (docs/02-architecture.md §4) — consumed by `transactions`, `debts`, `goals`, `reconciliation`, `sync`. */
 @Injectable()
 export class AccountsFacade {
   constructor(private readonly accountsService: AccountsService) {}
@@ -36,7 +36,7 @@ export class AccountsFacade {
     return this.accountsService.remove(userId, id);
   }
 
-  reconcile(userId: string, id: string) {
-    return this.accountsService.reconcile(userId, id);
+  updateLastReconciledAt(userId: string, id: string, at: Date) {
+    return this.accountsService.updateLastReconciledAt(userId, id, at);
   }
 }
