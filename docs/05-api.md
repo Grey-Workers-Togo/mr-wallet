@@ -442,3 +442,18 @@ The audit log is **read-only**: no write or delete endpoint is exposed.
 | `/import/upload` | 20 / hour / user |
 | `/export/*` | 10 / hour / user |
 | Rest of the API | 300 / min / user |
+
+## 18. Sync (docs/14-sync-protocol.md)
+
+Server groundwork landed in `apps/api/src/modules/sync/` (docs/15-roadmap-mobile.md § M0) — no
+mobile client consumes it yet.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/sync/push` | Applies up to 100 client operations, in order. Full contract: docs/14 § 3.1. |
+| GET | `/sync/changes` | `?since=<cursor>&limit=<n>` — single ordered feed of upserts/tombstones since the cursor. docs/14 § 3.2. |
+| GET | `/sync/snapshot` | `?limit=<n>` — same feed from the beginning, for a device's first replica. docs/14 § 3.3. |
+
+`account.create`/`category.create`/etc. accept an optional client-supplied `id` (UUIDv7) on
+every business module's create endpoint — an id already used by that user is a replay, not an
+error (RG-SY3). This is additive: existing callers that never send an `id` see no change.
