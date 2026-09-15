@@ -475,7 +475,15 @@
     "columnCurrency": "Currency",
     "columnEntries": "Entries",
     "columnExits": "Exits",
-    "columnBalance": "Balance"
+    "columnBalance": "Balance",
+    "reconcile": "Reconcile",
+    "reconcileTitle": "Reconcile {name}",
+    "reconcileDescription": "Enter the real balance you counted. The difference is recorded as an adjustment — nothing is corrected silently.",
+    "actualBalanceLabel": "Actual balance",
+    "asOfDateLabel": "As of date",
+    "reconcileSubmit": "Reconcile",
+    "reconcileNoChange": "Your balance already matched — nothing to adjust.",
+    "reconcileAdjusted": "Adjusted by {amount}."
   },
   "account": {
     "type": {
@@ -620,7 +628,9 @@
     "columnAmount": "Amount",
     "paginationRange": "Showing {from}–{to} of {total}",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "feeLabel": "Fee ({currency}, optional)",
+    "feeInline": "incl. {amount} fee"
   },
   "import": {
     "title": "Import a statement",
@@ -941,6 +951,8 @@
     "timezoneLabel": "Timezone",
     "weekStartsOnLabel": "Week start day",
     "monthStartDayLabel": "Month start day",
+    "entryReminderDaysLabel": "Remind me after this many days of inactivity",
+    "entryReminderDaysDisabled": "Disabled",
     "save": "Save",
     "pinSection": "PIN lock",
     "pinEnabled": "PIN lock enabled",

@@ -475,7 +475,15 @@
     "columnCurrency": "Devise",
     "columnEntries": "Entrées",
     "columnExits": "Sorties",
-    "columnBalance": "Solde"
+    "columnBalance": "Solde",
+    "reconcile": "Rapprocher",
+    "reconcileTitle": "Rapprocher {name}",
+    "reconcileDescription": "Indiquez le solde réel constaté. La différence est enregistrée comme un ajustement — rien n'est corrigé silencieusement.",
+    "actualBalanceLabel": "Solde réel",
+    "asOfDateLabel": "Date du constat",
+    "reconcileSubmit": "Rapprocher",
+    "reconcileNoChange": "Votre solde correspondait déjà — aucun ajustement nécessaire.",
+    "reconcileAdjusted": "Ajusté de {amount}."
   },
   "account": {
     "type": {
@@ -620,7 +628,9 @@
     "columnAmount": "Montant",
     "paginationRange": "Affichage {from}–{to} sur {total}",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "feeLabel": "Frais ({currency}, facultatif)",
+    "feeInline": "dont {amount} de frais"
   },
   "import": {
     "title": "Importer un relevé",
@@ -941,6 +951,8 @@
     "timezoneLabel": "Fuseau horaire",
     "weekStartsOnLabel": "Premier jour de la semaine",
     "monthStartDayLabel": "Jour de début du mois",
+    "entryReminderDaysLabel": "Me rappeler après ce nombre de jours d'inactivité",
+    "entryReminderDaysDisabled": "Désactivé",
     "save": "Enregistrer",
     "pinSection": "Verrouillage par code PIN",
     "pinEnabled": "Code PIN activé",

@@ -36,6 +36,7 @@ interface Profile {
   timezone: string;
   weekStartsOn: number;
   monthStartDay: number;
+  entryReminderDays: number | null;
   pinEnabled: boolean;
   pinLockMinutes: number;
 }
@@ -121,6 +122,7 @@ export default function PreferencesPage() {
     e.preventDefault();
     if (!profile) return;
     const form = new FormData(e.currentTarget);
+    const entryReminderDaysRaw = form.get('entryReminderDays') as string;
     await run('profile', async () => {
       await apiClient.patch('/me', {
         displayName: (form.get('displayName') as string) || undefined,
@@ -128,6 +130,7 @@ export default function PreferencesPage() {
         timezone: form.get('timezone') as string,
         weekStartsOn: Number(form.get('weekStartsOn')),
         monthStartDay: Number(form.get('monthStartDay')),
+        entryReminderDays: entryReminderDaysRaw === '' ? null : Number(entryReminderDaysRaw),
       });
       await loadAll();
       const routeLocale = LOCALE_TO_ROUTE[locale];
@@ -264,6 +267,18 @@ export default function PreferencesPage() {
                     min={1}
                     max={31}
                     defaultValue={profile.monthStartDay}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="entryReminderDays">{t('entryReminderDaysLabel')}</Label>
+                  <Input
+                    id="entryReminderDays"
+                    name="entryReminderDays"
+                    type="number"
+                    min={1}
+                    max={90}
+                    defaultValue={profile.entryReminderDays ?? ''}
+                    placeholder={t('entryReminderDaysDisabled')}
                   />
                 </div>
                 <div className="md:col-span-2">
