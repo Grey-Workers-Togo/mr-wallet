@@ -116,4 +116,25 @@ describe('reporting', () => {
     const top = await service.topTransactions(userA, { limit: 10 });
     expect(top[0]?.amountMinor).toBe(5000n);
   });
+
+  it('RG-A10 (lot 19): a reconciliation adjustment is excluded from the category breakdown, shown as unaccountedMinor', async () => {
+    await transactionsService.create(
+      userA,
+      {
+        accountId,
+        type: 'EXPENSE',
+        amountMinor: '750',
+        occurredAt: new Date('2026-01-15'),
+        description: 'Reconciliation adjustment',
+        status: 'RECONCILED',
+        tagIds: [],
+      },
+      { source: 'ADJUSTMENT' },
+    );
+
+    const report = await service.spendingByCategory(userA, {});
+    expect(report.unaccountedMinor).toBe('750');
+    expect(report.totalMinor).toBe('5000'); // unchanged — the adjustment never joins the per-category items
+    expect(report.items.every((i) => i.categoryId !== null)).toBe(true);
+  });
 });
