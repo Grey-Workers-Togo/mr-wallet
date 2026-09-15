@@ -1,12 +1,12 @@
 # Build context must be the repo root (npm workspaces monorepo):
-#   docker build -f apps/web/Dockerfile -t budget-manager-web .
+#   docker build -f apps/web/Dockerfile -t mr-wallet-web .
 
 FROM node:24-alpine AS deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
-RUN npm ci --workspace=@budget-manager/web --workspace=@budget-manager/contracts --include-workspace-root
+RUN npm ci --workspace=@mr-wallet/web --workspace=@mr-wallet/contracts --include-workspace-root
 
 FROM node:24-alpine AS build
 WORKDIR /repo

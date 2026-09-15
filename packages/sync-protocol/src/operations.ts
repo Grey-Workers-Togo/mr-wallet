@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { clientSuppliedId, moneySchema } from '@budget-manager/contracts';
+import { clientSuppliedId, moneySchema } from '@mr-wallet/contracts';
 
 /**
  * The operation catalogue (docs/14-sync-protocol.md § 2.1). Adding a row here is a change to

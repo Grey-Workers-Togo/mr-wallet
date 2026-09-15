@@ -176,6 +176,6 @@ export class ExportService {
     archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
     void archive.finalize();
 
-    return { stream: output, filename: `budget-manager-export-${new Date().toISOString().slice(0, 10)}.zip` };
+    return { stream: output, filename: `mr-wallet-export-${new Date().toISOString().slice(0, 10)}.zip` };
   }
 }

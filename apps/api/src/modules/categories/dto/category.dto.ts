@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { clientSuppliedId } from '@budget-manager/contracts';
+import { clientSuppliedId } from '@mr-wallet/contracts';
 
 const categoryKindEnum = z.enum(['EXPENSE', 'INCOME', 'TRANSFER']);
 

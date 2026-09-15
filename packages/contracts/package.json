@@ -1,5 +1,5 @@
 {
-  "name": "@budget-manager/contracts",
+  "name": "@mr-wallet/contracts",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
