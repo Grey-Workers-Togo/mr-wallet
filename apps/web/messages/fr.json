@@ -919,6 +919,8 @@
       "IMPORT_COMPLETED": "Import terminé",
       "IMPORT_FAILED": "Échec de l'import",
       "BALANCE_MISMATCH": "Écart de solde détecté",
+      "ENTRY_REMINDER": "Aucune saisie depuis {daysSinceLastEntry} jours",
+      "RECONCILE_REMINDER": "Pensez à rapprocher {accountName}",
       "UNKNOWN": "Notification"
     }
   },

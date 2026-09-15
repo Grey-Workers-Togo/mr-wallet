@@ -919,6 +919,8 @@
       "IMPORT_COMPLETED": "Import completed",
       "IMPORT_FAILED": "Import failed",
       "BALANCE_MISMATCH": "Balance mismatch detected",
+      "ENTRY_REMINDER": "No entry in {daysSinceLastEntry} days",
+      "RECONCILE_REMINDER": "Time to reconcile {accountName}",
       "UNKNOWN": "Notification"
     }
   },
