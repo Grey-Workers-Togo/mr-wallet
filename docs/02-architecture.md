@@ -106,11 +106,20 @@ export       → transactions, accounts, categories, tags, budgets, debts, goals
 reporting    → transactions, accounts, debts, currency, budgets
 forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
-sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications
+reconciliation → money, accounts, transactions, categories
+sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications, reconciliation
 ```
 
 `sync` (docs/14-sync-protocol.md § 5) is depended on by none — it exists to dispatch to the
 business facades above, not to be called by them.
+
+`reconciliation` (docs/04-modules.md §B, lot 19) declares `POST /accounts/:id/reconcile` even
+though `accounts` does not appear on its own left-hand side above: the handler needs
+`TransactionsFacade` (to book the adjustment) and `CategoriesFacade` (to resolve the adjustment
+category), and `accounts` must never depend on `transactions` — `transactions` already depends on
+`accounts`, so the reverse edge would cycle. `notifications` reacts to a balance-drift event
+(`account.balance_mismatch`, emitted by `reconciliation`'s nightly job) the same way it already
+reacts to `DebtPaidOff` — no import needed in either direction.
 
 Any dependency absent from this list must be added here before being coded, and verified to be acyclic.
 

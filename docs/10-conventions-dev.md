@@ -249,7 +249,7 @@ The application refuses to start if a mandatory variable is missing — environm
 | `materializeRecurrences` | daily | Creates transactions for due `autoCreate` recurrences (idempotent) |
 | `notifyUpcoming` | daily | Reminders for debt and recurrence due dates |
 | `markLateInstallments` | daily | Moves overdue installments to `LATE` |
-| `reconcileBalances` | nightly | Compares stored and recalculated balances, notifies on discrepancies |
+| `reconcileBalances` (`ReconciliationService.runNightlyDriftChecks`) | nightly | Compares stored and recalculated balances, notifies on discrepancies (`BALANCE_MISMATCH`) — log-and-notify only, never books an adjustment (RG-A11, lot 19) |
 | `purgeUploads` | daily | Deletes imported files older than 30 days |
 | `purgeAuditLog` | monthly | Archives then purges beyond the retention period |
 | `purgeDeletedAccounts` | daily | Physical purge of accounts deleted more than 30 days ago |

@@ -41,7 +41,7 @@ type Operation = {
 | `op` | Payload | Notes |
 |---|---|---|
 | `account.create` / `account.update` / `account.archive` / `account.delete` | Account DTO | Never `currentBalanceMinor` (RG-MW5) |
-| `account.reconcile` | `{ accountId, actualBalanceMinor, at }` | Carries the **declared actual balance**, never the computed delta. The server computes the difference and creates the adjustment (RG-A13). A textbook case of RG-SY1. |
+| `account.reconcile` | `{ accountId, actualBalanceMinor, asOfDate }` | Carries the **declared actual balance**, never the computed delta. The server computes the difference and creates the adjustment (RG-A13). A textbook case of RG-SY1. |
 | `transaction.create` | Transaction DTO with client-supplied `id`, optional fee | The core operation. A fee is one field on this payload; the server creates the fee line in the same SQL transaction (RG-T12). It is never a second operation — that would let a parent sync without its fee. |
 | `transaction.update` / `transaction.delete` | Partial DTO + `baseVersion` | |
 | `transfer.create` | Two-leg DTO | Atomic server-side, one operation client-side |

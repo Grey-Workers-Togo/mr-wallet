@@ -45,6 +45,23 @@ Impact: none observable today. Revisit once a front-end change for reconciliatio
 planned.
 
 
+## Reconciliation adjustment — `description` field (lot 19)
+
+RG-A9 requires the adjustment to be "a normal transaction" but doesn't say what its `description`
+should be. `Transaction.description` is `NOT NULL` and, per CLAUDE.md's "Langues" rule, the
+database must never contain a server-authored human-readable phrase (no `"Reconciliation for " +
+account.name`-style concatenation) — the same reasoning `createFeeLine` already follows by reusing
+its parent's own `description` rather than inventing one.
+
+**Implemented behavior (conservative):** the adjustment's `description` is the account's own name
+(`account.name`) — existing user data, not synthesized text, and immediately meaningful in history
+("Cash wallet", not a generic label). Its category (`category.expense.adjustment`, `i18nKey`-only)
+is what actually identifies it as an adjustment in the UI.
+
+Impact: two reconciliations on the same account produce two transactions with an identical
+description, distinguished only by date/amount — acceptable since the category and amount already
+make each one legible. Revisit if product feedback wants a richer per-adjustment label.
+
 ## Social login — auto-link vs. conflict when the provider doesn't vouch for the email (Lot 21)
 
 The user confirmed auto-linking an OAuth login onto an existing password account when the emails

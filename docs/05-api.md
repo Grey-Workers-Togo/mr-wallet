@@ -157,7 +157,7 @@ API-driven: the API owns the redirect and the callback, not a client-side SDK ex
 | POST | `/accounts/:id/archive` | Archiving |
 | POST | `/accounts/:id/unarchive` | Unarchiving |
 | GET | `/accounts/:id/balance-history` | Balance time series. `?from&to&granularity=day\|week\|month` |
-| POST | `/accounts/:id/reconcile` | Compares stored balance and computed balance, returns the discrepancy |
+| POST | `/accounts/:id/reconcile` | Lot 19 (RG-A8..RG-A13): body `{ actualBalanceMinor, asOfDate }` — the declared actual balance, never a delta. The server computes the difference and, if non-zero, books one `ADJUSTMENT`-source transaction for it (typed `EXPENSE`/`INCOME` by sign) and sets `Account.lastReconciledAt`. Returns `{ deltaMinor, transaction }` (`transaction: null` when the delta was zero). The old stored-vs-computed drift check (`BalanceCheck`) still runs, but only from the nightly job (§ below) — it is no longer reachable via this endpoint. |
 
 ---
 
@@ -363,7 +363,7 @@ Sample response for `simulate-payoff`:
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/reports/spending-by-category` | `?from&to&accountId&depth=1\|2` |
+| GET | `/reports/spending-by-category` | `?from&to&accountId&depth=1\|2`. Response also carries `unaccountedMinor` (lot 19, RG-A10) — the period's reconciliation adjustments, excluded from `items`/`totalMinor` and shown as their own explicit line |
 | GET | `/reports/monthly-summary` | `?months=12` — income, expenses, net per month |
 | GET | `/reports/net-worth` | `?from&to&granularity=month` |
 | GET | `/reports/cashflow` | Inflows/outflows/net |
