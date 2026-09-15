@@ -25,6 +25,15 @@ export class CategoriesService {
     return resolveCategoryName(category, locale);
   }
 
+  /** RG-T13: resolves a user's system category by its stable i18nKey — e.g. the default fee category. */
+  async findSystemByKey(userId: string, i18nKey: string) {
+    const category = await this.prisma.category.findFirst({ where: { userId, i18nKey, isSystem: true } });
+    if (!category) {
+      throw new NotFoundAppError('SYSTEM_CATEGORY_NOT_FOUND', { i18nKey });
+    }
+    return category;
+  }
+
   list(userId: string) {
     return this.prisma.category.findMany({
       where: { userId },

@@ -11,6 +11,10 @@ export class CategoriesFacade {
     return this.categoriesService.getById(userId, id);
   }
 
+  findSystemByKey(userId: string, i18nKey: string) {
+    return this.categoriesService.findSystemByKey(userId, i18nKey);
+  }
+
   create(userId: string, dto: CreateCategoryDto) {
     return this.categoriesService.create(userId, dto);
   }
