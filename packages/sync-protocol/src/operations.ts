@@ -72,39 +72,38 @@ const accountReconcileSchema = z.object({
   accountId: entityId,
 });
 
+// currency is inferred server-side from the account, never accepted from the client — matches
+// transactions.dto.ts's createTransactionSchema exactly (no currency field there either).
+// feeMinor will be added here in the same commit as lot 18 (RG-SY5) — not implemented yet.
 const transactionCreateSchema = z.object({
   id: clientSuppliedId().optional(),
   accountId: entityId,
   type: z.enum(['EXPENSE', 'INCOME']),
   amountMinor: moneySchema.shape.amountMinor,
-  currency: z.string().length(3),
   occurredAt: z.string(),
   description: z.string().min(1),
   categoryId: entityId.optional(),
   payee: z.string().optional(),
   notes: z.string().optional(),
   tagIds: z.array(entityId).optional(),
-  feeMinor: moneySchema.shape.amountMinor.optional(),
 });
 
-const transactionUpdateSchema = z.object({ id: entityId, baseVersion: z.string() }).and(
-  transactionCreateSchema.omit({ id: true }).partial(),
-);
-const transactionDeleteSchema = z.object({ id: entityId, baseVersion: z.string() });
+// baseVersion travels on the Operation envelope (sibling of payload), not duplicated here.
+const transactionUpdateSchema = z.object({ id: entityId }).and(transactionCreateSchema.omit({ id: true }).partial());
+const transactionDeleteSchema = z.object({ id: entityId });
 const transactionBulkCategorizeSchema = z.object({ ids: z.array(entityId).min(1), categoryId: entityId });
 const transactionSetTagsSchema = z.object({ id: entityId, tagIds: z.array(entityId) });
 
+// Matches transaction.dto.ts's createTransferSchema exactly: no currency (inferred per leg from
+// its own account), no cross-currency toAmountMinor/toCurrency, no feeMinor yet (lot 18, RG-SY5).
 const transferCreateSchema = z.object({
   id: clientSuppliedId().optional(),
   fromAccountId: entityId,
   toAccountId: entityId,
   amountMinor: moneySchema.shape.amountMinor,
-  currency: z.string().length(3),
   occurredAt: z.string(),
   description: z.string().min(1),
-  toAmountMinor: moneySchema.shape.amountMinor.optional(),
-  toCurrency: z.string().length(3).optional(),
-  feeMinor: moneySchema.shape.amountMinor.optional(),
+  notes: z.string().optional(),
 });
 
 const categoryCreateSchema = z.object({
