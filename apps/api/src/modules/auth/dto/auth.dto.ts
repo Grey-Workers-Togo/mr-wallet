@@ -50,3 +50,6 @@ export const oauthCompleteSchema = z
   })
   .strict();
 export type OAuthCompleteDto = z.infer<typeof oauthCompleteSchema>;
+
+export const oauthLoginExchangeSchema = z.object({ ticket: z.string().min(1) }).strict();
+export type OAuthLoginExchangeDto = z.infer<typeof oauthLoginExchangeSchema>;
