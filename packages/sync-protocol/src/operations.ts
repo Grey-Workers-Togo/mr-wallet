@@ -74,7 +74,7 @@ const accountReconcileSchema = z.object({
 
 // currency is inferred server-side from the account, never accepted from the client — matches
 // transactions.dto.ts's createTransactionSchema exactly (no currency field there either).
-// feeMinor will be added here in the same commit as lot 18 (RG-SY5) — not implemented yet.
+// feeMinor: RG-T12, one optional field, never stored (RG-T12a).
 const transactionCreateSchema = z.object({
   id: clientSuppliedId().optional(),
   accountId: entityId,
@@ -86,21 +86,28 @@ const transactionCreateSchema = z.object({
   payee: z.string().optional(),
   notes: z.string().optional(),
   tagIds: z.array(entityId).optional(),
+  feeMinor: moneySchema.shape.amountMinor.optional(),
 });
 
 // baseVersion travels on the Operation envelope (sibling of payload), not duplicated here.
-const transactionUpdateSchema = z.object({ id: entityId }).and(transactionCreateSchema.omit({ id: true }).partial());
+// feeMinor is overridden nullable here — RG-T12b: null (or 0) deletes the fee line on update.
+const transactionUpdateSchema = z
+  .object({ id: entityId })
+  .and(transactionCreateSchema.omit({ id: true }).partial())
+  .and(z.object({ feeMinor: moneySchema.shape.amountMinor.nullable().optional() }));
 const transactionDeleteSchema = z.object({ id: entityId });
 const transactionBulkCategorizeSchema = z.object({ ids: z.array(entityId).min(1), categoryId: entityId });
 const transactionSetTagsSchema = z.object({ id: entityId, tagIds: z.array(entityId) });
 
 // Matches transaction.dto.ts's createTransferSchema exactly: no currency (inferred per leg from
-// its own account), no cross-currency toAmountMinor/toCurrency, no feeMinor yet (lot 18, RG-SY5).
+// its own account), no cross-currency toAmountMinor/toCurrency. feeMinor attaches to the
+// outbound leg (RG-T11).
 const transferCreateSchema = z.object({
   id: clientSuppliedId().optional(),
   fromAccountId: entityId,
   toAccountId: entityId,
   amountMinor: moneySchema.shape.amountMinor,
+  feeMinor: moneySchema.shape.amountMinor.optional(),
   occurredAt: z.string(),
   description: z.string().min(1),
   notes: z.string().optional(),
