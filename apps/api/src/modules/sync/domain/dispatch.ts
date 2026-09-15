@@ -22,6 +22,8 @@ import { createDebtSchema, recordPaymentSchema, simulatePayoffSchema, updateDebt
 import { RecurrenceFacade } from '../../recurrence/recurrence.facade';
 import { createRecurrenceSchema, updateRecurrenceSchema } from '../../recurrence/dto/recurrence.dto';
 import { NotificationsFacade } from '../../notifications/notifications.facade';
+import { ReconciliationFacade } from '../../reconciliation/reconciliation.facade';
+import { reconcileAccountSchema } from '../../reconciliation/dto/reconcile.dto';
 import { checkVersion } from './sync-conflict.error';
 
 /** `{ id, ...rest }` — every update/delete-style payload targets an existing entity by id. */
@@ -33,7 +35,7 @@ const notificationMarkReadSchema = z.object({ id: z.string() });
 const debtRecordPaymentEnvelope = z.object({ debtId: z.string() }).passthrough();
 const debtSimulateEnvelope = z.object({ debtId: z.string() }).passthrough();
 const goalContributeEnvelope = z.object({ goalId: z.string() }).passthrough();
-const accountReconcileSchema = z.object({ accountId: z.string() });
+const accountReconcileEnvelope = z.object({ accountId: z.string() }).passthrough();
 
 export type OperationHandler = (userId: string, payload: unknown, baseVersion?: string) => Promise<unknown>;
 
@@ -55,8 +57,10 @@ export function buildDispatchTable(facades: {
   debts: DebtsFacade;
   recurrence: RecurrenceFacade;
   notifications: NotificationsFacade;
+  reconciliation: ReconciliationFacade;
 }): Record<OperationName, OperationHandler> {
-  const { accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications } = facades;
+  const { accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications, reconciliation } =
+    facades;
 
   return {
     'account.create': (userId, payload) => accounts.create(userId, createAccountSchema.parse(payload)),
@@ -77,8 +81,8 @@ export function buildDispatchTable(facades: {
       return { id };
     },
     'account.reconcile': (userId, payload) => {
-      const { accountId } = accountReconcileSchema.parse(payload);
-      return accounts.reconcile(userId, accountId);
+      const { accountId, ...rest } = accountReconcileEnvelope.parse(payload);
+      return reconciliation.reconcile(userId, accountId, reconcileAccountSchema.parse(rest));
     },
 
     'transaction.create': (userId, payload) => transactions.create(userId, createTransactionSchema.parse(payload)),

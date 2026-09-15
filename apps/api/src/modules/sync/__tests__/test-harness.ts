@@ -23,6 +23,8 @@ import { RecurrenceService } from '../../recurrence/recurrence.service';
 import { RecurrenceFacade } from '../../recurrence/recurrence.facade';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationsFacade } from '../../notifications/notifications.facade';
+import { ReconciliationService } from '../../reconciliation/reconciliation.service';
+import { ReconciliationFacade } from '../../reconciliation/reconciliation.facade';
 import { SyncService } from '../sync.service';
 
 /**
@@ -62,6 +64,9 @@ export function buildSyncTestHarness(prisma: PrismaService, raw: RawPrismaServic
   const notificationsFacade = new NotificationsFacade(
     new NotificationsService(prisma, recurrenceFacade, config, new MailService(config)),
   );
+  const reconciliationFacade = new ReconciliationFacade(
+    new ReconciliationService(prisma, accountsFacade, transactionsFacade, categoriesFacade, events),
+  );
 
   const syncService = new SyncService(
     prisma,
@@ -76,6 +81,7 @@ export function buildSyncTestHarness(prisma: PrismaService, raw: RawPrismaServic
     debtsFacade,
     recurrenceFacade,
     notificationsFacade,
+    reconciliationFacade,
   );
 
   return {
@@ -89,5 +95,6 @@ export function buildSyncTestHarness(prisma: PrismaService, raw: RawPrismaServic
     debtsFacade,
     recurrenceFacade,
     notificationsFacade,
+    reconciliationFacade,
   };
 }

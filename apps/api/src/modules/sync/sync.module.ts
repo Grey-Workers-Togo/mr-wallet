@@ -8,6 +8,7 @@ import { GoalsModule } from '../goals/goals.module';
 import { DebtsModule } from '../debts/debts.module';
 import { RecurrenceModule } from '../recurrence/recurrence.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ReconciliationModule } from '../reconciliation/reconciliation.module';
 import { SyncController } from './sync.controller';
 import { SyncService } from './sync.service';
 
@@ -26,6 +27,7 @@ import { SyncService } from './sync.service';
     DebtsModule,
     RecurrenceModule,
     NotificationsModule,
+    ReconciliationModule,
   ],
   controllers: [SyncController],
   providers: [SyncService],

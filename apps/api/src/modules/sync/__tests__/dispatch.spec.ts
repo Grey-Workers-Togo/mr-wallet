@@ -10,6 +10,7 @@ import type { GoalsFacade } from '../../goals/goals.facade';
 import type { DebtsFacade } from '../../debts/debts.facade';
 import type { RecurrenceFacade } from '../../recurrence/recurrence.facade';
 import type { NotificationsFacade } from '../../notifications/notifications.facade';
+import type { ReconciliationFacade } from '../../reconciliation/reconciliation.facade';
 
 /**
  * RG-SY5: adding an op to the catalogue requires handling on the API side in the same commit.
@@ -27,6 +28,7 @@ describe('sync dispatch table completeness', () => {
       debts: {} as DebtsFacade,
       recurrence: {} as RecurrenceFacade,
       notifications: {} as NotificationsFacade,
+      reconciliation: {} as ReconciliationFacade,
     });
 
     const tableKeys = Object.keys(table).sort();

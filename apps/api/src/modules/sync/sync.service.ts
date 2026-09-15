@@ -13,6 +13,7 @@ import { GoalsFacade } from '../goals/goals.facade';
 import { DebtsFacade } from '../debts/debts.facade';
 import { RecurrenceFacade } from '../recurrence/recurrence.facade';
 import { NotificationsFacade } from '../notifications/notifications.facade';
+import { ReconciliationFacade } from '../reconciliation/reconciliation.facade';
 import { buildDispatchTable, OperationHandler } from './domain/dispatch';
 import { SyncConflictError } from './domain/sync-conflict.error';
 import { decodeCursor, encodeCursor, loadChangesPage } from './domain/changes-feed';
@@ -40,6 +41,7 @@ export class SyncService {
     debts: DebtsFacade,
     recurrence: RecurrenceFacade,
     notifications: NotificationsFacade,
+    reconciliation: ReconciliationFacade,
   ) {
     this.dispatch = buildDispatchTable({
       accounts,
@@ -51,6 +53,7 @@ export class SyncService {
       debts,
       recurrence,
       notifications,
+      reconciliation,
     });
   }
 
