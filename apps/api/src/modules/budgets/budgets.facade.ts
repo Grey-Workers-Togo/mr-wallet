@@ -11,6 +11,10 @@ export class BudgetsFacade {
     return this.budgetsService.list(userId);
   }
 
+  getById(userId: string, id: string) {
+    return this.budgetsService.getById(userId, id);
+  }
+
   create(userId: string, dto: CreateBudgetDto) {
     return this.budgetsService.create(userId, dto);
   }

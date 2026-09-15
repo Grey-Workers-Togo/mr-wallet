@@ -11,6 +11,10 @@ export class RecurrenceFacade {
     return this.recurrenceService.upcoming(userId, days);
   }
 
+  getById(userId: string, id: string) {
+    return this.recurrenceService.getById(userId, id);
+  }
+
   create(userId: string, dto: CreateRecurrenceDto) {
     return this.recurrenceService.create(userId, dto);
   }

@@ -11,6 +11,10 @@ export class GoalsFacade {
     return this.goalsService.list(userId);
   }
 
+  getById(userId: string, id: string) {
+    return this.goalsService.getById(userId, id);
+  }
+
   create(userId: string, dto: CreateGoalDto) {
     return this.goalsService.create(userId, dto);
   }

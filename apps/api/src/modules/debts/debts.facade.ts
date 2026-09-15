@@ -11,6 +11,10 @@ export class DebtsFacade {
     return this.debtsService.list(userId);
   }
 
+  getById(userId: string, id: string) {
+    return this.debtsService.getById(userId, id);
+  }
+
   create(userId: string, dto: CreateDebtDto) {
     return this.debtsService.create(userId, dto);
   }
