@@ -53,6 +53,11 @@ services:
       WEB_APP_URL: ${WEB_APP_URL}
       STORAGE_DIR: ${STORAGE_DIR:-/repo/apps/api/storage/attachments}
       PORT: 3000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-}
     # Persists uploaded receipt photos across container replacement - without this mount,
     # STORAGE_DIR would live in the container's writable layer and vanish on redeploy.
     volumes:
