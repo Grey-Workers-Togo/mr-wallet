@@ -247,6 +247,7 @@ enum TxSource {
   DEBT_CREATION
   GOAL_CONTRIBUTION
   ADJUSTMENT
+  FEE
 }
 
 model Transaction {
@@ -276,6 +277,12 @@ model Transaction {
   debtPaymentId      String?
   debtId             String?
   goalContributionId String?
+
+  // RG-T11/RG-T12a (docs/04 §D): a fee is its own EXPENSE/FEE transaction, never a column on its
+  // parent. feeForTransactionId is unique — a parent has at most one fee line.
+  feeForTransactionId String?      @unique
+  feeForTransaction   Transaction? @relation("TransactionFeeLine", fields: [feeForTransactionId], references: [id])
+  feeLine             Transaction? @relation("TransactionFeeLine")
 
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @db.Timestamptz(6)
