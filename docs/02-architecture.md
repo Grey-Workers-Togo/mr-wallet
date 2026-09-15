@@ -106,7 +106,11 @@ export       → transactions, accounts, categories, tags, budgets, debts, goals
 reporting    → transactions, accounts, debts, currency, budgets
 forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
+sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications
 ```
+
+`sync` (docs/14-sync-protocol.md § 5) is depended on by none — it exists to dispatch to the
+business facades above, not to be called by them.
 
 Any dependency absent from this list must be added here before being coded, and verified to be acyclic.
 
