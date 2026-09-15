@@ -60,6 +60,7 @@ describe('auth OAuth login / auto-link resolution', () => {
   });
 
   afterAll(async () => {
+    await prisma.oAuthLoginTicket.deleteMany({ where: { userId: { in: userIds } } });
     await prisma.oAuthAccount.deleteMany({ where: { userId: { in: userIds } } });
     await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
     await prisma.category.deleteMany({ where: { userId: { in: userIds } } });
@@ -85,7 +86,19 @@ describe('auth OAuth login / auto-link resolution', () => {
     expect(outcome.kind).toBe('login');
     if (outcome.kind === 'login') {
       expect(outcome.user.id).toBe(user.id);
-      expect(outcome.accessToken).toBeTruthy();
+      expect(outcome.refreshToken).toBeTruthy();
+      expect(outcome.loginTicket).toBeTruthy();
+
+      // The redirect itself carries no access token (docs: cross-site refresh cookie can't be
+      // trusted on first load) — the front end exchanges the opaque ticket for one instead.
+      const exchanged = await service.exchangeOAuthLoginTicket(outcome.loginTicket);
+      expect(exchanged.accessToken).toBeTruthy();
+      expect(exchanged.user.id).toBe(user.id);
+
+      // Single-use: a second exchange of the same ticket must fail.
+      await expect(service.exchangeOAuthLoginTicket(outcome.loginTicket)).rejects.toMatchObject({
+        code: 'INVALID_OAUTH_LOGIN_TICKET',
+      });
     }
   });
 

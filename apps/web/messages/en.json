@@ -446,6 +446,10 @@
       "submitting": "Creating account...",
       "missingToken": "This link is invalid or has expired. Please sign in again.",
       "loginLink": "Back to login"
+    },
+    "oauthLogin": {
+      "title": "Signing you in",
+      "subtitle": "Just a moment..."
     }
   },
   "accounts": {
@@ -1019,6 +1023,7 @@
     "OAUTH_LAST_AUTH_METHOD": "You can't unlink this account — it's your only way to sign in. Set a password first.",
     "OAUTH_PROVIDER_DISABLED": "This sign-in method isn't available right now.",
     "INVALID_OAUTH_SIGNUP_TOKEN": "This link is invalid or has expired. Please sign in again.",
+    "INVALID_OAUTH_LOGIN_TICKET": "This link is invalid or has expired. Please sign in again.",
     "CATEGORY_NOT_FOUND": "Category not found.",
     "CATEGORY_NAME_TAKEN": "A category with this name already exists.",
     "CATEGORY_MAX_DEPTH_EXCEEDED": "A sub-category cannot have children.",
