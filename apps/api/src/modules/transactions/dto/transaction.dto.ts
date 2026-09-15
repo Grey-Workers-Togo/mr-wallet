@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const transactionTypeEnum = z.enum(['EXPENSE', 'INCOME']);
@@ -6,6 +7,8 @@ const txStatusEnum = z.enum(['PENDING', 'CLEARED', 'RECONCILED', 'VOID']);
 
 export const createTransactionSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     accountId: z.string().uuid(),
     type: transactionTypeEnum,
     amountMinor: unsignedAmountMinor(),
@@ -16,6 +19,9 @@ export const createTransactionSchema = z
     notes: z.string().max(500).optional(),
     status: txStatusEnum.default('CLEARED'),
     tagIds: z.array(z.string().uuid()).default([]),
+    // RG-T12: one optional field, not a second entry. Never stored (RG-T12a) — materialized as
+    // its own FEE-source transaction line in the same SQL transaction as the parent.
+    feeMinor: unsignedAmountMinor().optional(),
   })
   .strict();
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
@@ -31,18 +37,24 @@ export const updateTransactionSchema = z
     notes: z.string().max(500).optional(),
     status: txStatusEnum.optional(),
     tagIds: z.array(z.string().uuid()).optional(),
+    // RG-T12b: 0 or null deletes the fee line; a new value updates it; omitted leaves it as-is.
+    feeMinor: unsignedAmountMinor().nullable().optional(),
   })
   .strict();
 export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 
 export const createTransferSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7 for the outbound leg, for sync.
+    id: clientSuppliedId().optional(),
     fromAccountId: z.string().uuid(),
     toAccountId: z.string().uuid(),
     amountMinor: unsignedAmountMinor(),
     occurredAt: z.coerce.date(),
     description: z.string().trim().min(1).max(200).default('Transfer'),
     notes: z.string().max(500).optional(),
+    // RG-T11: a fee attached to a transfer debits the source account, same as any other operation.
+    feeMinor: unsignedAmountMinor().optional(),
   })
   .strict()
   .refine((dto) => dto.fromAccountId !== dto.toAccountId, { message: 'SAME_ACCOUNT' });

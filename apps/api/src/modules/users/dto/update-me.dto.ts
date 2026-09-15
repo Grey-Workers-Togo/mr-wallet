@@ -8,6 +8,8 @@ export const updateMeSchema = z
     weekStartsOn: z.number().int().min(0).max(6).optional(),
     monthStartDay: z.number().int().min(1).max(31).optional(),
     hasSeenOnboarding: z.boolean().optional(),
+    // RG-N12 (lot 20): days of inactivity before an ENTRY_REMINDER fires; null disables it.
+    entryReminderDays: z.number().int().min(1).max(90).nullable().optional(),
   })
   .strict();
 

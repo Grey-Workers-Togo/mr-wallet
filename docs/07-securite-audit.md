@@ -55,6 +55,17 @@ Lockout after inactivity (default 5 minutes, configurable, can be disabled). The
 | RG-S8 | After 5 incorrect PIN attempts, the client purges the local cache and forces a full reconnection. |
 | RG-S9 | System biometrics is not guaranteed to be available on a PWA (see ADR-0007). The PIN is the reference mechanism; biometrics, when the `WebAuthn` API is available, is offered as an optional complement. |
 
+### Social login (Google / GitHub)
+
+API-driven (the API owns the redirect and the callback — see `05-api.md § 2 bis`), no third-party auth SDK, no session middleware: the whole flow is built from the same primitives as password auth (a hashed opaque token, a short-lived cookie), never a new one invented for the occasion.
+
+- **CSRF / state**: a plain random nonce (`randomBytes(32)`), not a signed JWT — the `oauth_state` cookie is `HttpOnly` and set by the API itself, already an unforgeable trust anchor, so signing its content adds a cryptographic primitive for no benefit. Sent both as the `state` query parameter to the provider and as the cookie value; the callback rejects the request outright if they don't match, before any code exchange is attempted. `SameSite=Lax` (not `Strict` or `None`): this cookie is read back on a top-level GET navigation the *provider* initiates back to the API's own origin — the one case `Lax` is designed for, and distinct from the refresh cookie's `SameSite=None`, which exists only because that cookie is read by a cross-site `fetch()` from the web app.
+- **A brand-new identity never gets a `User` row on the callback itself.** `baseCurrency` has no default anywhere in the app — registration always requires the client to pick one explicitly — so a provider identity with no matching account yields a `PendingOAuthSignup` row instead: a single-use, hashed, 10-minute token, the same shape as `PasswordResetToken`/`EmailVerificationToken` (opaque, **never a JWT** — a JWT is signed, not encrypted, and would carry the email/name in the clear inside a URL that then sits in browser history and referrer headers). The client is redirected to a one-field "pick a currency" step; only then is the `User` row created.
+- **Auto-link only if the provider vouches for the email.** An OAuth login whose email matches an existing account is linked automatically **only when the provider reports that email as verified** (`OAUTH_EMAIL_UNVERIFIED_CONFLICT` otherwise). Without this check, anyone could take over an existing account by registering its email address at a provider without ever proving they own it.
+- **Redirect-URI trust**: each provider is configured with an exact, pre-registered callback URL built from `API_PUBLIC_URL`, never derived from the incoming request — Google/GitHub both refuse a mismatched `redirect_uri`, and the API doesn't try to be cleverer than that.
+- **Unlinking never leaves an account with zero authentication methods** (`OAUTH_LAST_AUTH_METHOD`, 409): refused when the account has no password and this would remove its last linked provider.
+- A linked provider account (`OAuthAccount`) never stores an access/refresh token issued by Google or GitHub — the provider is only consulted once, at link time, to read the profile. There is nothing to revoke on their side because nothing long-lived is kept.
+
 ---
 
 ## 3. Authorization
@@ -217,7 +228,7 @@ currency.rate_create|rate_delete
 - **Right of access and portability**: `GET /me/export` provides all data in an open format.
 - **Right to erasure**: `DELETE /me` marks the account as deleted, revokes sessions, and triggers a physical purge at D+30. The delay allows for recovery in case of error; it is announced to the user.
 - **Retention**: data is retained as long as the account is active. An account inactive for 24 months is notified before any action.
-- **Subprocessors**: no third-party service receives financial data in V1. If a transactional email provider is used, it only receives the address and the message content.
+- **Subprocessors**: no third-party service receives financial data in V1. If a transactional email provider is used, it only receives the address and the message content. Google/GitHub, when social login is used, only ever see the standard OAuth handshake (an authorization code, a profile read at link time) — never budget data, and no token from either provider is retained past that one request (see § 2, "Social login").
 
 ---
 

@@ -29,10 +29,12 @@ import { BudgetsModule } from './modules/budgets/budgets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DebtsModule } from './modules/debts/debts.module';
 import { GoalsModule } from './modules/goals/goals.module';
+import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { ForecastingModule } from './modules/forecasting/forecasting.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { HealthModule } from './modules/health/health.module';
+import { SyncModule } from './modules/sync/sync.module';
 
 @Module({
   imports: [
@@ -60,10 +62,12 @@ import { HealthModule } from './modules/health/health.module';
     NotificationsModule,
     DebtsModule,
     GoalsModule,
+    ReconciliationModule,
     ReportingModule,
     ForecastingModule,
     AuditLogModule,
     HealthModule,
+    SyncModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

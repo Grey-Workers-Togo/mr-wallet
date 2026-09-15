@@ -8,10 +8,12 @@
 |---|---|
 | Code, identifiers, table and field names | **English** |
 | Error codes, `i18nKey`, notification types | **English**, stable, never translated |
-| Code comments | French or English, but consistent per file |
-| Documentation, commits | **French** |
+| Code comments | **English** |
+| Documentation, ADRs, commits, `QUESTIONS.md` | **English** ([ADR-0014](adr/0014-english-as-sole-documentation-language.md)) |
 | User interface | **French and English** (ADR-0009) |
 | Data entered by the user | Their language, never translated |
+
+Documentation exists **once**, in English ([ADR-0014](adr/0014-english-as-sole-documentation-language.md)). There are no `*_fr.md` twins: a second copy that nobody is accountable for keeping in step diverges, and it did. This says nothing about the product, which stays bilingual — the rules below are unchanged.
 
 ## 1 bis. Internationalization
 
@@ -247,12 +249,14 @@ The application refuses to start if a mandatory variable is missing — environm
 | `materializeRecurrences` | daily | Creates transactions for due `autoCreate` recurrences (idempotent) |
 | `notifyUpcoming` | daily | Reminders for debt and recurrence due dates |
 | `markLateInstallments` | daily | Moves overdue installments to `LATE` |
-| `reconcileBalances` | nightly | Compares stored and recalculated balances, notifies on discrepancies |
+| `reconcileBalances` (`ReconciliationService.runNightlyDriftChecks`) | nightly | Compares stored and recalculated balances, notifies on discrepancies (`BALANCE_MISMATCH`) — log-and-notify only, never books an adjustment (RG-A11, lot 19) |
 | `purgeUploads` | daily | Deletes imported files older than 30 days |
 | `purgeAuditLog` | monthly | Archives then purges beyond the retention period |
 | `purgeDeletedAccounts` | daily | Physical purge of accounts deleted more than 30 days ago |
 | `purgeStaleDeviceTokens` | weekly | Deletes push subscriptions inactive or failing for 90 days |
 | `purgeExpiredSupportRows` | daily | Purges expired `IdempotencyKey`, `PasswordResetToken`, and `ExportJob` |
+| `notifyEntryReminders` (`NotificationsService`) | daily | `ENTRY_REMINDER` after `user.entryReminderDays` days of inactivity, one per streak (RG-N12/RG-N13, lot 20) |
+| `notifyReconcileReminders` (`NotificationsService`) | monthly | `RECONCILE_REMINDER` for `CASH`/`MOBILE_MONEY` accounts not yet reconciled this month (RG-N15, lot 20) |
 
 All tasks are **idempotent** and logged with `actorType = SCHEDULER`.
 

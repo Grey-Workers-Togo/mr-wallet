@@ -17,6 +17,8 @@ const TITLES: Record<'fr' | 'en', Record<NotificationType, string>> = {
     IMPORT_COMPLETED: 'Import terminé',
     IMPORT_FAILED: "Échec de l'import",
     BALANCE_MISMATCH: 'Écart de solde détecté',
+    ENTRY_REMINDER: 'Aucune saisie récente',
+    RECONCILE_REMINDER: 'Pensez à rapprocher votre solde',
   },
   en: {
     BUDGET_THRESHOLD: 'Budget threshold reached',
@@ -29,6 +31,8 @@ const TITLES: Record<'fr' | 'en', Record<NotificationType, string>> = {
     IMPORT_COMPLETED: 'Import completed',
     IMPORT_FAILED: 'Import failed',
     BALANCE_MISMATCH: 'Balance mismatch detected',
+    ENTRY_REMINDER: 'No recent entry',
+    RECONCILE_REMINDER: 'Time to reconcile your balance',
   },
 };
 

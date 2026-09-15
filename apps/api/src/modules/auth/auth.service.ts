@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
-import type { Session } from '@prisma/client';
+import type { Session, OAuthProvider as OAuthProviderName } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
 import { MailService } from '../../common/mail/mail.service';
@@ -13,9 +13,13 @@ import { hashPassword, isPasswordAcceptable, verifyPassword } from './domain/pas
 import { generateRefreshToken, hashRefreshToken, refreshTokenMatches } from './domain/refresh-token';
 import { signAccessToken } from '../../common/auth/jwt.util';
 import { assertNotLocked, recordFailure, recordSuccess } from './login-throttle';
+import { OAuthProfile, OAuthProviderAdapter } from '../../common/oauth/oauth-provider.interface';
+import { GoogleOAuthProvider } from '../../common/oauth/google.provider';
+import { GithubOAuthProvider } from '../../common/oauth/github.provider';
 import {
   ChangePasswordDto,
   LoginDto,
+  OAuthCompleteDto,
   RegisterDto,
   ResendVerificationDto,
   ResetPasswordDto,
@@ -30,9 +34,16 @@ export interface AuthResult {
   skipCookie?: boolean;
 }
 
+export type OAuthCallbackOutcome =
+  | ({ kind: 'login' } & AuthResult)
+  | { kind: 'pending'; redirectToken: string }
+  | { kind: 'error'; code: string };
+
 const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** A brand-new OAuth identity has this long to pick a base currency and complete signup. */
+const PENDING_OAUTH_SIGNUP_TTL_MS = 10 * 60 * 1000;
 /**
  * Refresh tokens rotate on every use. Two tabs/requests racing on the same expired
  * access token can both present the same (about-to-be-superseded) refresh token; without
@@ -103,7 +114,7 @@ export class AuthService {
     }
 
     const user = await this.users.findByEmail(dto.email);
-    const passwordValid = user ? await verifyPassword(user.passwordHash, dto.password) : false;
+    const passwordValid = user?.passwordHash ? await verifyPassword(user.passwordHash, dto.password) : false;
 
     if (!user || !passwordValid) {
       recordFailure(dto.email, ipHash);
@@ -155,6 +166,177 @@ export class AuthService {
     const user = await this.users.findByEmail(dto.email);
     if (!user || user.emailVerifiedAt) return;
     await this.sendVerificationEmail(user.id, user.email, user.locale);
+  }
+
+  /** Throws `OAUTH_PROVIDER_DISABLED` if that provider has no client id/secret configured. */
+  private getOAuthProviderAdapter(provider: OAuthProviderName): OAuthProviderAdapter {
+    const base = this.config.get('API_PUBLIC_URL') ?? '';
+    if (provider === 'GOOGLE') {
+      const clientId = this.config.get('GOOGLE_CLIENT_ID') ?? '';
+      const clientSecret = this.config.get('GOOGLE_CLIENT_SECRET') ?? '';
+      if (!clientId || !clientSecret || !base) {
+        throw new AppError('OAUTH_PROVIDER_DISABLED', HttpStatus.NOT_FOUND);
+      }
+      return new GoogleOAuthProvider(clientId, clientSecret, `${base}/api/v1/auth/google/callback`);
+    }
+    const clientId = this.config.get('GITHUB_CLIENT_ID') ?? '';
+    const clientSecret = this.config.get('GITHUB_CLIENT_SECRET') ?? '';
+    if (!clientId || !clientSecret || !base) {
+      throw new AppError('OAUTH_PROVIDER_DISABLED', HttpStatus.NOT_FOUND);
+    }
+    return new GithubOAuthProvider(clientId, clientSecret, `${base}/api/v1/auth/github/callback`);
+  }
+
+  buildOAuthAuthorizeUrl(provider: OAuthProviderName, state: string): string {
+    return this.getOAuthProviderAdapter(provider).buildAuthUrl(state);
+  }
+
+  /**
+   * Order of resolution (docs/07 §2 "OAuth2 / social login"):
+   * 1. Already-linked `OAuthAccount` → log in, whatever the provider says about the email today.
+   * 2. No link, but the provider gave a verified email matching an existing `User` → auto-link.
+   * 3. No link, provider gave a verified email matching an existing `User`, but reported
+   *    unverified → refuse (`OAUTH_EMAIL_UNVERIFIED_CONFLICT`) rather than silently take over
+   *    that account.
+   * 4. No link, no matching `User`, no usable verified email at all → `OAUTH_EMAIL_UNAVAILABLE`.
+   * 5. Otherwise: brand-new identity → a `PendingOAuthSignup` row, caller redirects to the
+   *    "pick a base currency" step (`completeOAuthSignup`) — see class-level note on why a User
+   *    row can't be created yet.
+   */
+  async handleOAuthCallback(
+    provider: OAuthProviderName,
+    code: string,
+    ipHash: string,
+    userAgent: string | null,
+  ): Promise<OAuthCallbackOutcome> {
+    let profile: OAuthProfile;
+    try {
+      profile = await this.getOAuthProviderAdapter(provider).exchangeCode(code);
+    } catch (error) {
+      return { kind: 'error', code: error instanceof AppError ? error.code : 'OAUTH_FAILED' };
+    }
+
+    // `findUnique` on the (provider, providerAccountId) unique index is the only way to look
+    // this up, but the soft-delete extension deliberately can't filter a unique-key lookup
+    // (see soft-delete.extension.ts) — a previously-unlinked row must be checked explicitly, or
+    // a user who unlinked a provider would find themselves silently still logged in through it.
+    const existingLink = await this.prisma.oAuthAccount.findUnique({
+      where: { provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId } },
+    });
+    if (existingLink && !existingLink.deletedAt) {
+      const user = await this.users.findById(existingLink.userId);
+      if (!user) {
+        return { kind: 'error', code: 'OAUTH_FAILED' };
+      }
+      const result = await this.createSessionAndTokens(user.id, user.email, ipHash, userAgent);
+      return { kind: 'login', ...result };
+    }
+
+    const existingUser = profile.email ? await this.users.findByEmail(profile.email) : null;
+    if (existingUser) {
+      if (!profile.emailVerified) {
+        return { kind: 'error', code: 'OAUTH_EMAIL_UNVERIFIED_CONFLICT' };
+      }
+      // `upsert`, not `create`: a soft-deleted row from a previous unlink still occupies this
+      // unique key at the DB level, so re-linking the same provider account must revive it
+      // rather than crash on a unique-constraint violation.
+      await this.prisma.oAuthAccount.upsert({
+        where: { provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId } },
+        create: { userId: existingUser.id, provider, providerAccountId: profile.providerAccountId, email: profile.email as string },
+        update: { userId: existingUser.id, email: profile.email as string, deletedAt: null },
+      });
+      const result = await this.createSessionAndTokens(existingUser.id, existingUser.email, ipHash, userAgent);
+      return { kind: 'login', ...result };
+    }
+
+    if (!profile.email || !profile.emailVerified) {
+      return { kind: 'error', code: 'OAUTH_EMAIL_UNAVAILABLE' };
+    }
+
+    const redirectToken = generateRefreshToken();
+    await this.prisma.pendingOAuthSignup.create({
+      data: {
+        tokenHash: hashRefreshToken(redirectToken),
+        provider,
+        providerAccountId: profile.providerAccountId,
+        email: profile.email,
+        name: profile.name,
+        expiresAt: new Date(Date.now() + PENDING_OAUTH_SIGNUP_TTL_MS),
+      },
+    });
+    return { kind: 'pending', redirectToken };
+  }
+
+  /** Finishes a brand-new OAuth signup once the client picks a `baseCurrency` (mirrors `register()`). */
+  async completeOAuthSignup(dto: OAuthCompleteDto, ipHash: string, userAgent: string | null): Promise<AuthResult> {
+    const hash = hashRefreshToken(dto.token);
+    const pending = await this.prisma.pendingOAuthSignup.findUnique({ where: { tokenHash: hash } });
+    if (!pending || pending.usedAt || pending.expiresAt < new Date()) {
+      throw new AppError('INVALID_OAUTH_SIGNUP_TOKEN', HttpStatus.BAD_REQUEST);
+    }
+
+    const currency = await this.prisma.currency.findUnique({ where: { code: dto.baseCurrency } });
+    if (!currency) {
+      throw new ValidationAppError('CURRENCY_UNKNOWN', { code: dto.baseCurrency });
+    }
+
+    // The email might have been claimed by another signup in the meantime — re-check right
+    // before creating the row (mirrors the same check in `register()`).
+    const existing = await this.users.findByEmail(pending.email);
+    if (existing) {
+      throw new ConflictAppError('EMAIL_ALREADY_REGISTERED');
+    }
+
+    const user = await this.users.createUser({
+      email: pending.email,
+      passwordHash: null,
+      baseCurrency: dto.baseCurrency,
+      displayName: pending.name ?? undefined,
+      // The provider already vouched for this address — no separate verification email needed.
+      emailVerifiedAt: new Date(),
+    });
+    await Promise.all([
+      // `upsert`, same reasoning as in `handleOAuthCallback`: a soft-deleted row from a previous
+      // unlink still occupies this unique key at the DB level.
+      this.prisma.oAuthAccount.upsert({
+        where: { provider_providerAccountId: { provider: pending.provider, providerAccountId: pending.providerAccountId } },
+        update: { userId: user.id, email: pending.email, deletedAt: null },
+        create: {
+          userId: user.id,
+          provider: pending.provider,
+          providerAccountId: pending.providerAccountId,
+          email: pending.email,
+        },
+      }),
+      this.prisma.pendingOAuthSignup.update({ where: { id: pending.id }, data: { usedAt: new Date() } }),
+      this.categories.seedSystemDefaults(user.id),
+    ]);
+
+    return this.createSessionAndTokens(user.id, user.email, ipHash, userAgent);
+  }
+
+  listOAuthAccounts(userId: string) {
+    return this.prisma.oAuthAccount.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, provider: true, email: true, createdAt: true },
+    });
+  }
+
+  /** Never leaves an account with zero ways to log in (`OAUTH_LAST_AUTH_METHOD`). */
+  async unlinkOAuthAccount(userId: string, provider: OAuthProviderName): Promise<void> {
+    const account = await this.prisma.oAuthAccount.findFirst({ where: { userId, provider } });
+    if (!account) {
+      throw new AppError('NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+    const user = await this.users.findById(userId);
+    if (!user?.passwordHash) {
+      const linkedCount = await this.prisma.oAuthAccount.count({ where: { userId } });
+      if (linkedCount <= 1) {
+        throw new AppError('OAUTH_LAST_AUTH_METHOD', HttpStatus.CONFLICT);
+      }
+    }
+    await this.prisma.oAuthAccount.delete({ where: { id: account.id } });
   }
 
   private async createSessionAndTokens(
@@ -353,7 +535,7 @@ export class AuthService {
       throw new ValidationAppError('PASSWORD_TOO_WEAK');
     }
     const user = await this.users.findById(userId);
-    if (!user || !(await verifyPassword(user.passwordHash, dto.currentPassword))) {
+    if (!user?.passwordHash || !(await verifyPassword(user.passwordHash, dto.currentPassword))) {
       throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED);
     }
     const passwordHash = await hashPassword(dto.newPassword, this.config.get('ARGON_MEMORY_COST') ?? 19456);

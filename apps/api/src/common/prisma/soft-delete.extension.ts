@@ -18,6 +18,7 @@ const SOFT_DELETE_MODELS = new Set([
   'GoalContribution',
   'ImportSource',
   'CategorizationRule',
+  'OAuthAccount',
 ]);
 
 const READ_ACTIONS = new Set(['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy']);

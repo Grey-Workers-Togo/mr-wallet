@@ -13,6 +13,9 @@ apps/api/generated/
 apps/api/storage/
 *.tsbuildinfo
 
+# One-off ops scripts (mass-email/mass-delete against the live DB) — never publish these.
+apps/api/scripts/
+
 # Bubblewrap/TWA build output (regenerate via `npx @bubblewrap/cli build`)
 apps/web/.gradle/
 apps/web/app/

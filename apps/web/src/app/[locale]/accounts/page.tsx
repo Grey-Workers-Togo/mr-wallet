@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Trash2, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import {
@@ -96,6 +96,10 @@ export default function AccountsPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [reconcileTarget, setReconcileTarget] = useState<Account | null>(null);
+  const [actualBalance, setActualBalance] = useState('0');
+  const [asOfDate, setAsOfDate] = useState(DEFAULT_OPENING_BALANCE_AT);
+  const [isReconciling, setIsReconciling] = useState(false);
 
   async function loadAccounts() {
     const list = await apiClient.get<Account[]>('/accounts');
@@ -157,6 +161,46 @@ export default function AccountsPage() {
       toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function openReconcileDialog(account: Account) {
+    setReconcileTarget(account);
+    setActualBalance(account.currentBalanceMinor);
+    setAsOfDate(DEFAULT_OPENING_BALANCE_AT());
+  }
+
+  async function onReconcile(e: FormEvent) {
+    e.preventDefault();
+    if (!reconcileTarget || !isValidAmount(actualBalance)) {
+      setError('VALIDATION_FAILED');
+      return;
+    }
+    setError(null);
+    setIsReconciling(true);
+    try {
+      const result = await apiClient.post<{ deltaMinor: string; transaction: unknown }>(
+        `/accounts/${reconcileTarget.id}/reconcile`,
+        { actualBalanceMinor: actualBalance, asOfDate },
+      );
+      setReconcileTarget(null);
+      await loadAccounts();
+      const minorUnits = minorUnitsByCode[reconcileTarget.currency] ?? 0;
+      const delta = BigInt(result.deltaMinor);
+      toast({
+        title: tCommon('updateSuccessTitle'),
+        description:
+          delta === 0n
+            ? t('reconcileNoChange')
+            : t('reconcileAdjusted', { amount: formatMinor((delta < 0n ? -delta : delta).toString(), reconcileTarget.currency, minorUnits) }),
+        variant: 'success',
+      });
+    } catch (err) {
+      const code = err instanceof ApiError ? err.body.code : 'INTERNAL_ERROR';
+      setError(code);
+      toast({ title: tCommon('actionErrorTitle'), description: tError(code as never), variant: 'destructive' });
+    } finally {
+      setIsReconciling(false);
     }
   }
 
@@ -331,6 +375,15 @@ export default function AccountsPage() {
                           type="button"
                           variant="ghost"
                           size="icon-sm"
+                          aria-label={t('reconcile')}
+                          onClick={() => openReconcileDialog(account)}
+                        >
+                          <Scale className="size-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           aria-label={t('edit')}
                           onClick={() => openEditDialog(account)}
                         >
@@ -440,6 +493,37 @@ export default function AccountsPage() {
             <DialogFooter>
               <Button type="submit" loading={isSubmitting}>
                 {editingId ? t('saveChanges') : t('submit')}
+              </Button>
+            </DialogFooter>
+            <SubmitShortcutHint />
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reconcileTarget} onOpenChange={(open) => !open && setReconcileTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('reconcileTitle', { name: reconcileTarget?.name ?? '' })}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('reconcileDescription')}</p>
+          <form onSubmit={onReconcile} onKeyDown={submitOnCtrlEnter} className="grid grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="actualBalance" required>{t('actualBalanceLabel')}</Label>
+              <AmountInput id="actualBalance" value={actualBalance} onValueChange={setActualBalance} required />
+            </div>
+            <div>
+              <Label htmlFor="asOfDate" required>{t('asOfDateLabel')}</Label>
+              <Input
+                id="asOfDate"
+                type="date"
+                value={asOfDate}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" loading={isReconciling}>
+                {t('reconcileSubmit')}
               </Button>
             </DialogFooter>
             <SubmitShortcutHint />

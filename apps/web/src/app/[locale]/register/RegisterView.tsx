@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PasswordStrength } from '@/components/shared/PasswordStrength';
+import { OAuthButtons } from '@/components/shared/OAuthButtons';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH } from '@/lib/validation';
 import { toast } from '@/hooks/useToast';
@@ -106,6 +107,8 @@ export default function RegisterView() {
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{t('title')}</h1>
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('subtitle')}</p>
       </div>
+
+      <OAuthButtons />
 
       <form onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter} className="space-y-4">
         <div className="space-y-1.5">

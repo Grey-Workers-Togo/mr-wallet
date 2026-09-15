@@ -1,6 +1,6 @@
 import { getAccessToken, setAccessToken } from './auth-store';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
 export interface ApiErrorBody {
   code: string;

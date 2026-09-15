@@ -39,7 +39,7 @@ Why not microservices: a single user consults their own data, volumes are low (a
 | API framework | **NestJS** | Nest's module system matches exactly the intended decomposition: dependency injection, encapsulated modules with explicit exports, global interceptors (essential for automatic auditing). |
 | Database | **PostgreSQL 16** | ACID transactions (mandatory for money movements), exact `numeric`/`bigint`, triggers (to make `audit_log` append-only), `jsonb` for audit diffs, good date functions. |
 | ORM | **Prisma** | Versioned, readable migrations, strongly-typed generated client. Heavy analytical queries (reports, forecasts) are done in raw SQL via `$queryRaw`, not through the ORM. |
-| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first and installable (PWA)** | Server rendering for consultation screens, good behavior on slow connections. A single front serves both web and mobile (ADR-0007). |
+| Front | **Next.js (App Router)** + TailwindCSS, **responsive-first and installable (PWA)** | Server rendering for consultation screens, good behavior on slow connections. Serves the web, and mobile through the browser (ADR-0007). Since ADR-0011, a native client `apps/mobile` (Expo / React Native, offline-first) is added alongside it. |
 | Service worker | Workbox | Read-only offline consultation cache (ADR-0008) and web push reception. |
 | Push | Web Push API (VAPID) | No proprietary third-party service required. See `04-modules.md § K`. |
 | Server state (front) | **TanStack Query** | Cache, invalidation, retry — sufficient without Redux. |
@@ -92,7 +92,7 @@ Imported files are parsed server-side, not in the browser. Reasons: consistent v
 money        → (none)
 currency     → money
 users        → (none)
-auth         → users
+auth         → users, categories
 audit        → (none)
 categories   → (none)
 accounts     → money, currency
@@ -106,7 +106,20 @@ export       → transactions, accounts, categories, tags, budgets, debts, goals
 reporting    → transactions, accounts, debts, currency, budgets
 forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
+reconciliation → money, accounts, transactions, categories
+sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications, reconciliation
 ```
+
+`sync` (docs/14-sync-protocol.md § 5) is depended on by none — it exists to dispatch to the
+business facades above, not to be called by them.
+
+`reconciliation` (docs/04-modules.md §B, lot 19) declares `POST /accounts/:id/reconcile` even
+though `accounts` does not appear on its own left-hand side above: the handler needs
+`TransactionsFacade` (to book the adjustment) and `CategoriesFacade` (to resolve the adjustment
+category), and `accounts` must never depend on `transactions` — `transactions` already depends on
+`accounts`, so the reverse edge would cycle. `notifications` reacts to a balance-drift event
+(`account.balance_mismatch`, emitted by `reconciliation`'s nightly job) the same way it already
+reacts to `DebtPaidOff` — no import needed in either direction.
 
 Any dependency absent from this list must be added here before being coded, and verified to be acyclic.
 
@@ -161,13 +174,16 @@ budget-manager/
 │   │           │   └── __tests__/
 │   │           ├── transactions/
 │   │           └── ...
-│   └── web/
-│       ├── app/
-│       ├── components/
-│       ├── lib/
-│       └── features/            # mirrors the back-end modules
+│   ├── web/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── lib/
+│   │   └── features/            # mirrors the back-end modules
+│   └── mobile/                  # Expo / React Native (ADR-0011)
 ├── packages/
-│   └── contracts/               # types shared API ↔ front
+│   ├── contracts/               # Zod schemas, shared types, money kernel
+│   ├── sync-protocol/           # operation catalogue, sync DTOs, error codes
+│   └── analytics-core/          # pure reference impl. of reports (oracle)
 ├── docs/
 ├── CLAUDE.md
 └── README.md
@@ -189,7 +205,9 @@ Creation endpoints accept an `Idempotency-Key` header. A key already seen return
 
 ### Clients and compatibility
 
-The API is client-agnostic: it uses no server session, no HTML rendering, no dependency on the origin of the request (except for the refresh cookie, restricted to a single endpoint). A native client could consume it without modification if ADR-0007 were reconsidered.
+The API is client-agnostic: it uses no server session, no HTML rendering, no dependency on the origin of the request (except for the refresh cookie, restricted to a single endpoint). This is what allowed the native client of ADR-0011 to be added without reshaping the API: the additions required by offline-first (`14-sync-protocol.md` § 5) are strictly additive, and no existing endpoint changes shape.
+
+One assumption does fall away, however: since ADR-0010, **clients are no longer uniform**. A store-published mobile build stays on a device for months. The API must therefore remain compatible with the two most recent published mobile versions (RG-RE5), and the protocol carries a minimum supported version with a forced-upgrade path (RG-SY14).
 
 Corollary to respect from now on: **any reusable business logic lives in `packages/contracts` or in `domain/` folders, never in a React component.** This is what keeps the cost of a possible native application limited to the presentation layer.
 

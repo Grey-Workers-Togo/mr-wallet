@@ -42,3 +42,11 @@ export type VerifyEmailDto = z.infer<typeof verifyEmailSchema>;
 
 export const resendVerificationSchema = z.object({ email: z.string().email() }).strict();
 export type ResendVerificationDto = z.infer<typeof resendVerificationSchema>;
+
+export const oauthCompleteSchema = z
+  .object({
+    token: z.string().min(1),
+    baseCurrency: z.string().length(3),
+  })
+  .strict();
+export type OAuthCompleteDto = z.infer<typeof oauthCompleteSchema>;

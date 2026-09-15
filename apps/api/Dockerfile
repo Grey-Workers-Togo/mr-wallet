@@ -6,7 +6,8 @@ WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
-RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --include-workspace-root --ignore-scripts
+COPY packages/sync-protocol/package.json packages/sync-protocol/package.json
+RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --workspace=@budget-manager/sync-protocol --include-workspace-root --ignore-scripts
 
 FROM node:24-alpine AS build
 RUN apk add --no-cache openssl
@@ -15,6 +16,9 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY apps/api apps/api
 COPY packages/contracts packages/contracts
+COPY packages/sync-protocol packages/sync-protocol
+RUN npm run build -w packages/contracts
+RUN npm run build -w packages/sync-protocol
 RUN npm run prisma:generate -w apps/api
 RUN npm run build -w apps/api
 
@@ -25,9 +29,12 @@ WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/sync-protocol/package.json packages/sync-protocol/package.json
 COPY --from=build /repo/apps/api/prisma apps/api/prisma
-RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --include-workspace-root --omit=dev --ignore-scripts
+RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --workspace=@budget-manager/sync-protocol --include-workspace-root --omit=dev --ignore-scripts
 RUN npm run prisma:generate -w apps/api
+COPY --from=build /repo/packages/contracts/dist packages/contracts/dist
+COPY --from=build /repo/packages/sync-protocol/dist packages/sync-protocol/dist
 COPY --from=build /repo/apps/api/dist apps/api/dist
 RUN chown -R node:node /repo
 

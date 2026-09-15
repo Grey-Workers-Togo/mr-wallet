@@ -44,6 +44,12 @@ export class DebtsService {
   }
 
   async create(userId: string, dto: CreateDebtDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.debt.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     if (dto.linkedAccountId) {
       await this.accountsFacade.getById(userId, dto.linkedAccountId);
     }
@@ -67,6 +73,7 @@ export class DebtsService {
     const debt = await this.prisma.$transaction(async (tx) => {
       const created = await tx.debt.create({
         data: {
+          id: dto.id,
           userId,
           name: dto.name,
           direction: dto.direction,
@@ -206,6 +213,12 @@ export class DebtsService {
 
   /** RG-D6: fees → interest → principal. RG-D4: an extra payment goes entirely to principal. RG-D8/RG-D9. */
   async recordPayment(userId: string, debtId: string, dto: RecordPaymentDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.debtPayment.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     const debt = await this.getById(userId, debtId);
     if (debt.status !== 'ACTIVE') {
       throw new ConflictAppError('DEBT_NOT_ACTIVE');
@@ -270,6 +283,7 @@ export class DebtsService {
 
     const payment = await this.prisma.debtPayment.create({
       data: {
+        id: dto.id,
         userId,
         debtId,
         installmentId,

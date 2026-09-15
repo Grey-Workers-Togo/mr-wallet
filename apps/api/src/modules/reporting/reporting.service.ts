@@ -43,21 +43,28 @@ export class ReportingService {
     };
   }
 
-  /** RG-RP1: aggregated in SQL via `groupBy`, never loaded row-by-row into memory. */
+  /**
+   * RG-RP1: aggregated in SQL via `groupBy`, never loaded row-by-row into memory.
+   * RG-A10 (lot 19): a reconciliation adjustment is not identified spending — excluded from the
+   * per-category breakdown, surfaced instead as its own explicit `unaccountedMinor` line.
+   */
   async spendingByCategory(userId: string, range: DateRangeDto) {
     const baseCurrency = await this.baseCurrency(userId);
-    const rows = await this.prisma.transaction.groupBy({
-      by: ['categoryId', 'currency'],
-      where: {
-        userId,
-        type: 'EXPENSE',
-        transferGroupId: null,
-        ...((range.from || range.to) && {
-          occurredAt: { ...(range.from && { gte: range.from }), ...(range.to && { lte: range.to }) },
-        }),
-      },
-      _sum: { amountMinor: true },
-    });
+    const dateFilter = (range.from || range.to) && {
+      occurredAt: { ...(range.from && { gte: range.from }), ...(range.to && { lte: range.to }) },
+    };
+    const [rows, adjustmentRows] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ['categoryId', 'currency'],
+        where: { userId, type: 'EXPENSE', transferGroupId: null, source: { not: 'ADJUSTMENT' }, ...dateFilter },
+        _sum: { amountMinor: true },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['currency'],
+        where: { userId, type: 'EXPENSE', transferGroupId: null, source: 'ADJUSTMENT', ...dateFilter },
+        _sum: { amountMinor: true },
+      }),
+    ]);
 
     const byCategory = new Map<string | null, { currency: string; amountMinor: bigint }[]>();
     for (const row of rows) {
@@ -76,9 +83,16 @@ export class ReportingService {
       grandTotal += totalMinor;
     }
 
+    const unaccountedMinor = await consolidateToBase(
+      adjustmentRows.map((row) => ({ currency: row.currency, amountMinor: row._sum.amountMinor ?? 0n })),
+      baseCurrency,
+      lookup,
+    );
+
     return {
       currency: baseCurrency,
       totalMinor: grandTotal.toString(),
+      unaccountedMinor: unaccountedMinor.toString(),
       items: items.map((item) => ({
         ...item,
         pct: grandTotal > 0n ? Number((BigInt(item.totalMinor) * 10000n) / grandTotal) / 100 : 0,

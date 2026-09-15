@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clientSuppliedId } from '@budget-manager/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const nameField = z.string().trim().min(1).max(120);
@@ -15,6 +16,8 @@ const manualInstallmentField = z.object({
 
 export const createDebtSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     name: nameField,
     direction: directionEnum,
     counterparty: z.string().max(120).optional(),
@@ -71,6 +74,8 @@ export type UpdateDebtDto = z.infer<typeof updateDebtSchema>;
 
 export const recordPaymentSchema = z
   .object({
+    // RG-SY3: optional client-supplied UUIDv7, for sync. Omitted by the web front today.
+    id: clientSuppliedId().optional(),
     paidAt: z.coerce.date(),
     amountMinor: unsignedAmountMinor(),
     installmentId: z.string().uuid().optional(),

@@ -45,6 +45,12 @@ export class AccountsService {
   }
 
   async create(userId: string, dto: CreateAccountDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.account.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     const currency = await this.prisma.currency.findUnique({ where: { code: dto.currency } });
     if (!currency) {
       throw new NotFoundAppError('CURRENCY_NOT_FOUND', { code: dto.currency });
@@ -53,6 +59,7 @@ export class AccountsService {
     const openingBalanceMinor = BigInt(dto.openingBalanceMinor);
     return this.prisma.account.create({
       data: {
+        id: dto.id,
         userId,
         name: dto.name,
         type: dto.type,
@@ -105,38 +112,9 @@ export class AccountsService {
     return this.prisma.account.update({ where: { id }, data: { isArchived: false } });
   }
 
-  /**
-   * Compares the stored balance against opening balance + Σ transactions and records the
-   * result in `BalanceCheck` (docs/03 §16). Never corrects the stored balance silently.
-   */
-  async reconcile(userId: string, id: string) {
-    const account = await this.getById(userId, id);
-    // amountMinor is stored unsigned; EXPENSE subtracts, INCOME adds (transactions module convention).
-    const [expense, income] = await Promise.all([
-      this.prisma.transaction.aggregate({
-        where: { userId, accountId: id, type: 'EXPENSE' },
-        _sum: { amountMinor: true },
-      }),
-      this.prisma.transaction.aggregate({
-        where: { userId, accountId: id, type: 'INCOME' },
-        _sum: { amountMinor: true },
-      }),
-    ]);
-    const computedMinor =
-      account.openingBalanceMinor + (income._sum.amountMinor ?? 0n) - (expense._sum.amountMinor ?? 0n);
-    const deltaMinor = account.currentBalanceMinor - computedMinor;
-    const isMatch = deltaMinor === 0n;
-
-    // Always returns the discrepancy (docs/05-api.md §4) — never corrects it silently (docs/03 §16).
-    return this.prisma.balanceCheck.create({
-      data: {
-        userId,
-        accountId: id,
-        storedMinor: account.currentBalanceMinor,
-        computedMinor,
-        deltaMinor,
-        isMatch,
-      },
-    });
+  /** RG-A12 (docs/04 §B, lot 19): set only by an explicit user reconciliation — see the `reconciliation` module. */
+  async updateLastReconciledAt(userId: string, id: string, at: Date) {
+    await this.getById(userId, id);
+    return this.prisma.account.update({ where: { id }, data: { lastReconciledAt: at } });
   }
 }

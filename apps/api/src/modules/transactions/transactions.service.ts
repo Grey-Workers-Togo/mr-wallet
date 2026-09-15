@@ -8,6 +8,7 @@ import { AccountsFacade } from '../accounts/accounts.facade';
 import { CategoriesFacade } from '../categories/categories.facade';
 import { RulesFacade } from '../rules/rules.facade';
 import { balanceDelta } from './domain/balance-delta';
+import { TRANSACTION_FEE_CATEGORY_KEY } from './domain/fee-line';
 import { computeFingerprint, normalizeLabel } from './domain/normalize';
 import { SavedSearchesService } from './saved-searches.service';
 import {
@@ -33,22 +34,75 @@ export class TransactionsService {
     private readonly savedSearches: SavedSearchesService,
   ) {}
 
-  /** No Prisma relation on `TransactionTag` (schema uses flat FK columns) — joined manually. */
-  private async attachTags<T extends { id: string }>(transactions: T[]): Promise<(T & { tagIds: string[] })[]> {
+  /**
+   * No Prisma relation on `TransactionTag` (schema uses flat FK columns) — joined manually.
+   * Also computes `feeMinor` on read (RG-T12a — never stored) by batching the linked fee lines.
+   */
+  private async attachTags<T extends { id: string }>(
+    transactions: T[],
+  ): Promise<(T & { tagIds: string[]; feeMinor: string | undefined })[]> {
     if (transactions.length === 0) return [];
-    const links = await this.prisma.transactionTag.findMany({
-      where: { transactionId: { in: transactions.map((t) => t.id) } },
-    });
+    const ids = transactions.map((t) => t.id);
+    const [links, feeLines] = await Promise.all([
+      this.prisma.transactionTag.findMany({ where: { transactionId: { in: ids } } }),
+      this.prisma.transaction.findMany({ where: { feeForTransactionId: { in: ids } } }),
+    ]);
     const byTransaction = new Map<string, string[]>();
     for (const link of links) {
       byTransaction.set(link.transactionId, [...(byTransaction.get(link.transactionId) ?? []), link.tagId]);
     }
-    return transactions.map((t) => ({ ...t, tagIds: byTransaction.get(t.id) ?? [] }));
+    const feeByParent = new Map<string, bigint>();
+    for (const fee of feeLines) {
+      if (fee.feeForTransactionId) feeByParent.set(fee.feeForTransactionId, fee.amountMinor);
+    }
+    return transactions.map((t) => ({
+      ...t,
+      tagIds: byTransaction.get(t.id) ?? [],
+      feeMinor: feeByParent.get(t.id)?.toString(),
+    }));
   }
 
-  private async attachTagsOne<T extends { id: string }>(transaction: T): Promise<T & { tagIds: string[] }> {
+  private async attachTagsOne<T extends { id: string }>(
+    transaction: T,
+  ): Promise<T & { tagIds: string[]; feeMinor: string | undefined }> {
     const [withTags] = await this.attachTags([transaction]);
-    return withTags as T & { tagIds: string[] };
+    return withTags as T & { tagIds: string[]; feeMinor: string | undefined };
+  }
+
+  /** RG-T13: resolves the fee category, creates the fee line, and debits the account — all within `tx`. */
+  private async createFeeLine(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    parent: { id: string; accountId: string; currency: string; occurredAt: Date; description: string },
+    feeMinor: bigint,
+  ) {
+    const category = await this.categoriesFacade.findSystemByKey(userId, TRANSACTION_FEE_CATEGORY_KEY);
+    const normalizedLabel = normalizeLabel(parent.description);
+    const feeLine = await tx.transaction.create({
+      data: {
+        userId,
+        accountId: parent.accountId,
+        type: 'EXPENSE',
+        amountMinor: feeMinor,
+        currency: parent.currency,
+        occurredAt: parent.occurredAt,
+        description: parent.description,
+        normalizedLabel,
+        categoryId: category.id,
+        status: 'CLEARED',
+        source: 'FEE',
+        feeForTransactionId: parent.id,
+        fingerprint: computeFingerprint({
+          accountId: parent.accountId,
+          occurredAt: parent.occurredAt,
+          type: 'EXPENSE',
+          amountMinor: feeMinor,
+          normalizedLabel,
+        }),
+      },
+    });
+    await this.accountsFacade.adjustBalance(parent.accountId, -feeMinor, tx);
+    return feeLine;
   }
 
   async list(userId: string, query: ListTransactionsDto) {
@@ -149,7 +203,7 @@ export class TransactionsService {
     userId: string,
     dto: CreateTransactionDto,
     opts?: {
-      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'DEBT_CREATION';
+      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'DEBT_CREATION' | 'ADJUSTMENT';
       importBatchId?: string;
       externalRef?: string;
       recurrenceId?: string;
@@ -157,10 +211,18 @@ export class TransactionsService {
       debtId?: string;
     },
   ) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.transaction.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return this.attachTagsOne(existing);
+    }
+
     const amountMinor = BigInt(dto.amountMinor);
     const account = await this.validateAgainstAccount(userId, dto.accountId, amountMinor, dto.occurredAt);
 
-    if (dto.categoryId) {
+    if (dto.categoryId && opts?.source !== 'ADJUSTMENT') {
+      // RG-A9 (lot 19): a reconciliation adjustment is system-assigned to one category regardless
+      // of sign — the kind-mismatch guard exists to stop a *user* mis-filing, which doesn't apply here.
       const category = await this.categoriesFacade.getById(userId, dto.categoryId);
       if (category.kind !== dto.type) {
         throw new ValidationAppError('CATEGORY_KIND_MISMATCH');
@@ -200,6 +262,7 @@ export class TransactionsService {
     const transaction = await this.prisma.$transaction(async (tx) => {
       const created = await tx.transaction.create({
         data: {
+          id: dto.id,
           userId,
           accountId: dto.accountId,
           type: dto.type,
@@ -227,6 +290,13 @@ export class TransactionsService {
         });
       }
       await this.accountsFacade.adjustBalance(dto.accountId, balanceDelta(dto.type, amountMinor), tx);
+
+      if (dto.feeMinor) {
+        const feeMinor = BigInt(dto.feeMinor);
+        if (feeMinor > 0n) {
+          await this.createFeeLine(tx, userId, created, feeMinor);
+        }
+      }
       return created;
     });
 
@@ -246,6 +316,10 @@ export class TransactionsService {
     if (existing.source === 'DEBT_PAYMENT' || existing.source === 'DEBT_CREATION') {
       // RG-T10
       throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
+    }
+    if (existing.source === 'FEE') {
+      // RG-T14: a fee line is only ever touched through its parent's own feeMinor field.
+      throw new ConflictAppError('TRANSACTION_IS_FEE_LINE');
     }
 
     const nextAccountId = dto.accountId ?? existing.accountId;
@@ -286,6 +360,40 @@ export class TransactionsService {
         }
       }
 
+      // RG-T12b: fee line cascades with the parent's own account/date, never independently.
+      if (dto.feeMinor !== undefined) {
+        const existingFeeLine = await tx.transaction.findFirst({ where: { feeForTransactionId: id } });
+        const nextFeeMinor = dto.feeMinor === null ? 0n : BigInt(dto.feeMinor);
+        if (existingFeeLine) {
+          await this.accountsFacade.adjustBalance(existingFeeLine.accountId, existingFeeLine.amountMinor, tx);
+        }
+        if (nextFeeMinor === 0n) {
+          if (existingFeeLine) {
+            await tx.transaction.delete({ where: { id: existingFeeLine.id } });
+          }
+        } else if (existingFeeLine) {
+          await tx.transaction.update({
+            where: { id: existingFeeLine.id },
+            data: {
+              accountId: nextAccountId,
+              amountMinor: nextFeeMinor,
+              currency: account.currency,
+              occurredAt: nextOccurredAt,
+              description: nextDescription,
+              normalizedLabel,
+            },
+          });
+          await this.accountsFacade.adjustBalance(nextAccountId, -nextFeeMinor, tx);
+        } else {
+          await this.createFeeLine(
+            tx,
+            userId,
+            { id, accountId: nextAccountId, currency: account.currency, occurredAt: nextOccurredAt, description: nextDescription },
+            nextFeeMinor,
+          );
+        }
+      }
+
       return tx.transaction.update({
         where: { id },
         data: {
@@ -323,11 +431,17 @@ export class TransactionsService {
       // RG-T10
       throw new ConflictAppError('TRANSACTION_LINKED_TO_DEBT_PAYMENT');
     }
+    if (existing.source === 'FEE') {
+      // RG-T14: a fee line is only ever removed as a side effect of deleting its parent.
+      throw new ConflictAppError('TRANSACTION_IS_FEE_LINE');
+    }
 
     if (existing.transferGroupId) {
       await this.removeTransferGroup(userId, existing.transferGroupId);
       return;
     }
+
+    const feeLine = await this.prisma.transaction.findFirst({ where: { feeForTransactionId: id } });
 
     await this.prisma.$transaction(async (tx) => {
       await this.accountsFacade.adjustBalance(
@@ -336,6 +450,12 @@ export class TransactionsService {
         tx,
       );
       await tx.transactionTag.deleteMany({ where: { transactionId: id } });
+      // RG-T14: the fee line cascades with its parent, in the same transaction (RG-A3).
+      if (feeLine) {
+        await this.accountsFacade.adjustBalance(feeLine.accountId, feeLine.amountMinor, tx);
+        await tx.transactionTag.deleteMany({ where: { transactionId: feeLine.id } });
+        await tx.transaction.delete({ where: { id: feeLine.id } });
+      }
       await tx.transaction.delete({ where: { id } });
     });
     await this.events.emitAsync('transaction.deleted', { userId, transaction: existing });
@@ -343,10 +463,18 @@ export class TransactionsService {
 
   private async removeTransferGroup(userId: string, transferGroupId: string): Promise<void> {
     const legs = await this.prisma.transaction.findMany({ where: { userId, transferGroupId } });
+    const feeLines = await this.prisma.transaction.findMany({
+      where: { feeForTransactionId: { in: legs.map((leg) => leg.id) } },
+    });
     await this.prisma.$transaction(async (tx) => {
       for (const leg of legs) {
         await this.accountsFacade.adjustBalance(leg.accountId, -balanceDelta(leg.type, leg.amountMinor), tx);
         await tx.transactionTag.deleteMany({ where: { transactionId: leg.id } });
+      }
+      // RG-T14: a fee on either leg cascades with the whole transfer group.
+      for (const feeLine of feeLines) {
+        await this.accountsFacade.adjustBalance(feeLine.accountId, feeLine.amountMinor, tx);
+        await tx.transaction.delete({ where: { id: feeLine.id } });
       }
       await tx.transaction.deleteMany({ where: { transferGroupId } });
     });
@@ -357,6 +485,17 @@ export class TransactionsService {
 
   /** RG-T4: two legs sharing a `transferGroupId`, excluded from spend/income totals (RG-T5). */
   async transfer(userId: string, dto: CreateTransferDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.transaction.findFirst({ where: { userId, id: dto.id } });
+      if (existing) {
+        const toLeg = await this.prisma.transaction.findFirstOrThrow({
+          where: { userId, transferGroupId: existing.transferGroupId ?? undefined, id: { not: existing.id } },
+        });
+        return { fromLeg: existing, toLeg };
+      }
+    }
+
     const amountMinor = BigInt(dto.amountMinor);
     const fromAccount = await this.validateAgainstAccount(userId, dto.fromAccountId, amountMinor, dto.occurredAt);
     const toAccount = await this.validateAgainstAccount(userId, dto.toAccountId, amountMinor, dto.occurredAt);
@@ -367,6 +506,7 @@ export class TransactionsService {
     const [fromLeg, toLeg] = await this.prisma.$transaction(async (tx) => {
       const outLeg = await tx.transaction.create({
         data: {
+          id: dto.id,
           userId,
           accountId: dto.fromAccountId,
           type: 'EXPENSE',
@@ -411,6 +551,14 @@ export class TransactionsService {
       });
       await this.accountsFacade.adjustBalance(dto.fromAccountId, -amountMinor, tx);
       await this.accountsFacade.adjustBalance(dto.toAccountId, amountMinor, tx);
+
+      // RG-T11: a transfer's fee attaches to the outbound leg — it debits the source account.
+      if (dto.feeMinor) {
+        const feeMinor = BigInt(dto.feeMinor);
+        if (feeMinor > 0n) {
+          await this.createFeeLine(tx, userId, outLeg, feeMinor);
+        }
+      }
       return [outLeg, inLeg];
     });
 

@@ -25,6 +25,15 @@ export class CategoriesService {
     return resolveCategoryName(category, locale);
   }
 
+  /** RG-T13: resolves a user's system category by its stable i18nKey — e.g. the default fee category. */
+  async findSystemByKey(userId: string, i18nKey: string) {
+    const category = await this.prisma.category.findFirst({ where: { userId, i18nKey, isSystem: true } });
+    if (!category) {
+      throw new NotFoundAppError('SYSTEM_CATEGORY_NOT_FOUND', { i18nKey });
+    }
+    return category;
+  }
+
   list(userId: string) {
     return this.prisma.category.findMany({
       where: { userId },
@@ -64,6 +73,12 @@ export class CategoriesService {
   }
 
   async create(userId: string, dto: CreateCategoryDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.category.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     if (dto.parentId) {
       const parent = await this.getById(userId, dto.parentId);
       if (parent.parentId) {
@@ -81,6 +96,7 @@ export class CategoriesService {
 
     return this.prisma.category.create({
       data: {
+        id: dto.id,
         userId,
         parentId: dto.parentId,
         name: dto.name,

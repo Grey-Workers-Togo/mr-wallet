@@ -54,9 +54,7 @@ export class AccountsController {
     return this.accountsService.unarchive(user.id, id);
   }
 
-  @Post(':id/reconcile')
-  @Audit({ action: 'account.reconcile', entityType: 'Account' })
-  reconcile(@CurrentUser() user: RequestUser, @Param('id') id: string) {
-    return this.accountsService.reconcile(user.id, id);
-  }
+  // POST :id/reconcile lives in the `reconciliation` module (see reconciliation.controller.ts) —
+  // it needs TransactionsFacade + CategoriesFacade, and accounts must never depend on transactions
+  // (transactions already depends on accounts; docs/02-architecture.md §4 forbids the cycle).
 }
