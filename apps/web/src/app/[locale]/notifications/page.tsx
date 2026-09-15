@@ -50,6 +50,8 @@ export default function NotificationsPage() {
       'IMPORT_COMPLETED',
       'IMPORT_FAILED',
       'BALANCE_MISMATCH',
+      'ENTRY_REMINDER',
+      'RECONCILE_REMINDER',
     ];
     if (!known.includes(notification.type)) return tType('UNKNOWN');
     return tType(notification.type as never, notification.params as never);

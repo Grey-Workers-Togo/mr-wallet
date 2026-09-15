@@ -41,6 +41,22 @@ Manage accounts and maintain their balance.
 | RG-A6 | For a `CREDIT_CARD`, the balance is negative when money is owed. `creditLimitMinor` is used to display available credit, without any blocking. |
 | RG-A7 | `includeInNetWorth = false` excludes the account from net worth but not from budgets or expense reports. |
 
+### Reconciliation against reality
+
+`BalanceCheck` (`03-modele-donnees.md § 16`) verifies that the stored balance matches the recomputed one. That is an internal consistency check. It says nothing about whether either figure matches the money that actually exists.
+
+On a bank account fed by import, the gap stays small. On cash and mobile money — personas A and C, and the majority of the target market — it opens within days: a small purchase never entered, a fee absorbed silently, a note handed to someone. Without a sanctioned way to close that gap, the user has exactly two options: invent a fake transaction, or stop trusting the application. Both end the same way.
+
+| Rule | Statement |
+|---|---|
+| RG-A8 | The user declares an account's **actual balance** at a date. They never edit a balance directly — a balance stays a derived value (ADR-0003). |
+| RG-A9 | The difference is materialized as one transaction, `source = ADJUSTMENT`, `status = RECONCILED`, in the system category `category.adjustment`, typed `EXPENSE` or `INCOME` by sign, dated on the reconciliation date. It is a normal transaction: audited, editable, reversible, visible in history. |
+| RG-A10 | An adjustment is **excluded from category expense reports by default** — it is not identified spending — but is included in balances and net worth. It is surfaced as its own explicit "unaccounted" line, never folded into another category and never hidden. |
+| RG-A11 | Reconciliation is always an explicit user action. The nightly job of `03 § 16` can only log and notify; it may never create an adjustment. Extending ADR-0003: a discrepancy is never corrected silently, and an adjustment is never created on the user's behalf. |
+| RG-A12 | `Account.lastReconciledAt` is set. It is distinct from `balanceCheckedAt`. Merging the two would let a genuine bug hide behind a routine user adjustment. |
+| RG-A13 | Offline, the operation carries **the declared actual balance and the date**, never the computed delta — the local balance is only a projection (`13-mobile-offline-first.md § 5`). The server computes the delta itself. This is ADR-0010 § 1 applied literally: the client sends an intent, not a derived value. |
+| RG-A14 | If adjustments exceed a significant share of a period's expenses, the interface says so plainly. A large or recurring adjustment means entry is drifting — that is information the user needs, not a number to absorb quietly. |
+
 ### Edge cases
 Deleting an old transaction (the balance must be recalculated, not merely decremented, if adjustments have occurred); account with a negative opening balance; reconciliation detecting a discrepancy (see `BalanceCheck`).
 
@@ -71,12 +87,37 @@ Deleting an old transaction (the balance must be recalculated, not merely decrem
 | RG-T2 | `currency` must equal the account's currency. |
 | RG-T3 | `occurredAt` cannot be earlier than `account.openingBalanceAt`, nor later than today+1 year (safeguard against date typos). |
 | RG-T4 | A transfer creates exactly two lines sharing a `transferGroupId`. Modifying or deleting one acts on both. |
-| RG-T5 | Transfers are excluded from: expense totals, income totals, budgets, and net worth calculation. |
+| RG-T5 | Transfers are excluded from: expense totals, income totals, budgets, and net worth calculation. **A fee attached to a transfer is not a transfer** (RG-T11): it is an expense and is counted as one. |
 | RG-T6 | `normalizedLabel` = description in lowercase, without accents, without punctuation, normalized spaces, digit sequences longer than 4 characters replaced with `#` (masks variable reference numbers). |
 | RG-T7 | `fingerprint` = SHA-256 of `accountId|occurredAt(date)|type|amountMinor|normalizedLabel`. |
 | RG-T8 | On creation, active `CategorizationRule` entries are evaluated in descending priority order; **the first match wins**. If the user provided a `categoryId`, no rule applies. |
 | RG-T9 | Modifying a transaction emits `TransactionUpdated` with the before and after state, so that `budgets` can decrement the old period and increment the new one (case of a date or category change). |
 | RG-T10 | A transaction resulting from a debt payment (`source = DEBT_PAYMENT`) cannot be deleted directly: the `DebtPayment` must be deleted, which cascades to delete the transaction. |
+
+### Fees
+
+In the primary market, almost every mobile money operation carries a fee. Withdrawing 10,000 XOF from a Flooz wallet debits 10,175. The fee is not an accounting detail: across a month it is a real budget line, and over a year it is one of the larger ones for exactly the users personas A and C describe.
+
+Two naive handlings both fail. Folding the fee into a transfer's legs makes it vanish from expense totals under RG-T5 — that is, it disappears from *"where does my money go"*, the application's first value proposition. Asking the user to enter a second transaction by hand doubles the cost of the most frequent operation and breaks UC-02's 15-second target.
+
+**A fee is `feeMinor` at the contract level, and its own `EXPENSE` transaction in storage.**
+
+`feeMinor` exists where it is useful — on the API DTO, in and out. The client sends one field alongside the parent transaction and reads one field back. The server creates the fee line, and computes `feeMinor` on read from that line. The interface therefore behaves exactly as if the parent carried a fee column.
+
+What it is **not** is a stored column. The distinction is not cosmetic: a persisted `feeMinor` alongside a fee row means the same amount of money exists twice in the database, and every piece of code that sums has to know which copy to ignore. Four places would have to remember: incremental balance maintenance (RG-A3) would debit twice, report aggregation would count twice, the full export (RG-E2) would emit the amount as both a column and a row, and the offline projection (`13-mobile-offline-first.md § 5`) would apply it twice. Worse, nothing would keep the two in step: edit the fee line's amount and the column is stale, with no reconciliation job to catch it — the exact failure mode ADR-0003 built `BalanceCheck` to detect for balances, here with no detector at all.
+
+One amount, one row, one place it can be wrong. The convenience of a column, none of its duplication.
+
+| Rule | Statement |
+|---|---|
+| RG-T11 | A fee is a transaction of type `EXPENSE`, `source = FEE`, carrying `feeForTransactionId` toward the operation that caused it. It debits the same account as its parent. It applies to any operation — expense, income or transfer — not only to transfers. |
+| RG-T12 | Entering a fee is **one optional field** (`feeMinor`) on the parent's create/update DTO, not a second entry and not a second API call. The fee line is created server-side within the same SQL transaction as the parent (RG-A3). |
+| RG-T12a | `feeMinor` is **never a database column**. It is computed on read from the linked fee line. A stored copy would duplicate an amount that already exists as a row, with no mechanism to keep the two equal. |
+| RG-T12b | Setting `feeMinor` to 0 or `null` on an update deletes the fee line. Changing it updates that line's `amountMinor`. The parent's own `amountMinor` never includes the fee. |
+| RG-T13 | The default category is the system category `category.transaction_fees`. The user can recategorize a fee line like any transaction. |
+| RG-T14 | A fee line cannot be created, moved to another account, or deleted independently of its parent. Deleting or modifying the parent cascades to it — this extends RG-T4 to fee lines within a `transferGroupId`. |
+| RG-T15 | A fee line is counted in expense totals, budgets and reports like any expense. It is never excluded, whatever the parent's type. This is the whole point of the design. |
+| RG-T16 | On import, a fee appearing as its own line in the statement is imported as an ordinary transaction, not linked by `feeForTransactionId`. Automatically pairing a fee line to its parent is guesswork; a `CategorizationRule` on the label is enough to categorize it correctly. |
 
 ### Edge cases
 Changing a transaction's account (impacts two balances); changing the date across a month boundary (impacts two budget periods); transaction in a currency different from the account's (rejected); deleting a single leg of a transfer (forbidden).
@@ -247,6 +288,18 @@ Reports to provide (all filterable by period, accounts, categories, tags):
 | RG-N1 | A notification is created only once per (type, entity, period). No duplicate if the job runs multiple times. |
 | RG-N2 | Two channels in V1: **in-app** (always) and **web push** (opt-in). Email is V2. |
 | RG-N3 | The user can enable or disable each channel for each notification type. |
+
+### Reminders — the only proactive notifications
+
+Every other notification type reacts to something that happened. Two do not, and their absence is a product gap rather than a technical one: the stated risk on this product is the D+30 return rate (`01-vision-perimetre.md § 8`), with manual entry as the likely drop-off point. Nothing currently brings a user back who has simply stopped entering. Native push (ADR-0011) makes these reliable, which the PWA could not guarantee on iOS.
+
+| Rule | Statement |
+|---|---|
+| RG-N12 | `ENTRY_REMINDER` fires after `user.entryReminderDays` days with no transaction entered (default 3, `null` disables). Driven by a daily job, not by an event. |
+| RG-N13 | **One reminder per inactivity streak.** A user who is away for two weeks receives one notification, not fourteen. Re-arming happens only after the user has entered something again. A reminder that nags is uninstalled. |
+| RG-N14 | A reminder contains no amount and no figure, like every push (RG-N5). It says that entry has stalled, never how much was spent. |
+| RG-N15 | `RECONCILE_REMINDER` is monthly and applies only to `CASH` and `MOBILE_MONEY` accounts, where drift is expected (RG-A8). Off by default for other account types. |
+| RG-N16 | Both types are opt-out from the settings screen, and the in-app notification is still created even when push is off (RG-N2). |
 
 ### Web push
 

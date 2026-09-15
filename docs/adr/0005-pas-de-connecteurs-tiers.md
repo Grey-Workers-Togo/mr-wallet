@@ -1,15 +1,18 @@
-# ADR-0005 — Ingestion par import de fichier, pas par connecteurs tiers
+# ADR-0005 — Ingestion by file import, not third-party connectors
 
-## Statut
-Accepté — 2026-07-28
+## Status
+Accepted — 2026-07-28
 
-## Contexte
-L'idée initiale était de récupérer automatiquement les données de services tiers (Gozem, Deliveroo, banques) avec l'accord de l'utilisateur. En pratique, ces plateformes n'exposent pas d'API publique permettant à un tiers de lire l'historique de transactions d'un utilisateur ; un tel accès suppose un partenariat commercial, pas un simple flux OAuth. Les agrégateurs bancaires régulés existent mais sont payants et impliquent des obligations de conformité.
+## Context
+The initial idea was to fetch data automatically from third-party services (Gozem, Deliveroo, banks) with the user's consent. In practice, these platforms expose no public API allowing a third party to read a user's transaction history; such access assumes a commercial partnership, not a simple OAuth flow. Regulated banking aggregators exist but are paid and carry compliance obligations.
 
-## Décision
-En V1 et V2, les données entrent uniquement par saisie manuelle ou import CSV/Excel. Le module `import` est conçu comme un pipeline générique (source de mapping réutilisable, parsing tolérant, dédoublonnage), de sorte qu'un connecteur automatique puisse un jour alimenter la même chaîne.
+## Decision
+In V1 and V2, data enters only through manual entry or CSV/Excel import. The `import` module is designed as a generic pipeline (reusable mapping source, error-tolerant parsing, deduplication), so that an automatic connector could one day feed the same chain.
 
-## Conséquences
-- **Bénéfice** : aucune dépendance contractuelle ou technique externe ; le produit fonctionne dès le premier jour.
-- **Coût** : l'import manuel est le point de friction principal du produit et probablement la première cause d'abandon. C'est pourquoi la qualité de l'assistant d'import est traitée comme une fonctionnalité de premier plan, pas comme un utilitaire.
-- **À mesurer** : taux de retour à 30 jours, comme indicateur de l'acceptabilité de l'effort d'import.
+## Consequences
+- **Benefit**: no external contractual or technical dependency; the product works from day one.
+- **Cost**: manual import is the product's main friction point and probably the leading cause of abandonment. This is why the quality of the import wizard is treated as a first-class feature, not a utility.
+- **To measure**: the 30-day return rate, as an indicator of how acceptable the import effort is.
+
+## Later development
+[ADR-0013](0013-native-ingestion-channels.md) does not reopen third-party connectors — it reprioritizes the *channels* through which files and data reach the same pipeline, now that a native client makes share sheets, the camera and platform APIs available.

@@ -26,9 +26,15 @@ export class RecurrenceService {
     return rule;
   }
 
-  create(userId: string, dto: CreateRecurrenceDto) {
+  async create(userId: string, dto: CreateRecurrenceDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.recurrenceRule.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
     return this.prisma.recurrenceRule.create({
       data: {
+        id: dto.id,
         userId,
         name: dto.name,
         type: dto.type,

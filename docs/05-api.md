@@ -119,6 +119,17 @@ The client holds a `code → message` dictionary per language. An unknown `code`
 | POST | `/auth/password/forgot` | Sends a reset link. Response is always 204, even if the email doesn't exist. |
 | POST | `/auth/password/reset` | Reset via token. Revokes all sessions. |
 | POST | `/auth/password/change` | Change with current password. |
+| GET | `/auth/:provider` | Social login (`provider` = `google` \| `github`). Redirects (302) to the provider's consent screen. Sets a short-lived `oauth_state` CSRF cookie. |
+| GET | `/auth/:provider/callback` | Provider redirects the browser back here. Never returns JSON — always a 302: to `WEB_APP_URL/accounts` (already-linked or verified-email auto-link — the refresh cookie is set exactly like `/auth/login`), to `WEB_APP_URL/register/oauth?token=...` (brand-new identity, see below), or to `WEB_APP_URL/login?error=<code>` (see § 2 bis). |
+| POST | `/auth/oauth/complete` | Finishes a brand-new OAuth signup. Body: `token` (from the `pending` redirect above), `baseCurrency`. Returns `accessToken` + sets the refresh cookie, same shape as `/auth/login`. |
+| GET | `/auth/oauth-accounts` | Lists the caller's linked social accounts (`provider`, `email`, `createdAt`). |
+| DELETE | `/auth/oauth-accounts/:provider` | Unlinks one. Refused (`OAUTH_LAST_AUTH_METHOD`, 409) if it's the account's only way to log in (no password, no other provider). |
+
+### 2 bis. Social login (Google / GitHub)
+
+API-driven: the API owns the redirect and the callback, not a client-side SDK exchanging a raw `id_token`. A brand-new identity never gets a `User` row on the callback itself — `baseCurrency` has no default anywhere in the app (see `03-modele-donnees.md § 3`), so the callback issues a short-lived, single-use `PendingOAuthSignup` token instead and redirects to a one-field "pick a currency" step that calls `/auth/oauth/complete`. Full resolution order, error codes, and the CSRF/state cookie design are in `07-securite-audit.md § 2`.
+
+`?error=` codes the `/login` redirect can carry: `OAUTH_FAILED` (state mismatch, provider denied, exchange failed), `OAUTH_EMAIL_UNAVAILABLE` (no verified email at all), `OAUTH_EMAIL_UNVERIFIED_CONFLICT` (matches an existing account, but the provider didn't vouch for the email), `OAUTH_PROVIDER_DISABLED` (that provider has no client id/secret configured).
 
 ---
 
@@ -127,7 +138,7 @@ The client holds a `code → message` dictionary per language. An unknown `code`
 | Method | Path | Description |
 |---|---|---|
 | GET | `/me` | Profile and preferences |
-| PATCH | `/me` | Modify displayName, locale, timezone, weekStartsOn, monthStartDay |
+| PATCH | `/me` | Modify displayName, locale, timezone, weekStartsOn, monthStartDay, entryReminderDays (lot 20, RG-N12 — `null` disables `ENTRY_REMINDER`) |
 | PATCH | `/me/base-currency` | Change the reference currency (heavy operation: recomputes cached reports) |
 | DELETE | `/me` | Account deletion (soft delete + scheduled purge at D+30) |
 | GET | `/me/export` | Triggers a full export |
@@ -146,7 +157,7 @@ The client holds a `code → message` dictionary per language. An unknown `code`
 | POST | `/accounts/:id/archive` | Archiving |
 | POST | `/accounts/:id/unarchive` | Unarchiving |
 | GET | `/accounts/:id/balance-history` | Balance time series. `?from&to&granularity=day\|week\|month` |
-| POST | `/accounts/:id/reconcile` | Compares stored balance and computed balance, returns the discrepancy |
+| POST | `/accounts/:id/reconcile` | Lot 19 (RG-A8..RG-A13): body `{ actualBalanceMinor, asOfDate }` — the declared actual balance, never a delta. The server computes the difference and, if non-zero, books one `ADJUSTMENT`-source transaction for it (typed `EXPENSE`/`INCOME` by sign) and sets `Account.lastReconciledAt`. Returns `{ deltaMinor, transaction }` (`transaction: null` when the delta was zero). The old stored-vs-computed drift check (`BalanceCheck`) still runs, but only from the nightly job (§ below) — it is no longer reachable via this endpoint. |
 
 ---
 
@@ -180,6 +191,18 @@ The client holds a `code → message` dictionary per language. An unknown `code`
 | GET | `/transactions/search` | Advanced search (complex filter body as query or POST) |
 | GET | `/transactions/summary` | Aggregates on the current filter: total, average, count, by category |
 
+`currency` is never part of the request body — it's inferred server-side from the account
+(a transaction's currency is always its account's currency, docs/03 § 7).
+
+`feeMinor` (lot 18, RG-T11..RG-T16): optional on create/update, in and out. A fee is entered as
+one extra field, never a second transaction — it materializes server-side as its own linked
+`EXPENSE`/`FEE` transaction (`feeForTransactionId`) in the same account, in the same SQL
+transaction as the parent (RG-A3), and is computed back on read from that linked row — it is
+**never a database column** (RG-T12a). On update, `feeMinor: 0` or `feeMinor: null` deletes the
+fee line; a fee line itself cannot be created, moved, or deleted independently of its parent
+(RG-T14) — attempting to do so via `PATCH`/`DELETE /transactions/:id` on a fee line's own id
+returns `409 TRANSACTION_IS_FEE_LINE`.
+
 ### Example — creation
 
 ```http
@@ -190,13 +213,13 @@ Idempotency-Key: 9f1c...
   "accountId": "acc_...",
   "type": "EXPENSE",
   "amountMinor": "12500",
-  "currency": "XOF",
   "occurredAt": "2026-07-28",
   "description": "Taxi aéroport",
   "categoryId": "cat_...",
   "payee": "Gozem",
   "tagIds": ["tag_..."],
-  "notes": null
+  "notes": null,
+  "feeMinor": "175"
 }
 ```
 
@@ -209,13 +232,14 @@ POST /api/v1/transactions/transfer
   "fromAccountId": "acc_bank",
   "toAccountId": "acc_savings",
   "amountMinor": "50000",
-  "currency": "XOF",
   "occurredAt": "2026-07-28",
-  "description": "Épargne mensuelle"
+  "description": "Épargne mensuelle",
+  "feeMinor": "150"
 }
 ```
 
-Different currencies: add `toAmountMinor` and `toCurrency`.
+A fee attaches to the outbound leg (RG-T11) — it debits the source account, on top of the
+transferred amount; the destination account still receives exactly `amountMinor`.
 
 ---
 
@@ -339,7 +363,7 @@ Sample response for `simulate-payoff`:
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/reports/spending-by-category` | `?from&to&accountId&depth=1\|2` |
+| GET | `/reports/spending-by-category` | `?from&to&accountId&depth=1\|2`. Response also carries `unaccountedMinor` (lot 19, RG-A10) — the period's reconciliation adjustments, excluded from `items`/`totalMinor` and shown as their own explicit line |
 | GET | `/reports/monthly-summary` | `?months=12` — income, expenses, net per month |
 | GET | `/reports/net-worth` | `?from&to&granularity=month` |
 | GET | `/reports/cashflow` | Inflows/outflows/net |
@@ -431,3 +455,18 @@ The audit log is **read-only**: no write or delete endpoint is exposed.
 | `/import/upload` | 20 / hour / user |
 | `/export/*` | 10 / hour / user |
 | Rest of the API | 300 / min / user |
+
+## 18. Sync (docs/14-sync-protocol.md)
+
+Server groundwork landed in `apps/api/src/modules/sync/` (docs/15-roadmap-mobile.md § M0) — no
+mobile client consumes it yet.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/sync/push` | Applies up to 100 client operations, in order. Full contract: docs/14 § 3.1. |
+| GET | `/sync/changes` | `?since=<cursor>&limit=<n>` — single ordered feed of upserts/tombstones since the cursor. docs/14 § 3.2. |
+| GET | `/sync/snapshot` | `?limit=<n>` — same feed from the beginning, for a device's first replica. docs/14 § 3.3. |
+
+`account.create`/`category.create`/etc. accept an optional client-supplied `id` (UUIDv7) on
+every business module's create endpoint — an id already used by that user is a replay, not an
+error (RG-SY3). This is additive: existing callers that never send an `id` see no change.

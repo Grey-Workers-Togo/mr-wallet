@@ -73,7 +73,14 @@ export class AuditInterceptor implements NestInterceptor {
               entityId: (result as { id?: string })?.id ?? null,
               before: redact(request.__auditBefore ?? null) as object | undefined,
               after: redact(result) as object | undefined,
-              metadata: { path: request.originalUrl, method: request.method },
+              metadata: {
+                path: request.originalUrl,
+                method: request.method,
+                // RG-SY10: sync mutations are audited with their deviceId, like any other endpoint's metadata.
+                ...((request.body as { deviceId?: string } | undefined)?.deviceId
+                  ? { deviceId: (request.body as { deviceId: string }).deviceId }
+                  : {}),
+              },
               ipHash: request.ipHash ?? null,
               userAgent: request.headers['user-agent'] ?? null,
               requestId: request.requestId ?? null,

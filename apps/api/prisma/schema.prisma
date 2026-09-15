@@ -13,23 +13,25 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  passwordHash    String
-  displayName     String?
-  baseCurrency    String    @db.Char(3)
-  locale          String    @default("fr-FR")
-  timezone        String    @default("Africa/Porto-Novo")
-  weekStartsOn    Int       @default(1)
-  monthStartDay   Int       @default(1)
-  pinHash         String?
-  pinLockMinutes  Int       @default(5)
-  hasSeenOnboarding Boolean @default(false)
-  emailVerifiedAt DateTime? @db.Timestamptz(6)
-  lastLoginAt     DateTime? @db.Timestamptz(6)
-  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
-  deletedAt       DateTime? @db.Timestamptz(6)
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String?
+  displayName       String?
+  baseCurrency      String    @db.Char(3)
+  locale            String    @default("fr-FR")
+  timezone          String    @default("Africa/Porto-Novo")
+  weekStartsOn      Int       @default(1)
+  monthStartDay     Int       @default(1)
+  pinHash           String?
+  pinLockMinutes    Int       @default(5)
+  hasSeenOnboarding Boolean   @default(false)
+  // RG-N12 (docs/04 §K, lot 20): nudge after N days with no transaction entered; null disables.
+  entryReminderDays Int?      @default(3)
+  emailVerifiedAt   DateTime? @db.Timestamptz(6)
+  lastLoginAt       DateTime? @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime? @db.Timestamptz(6)
 
   @@index([email])
 }
@@ -48,6 +50,27 @@ model Session {
   lastUsedAt       DateTime? @db.Timestamptz(6)
 
   @@index([userId, expiresAt])
+}
+
+enum OAuthProvider {
+  GOOGLE
+  GITHUB
+}
+
+// A linked social identity (docs/07 §2 "OAuth2 / social login"). One User can have several,
+// at most one per provider (unique on [provider, providerAccountId], not on userId).
+model OAuthAccount {
+  id                String        @id @default(uuid())
+  userId            String
+  provider          OAuthProvider
+  providerAccountId String
+  email             String
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?     @db.Timestamptz(6)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +128,10 @@ model Account {
   openingBalanceAt    DateTime    @db.Timestamptz(6)
   currentBalanceMinor BigInt      @default(0)
   balanceCheckedAt    DateTime?   @db.Timestamptz(6)
+  // RG-A12 (docs/04 §B, lot 19): last time the user reconciled against the real-world balance.
+  // Deliberately distinct from balanceCheckedAt (the nightly internal drift check, RG-A11) — merging
+  // the two would let a genuine bug hide behind a routine user adjustment.
+  lastReconciledAt    DateTime?   @db.Timestamptz(6)
   creditLimitMinor    BigInt?
   institution         String?
   color               String?
@@ -117,6 +144,7 @@ model Account {
   deletedAt           DateTime?   @db.Timestamptz(6)
 
   @@index([userId, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +174,7 @@ model Category {
 
   @@index([userId, deletedAt])
   @@index([userId, parentId])
+  @@index([userId, updatedAt, id])
 }
 
 model Tag {
@@ -158,6 +187,7 @@ model Tag {
   deletedAt DateTime? @db.Timestamptz(6)
 
   @@unique([userId, name])
+  @@index([userId, updatedAt, id])
 }
 
 model TransactionTag {
@@ -183,16 +213,16 @@ model SavedSearch {
 
 // docs/12 Lot 13: a receipt photo (or other proof) attached to a transaction.
 model Attachment {
-  id           String    @id @default(uuid())
-  userId       String
+  id            String    @id @default(uuid())
+  userId        String
   transactionId String
-  storageKey   String
-  originalName String
-  mimeType     String
-  sizeBytes    Int
-  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
-  deletedAt    DateTime? @db.Timestamptz(6)
+  storageKey    String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt     DateTime? @db.Timestamptz(6)
 
   @@index([userId])
   @@index([transactionId])
@@ -223,45 +253,53 @@ enum TxSource {
   DEBT_CREATION
   GOAL_CONTRIBUTION
   ADJUSTMENT
+  FEE
 }
 
 model Transaction {
-  id                 String          @id @default(uuid())
-  userId             String
-  accountId          String
-  type               TransactionType
-  amountMinor        BigInt
-  currency           String          @db.Char(3)
-  occurredAt         DateTime        @db.Timestamptz(6)
-  description        String
-  normalizedLabel    String
-  categoryId         String?
-  payee              String?
-  notes              String?
-  status             TxStatus        @default(CLEARED)
+  id              String          @id @default(uuid())
+  userId          String
+  accountId       String
+  type            TransactionType
+  amountMinor     BigInt
+  currency        String          @db.Char(3)
+  occurredAt      DateTime        @db.Timestamptz(6)
+  description     String
+  normalizedLabel String
+  categoryId      String?
+  payee           String?
+  notes           String?
+  status          TxStatus        @default(CLEARED)
 
-  transferGroupId    String?
-  counterAccountId   String?
+  transferGroupId  String?
+  counterAccountId String?
 
-  source             TxSource        @default(MANUAL)
-  importBatchId      String?
-  externalRef        String?
-  fingerprint        String
+  source        TxSource @default(MANUAL)
+  importBatchId String?
+  externalRef   String?
+  fingerprint   String
 
   recurrenceId       String?
   debtPaymentId      String?
   debtId             String?
   goalContributionId String?
 
-  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
-  deletedAt          DateTime?       @db.Timestamptz(6)
+  // RG-T11/RG-T12a (docs/04 §D): a fee is its own EXPENSE/FEE transaction, never a column on its
+  // parent. feeForTransactionId is unique — a parent has at most one fee line.
+  feeForTransactionId String?      @unique
+  feeForTransaction   Transaction? @relation("TransactionFeeLine", fields: [feeForTransactionId], references: [id])
+  feeLine             Transaction? @relation("TransactionFeeLine")
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, occurredAt])
   @@index([userId, accountId, occurredAt])
   @@index([userId, categoryId, occurredAt])
   @@index([userId, fingerprint])
   @@index([transferGroupId])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -279,35 +317,36 @@ enum Frequency {
 }
 
 model RecurrenceRule {
-  id                 String          @id @default(uuid())
-  userId             String
-  name               String
-  type               TransactionType
-  accountId          String
-  categoryId         String?
-  amountMinor        BigInt
-  currency           String          @db.Char(3)
-  amountIsEstimate   Boolean         @default(false)
+  id               String          @id @default(uuid())
+  userId           String
+  name             String
+  type             TransactionType
+  accountId        String
+  categoryId       String?
+  amountMinor      BigInt
+  currency         String          @db.Char(3)
+  amountIsEstimate Boolean         @default(false)
 
-  frequency          Frequency
-  interval           Int             @default(1)
-  dayOfMonth         Int?
-  dayOfWeek          Int?
-  startsOn           DateTime        @db.Timestamptz(6)
-  endsOn             DateTime?       @db.Timestamptz(6)
-  maxOccurrences     Int?
+  frequency      Frequency
+  interval       Int       @default(1)
+  dayOfMonth     Int?
+  dayOfWeek      Int?
+  startsOn       DateTime  @db.Timestamptz(6)
+  endsOn         DateTime? @db.Timestamptz(6)
+  maxOccurrences Int?
 
-  autoCreate         Boolean         @default(false)
-  reminderDaysBefore Int?            @default(3)
-  lastGeneratedAt    DateTime?       @db.Timestamptz(6)
-  isActive           Boolean         @default(true)
-  skippedOccurrences DateTime[]      @db.Timestamptz(6)
+  autoCreate         Boolean    @default(false)
+  reminderDaysBefore Int?       @default(3)
+  lastGeneratedAt    DateTime?  @db.Timestamptz(6)
+  isActive           Boolean    @default(true)
+  skippedOccurrences DateTime[] @db.Timestamptz(6)
 
-  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
-  deletedAt          DateTime?       @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, isActive, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -340,6 +379,7 @@ model Budget {
   deletedAt       DateTime?        @db.Timestamptz(6)
 
   @@index([userId, isActive, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 model BudgetPeriod {
@@ -405,39 +445,40 @@ enum ScheduleMode {
 }
 
 model Debt {
-  id                        String        @id @default(uuid())
-  userId                    String
-  name                      String
-  direction                 DebtDirection
-  counterparty              String?
-  kind                      DebtKind      @default(LOAN)
-  linkedAccountId           String?
-  creationTransactionId     String?
+  id                    String        @id @default(uuid())
+  userId                String
+  name                  String
+  direction             DebtDirection
+  counterparty          String?
+  kind                  DebtKind      @default(LOAN)
+  linkedAccountId       String?
+  creationTransactionId String?
 
   principalMinor            BigInt
   outstandingPrincipalMinor BigInt
-  currency                  String        @db.Char(3)
+  currency                  String @db.Char(3)
 
-  annualRatePct             Decimal?      @db.Decimal(7, 4)
-  rateType                  RateType      @default(FIXED)
-  compounding               Compounding   @default(MONTHLY)
+  annualRatePct Decimal?    @db.Decimal(7, 4)
+  rateType      RateType    @default(FIXED)
+  compounding   Compounding @default(MONTHLY)
 
-  startedOn                 DateTime      @db.Timestamptz(6)
-  termDays                  Int?
-  scheduleMode              ScheduleMode  @default(AUTO)
-  paymentFrequency          Frequency     @default(MONTHLY)
-  paymentDayOfMonth         Int?
-  installmentMinor          BigInt?
+  startedOn         DateTime     @db.Timestamptz(6)
+  termDays          Int?
+  scheduleMode      ScheduleMode @default(AUTO)
+  paymentFrequency  Frequency    @default(MONTHLY)
+  paymentDayOfMonth Int?
+  installmentMinor  BigInt?
 
-  status                    DebtStatus    @default(ACTIVE)
-  closedAt                  DateTime?     @db.Timestamptz(6)
-  notes                     String?
+  status   DebtStatus @default(ACTIVE)
+  closedAt DateTime?  @db.Timestamptz(6)
+  notes    String?
 
-  createdAt                 DateTime      @default(now()) @db.Timestamptz(6)
-  updatedAt                 DateTime      @updatedAt @db.Timestamptz(6)
-  deletedAt                 DateTime?     @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, status, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 enum InstallmentStatus {
@@ -519,6 +560,7 @@ model SavingsGoal {
   deletedAt       DateTime?  @db.Timestamptz(6)
 
   @@index([userId, status, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 model GoalContribution {
@@ -695,6 +737,9 @@ enum NotificationType {
   IMPORT_COMPLETED
   IMPORT_FAILED
   BALANCE_MISMATCH
+  // Lot 20 (docs/04 §K, RG-N12..RG-N16): the only proactive types — driven by a daily/monthly job, not an event.
+  ENTRY_REMINDER
+  RECONCILE_REMINDER
 }
 
 enum Severity {
@@ -724,7 +769,7 @@ model Notification {
 // ---------------------------------------------------------------------------
 
 model BalanceCheck {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   userId        String
   accountId     String
   storedMinor   BigInt
@@ -814,6 +859,24 @@ model EmailVerificationToken {
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([userId, expiresAt])
+}
+
+// A brand-new OAuth identity with no matching User yet — the provider gave us an email but the
+// app still needs `baseCurrency` (no default exists anywhere, see docs/07 §2) before a User row
+// can be created. Opaque single-use token, same shape as the two tokens above, never a JWT: it
+// carries no PII in the token itself, only as the row it's looked up by hash.
+model PendingOAuthSignup {
+  id                String        @id @default(uuid())
+  tokenHash         String        @unique
+  provider          OAuthProvider
+  providerAccountId String
+  email             String
+  name              String?
+  expiresAt         DateTime      @db.Timestamptz(6)
+  usedAt            DateTime?     @db.Timestamptz(6)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([expiresAt])
 }
 
 enum ExportKind {

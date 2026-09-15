@@ -41,7 +41,7 @@ The precision (`minorUnits`) is **not** stored on each row: it is carried by the
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
-  passwordHash      String                       // Argon2id
+  passwordHash      String?                      // Argon2id; null for a social-only (OAuth) account
   displayName       String?
   baseCurrency      String    @db.Char(3)        // consolidation currency
   locale            String    @default("fr-FR")
@@ -49,6 +49,7 @@ model User {
   weekStartsOn      Int       @default(1)        // 1 = Monday
   monthStartDay     Int       @default(1)        // budget anchored on the 1st, or on payday
   hasSeenOnboarding Boolean   @default(false)    // guided tour shown once, never repeats
+  entryReminderDays Int?      @default(3)        // nudge after N days with no entry; null = off
   emailVerifiedAt   Dt?
   lastLoginAt       Dt?
   createdAt         Dt        @default(now())
@@ -69,9 +70,33 @@ model Session {
 
   @@index([userId, expiresAt])
 }
+
+// A linked social identity (docs/07 §2 "OAuth2 / social login").
+model OAuthAccount {
+  id                String        @id @default(uuid())
+  userId            String
+  provider          OAuthProvider                 // GOOGLE | GITHUB
+  providerAccountId String                         // the provider's own stable subject/user id
+  email             String                         // the provider's email at link time, for display only
+  createdAt         Dt            @default(now())
+  updatedAt         Dt            @updatedAt
+  deletedAt         Dt?
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+enum OAuthProvider { GOOGLE  GITHUB }
 ```
 
 `monthStartDay` allows budgets to be anchored on the pay cycle rather than the calendar — a frequent and often overlooked case.
+
+A `User` created through email/password registration always has a `passwordHash`; one created
+through OAuth signup has none at creation (`passwordHash: null`) and may never set one. A user
+can hold one `OAuthAccount` per provider (Google, GitHub) and, independently, a password — both
+are valid, simultaneous ways to authenticate the same account. The unique key is
+`[provider, providerAccountId]`, not `userId`: it is the provider account, not the row, that must
+resolve to exactly one `User`.
 
 ---
 
@@ -118,7 +143,8 @@ model Account {
   openingBalanceMinor BigInt      @default(0)
   openingBalanceAt   Dt                          // opening balance date
   currentBalanceMinor BigInt      @default(0)    // maintained incrementally
-  balanceCheckedAt   Dt?                         // last successful reconciliation
+  balanceCheckedAt   Dt?                         // last INTERNAL drift check (§ 16) — not a user action
+  lastReconciledAt   Dt?                         // last reconciliation against reality by the user (§ 16 bis)
   creditLimitMinor   BigInt?                     // credit cards / authorized overdraft
   institution        String?
   color              String?
@@ -237,6 +263,12 @@ model Transaction {
   notes            String?
   status           TxStatus        @default(CLEARED)
 
+  // Fees — a fee is its own EXPENSE line, attached to the operation that caused it.
+  // There is deliberately NO feeMinor column: the API exposes `feeMinor` on the DTO and
+  // computes it from this relation on read (RG-T12a). Storing it too would duplicate an
+  // amount that already exists as a row, with nothing keeping the two equal.
+  feeForTransactionId String?                    // set on the fee line; points to the parent operation
+
   // Transfers
   transferGroupId  String?                       // links the two legs of a transfer
   counterAccountId String?
@@ -261,11 +293,12 @@ model Transaction {
   @@index([userId, categoryId, occurredAt])
   @@index([userId, fingerprint])
   @@index([transferGroupId])
+  @@index([feeForTransactionId])
 }
 
 enum TransactionType { EXPENSE  INCOME  TRANSFER }
 enum TxStatus        { PENDING  CLEARED  RECONCILED  VOID }
-enum TxSource         { MANUAL  IMPORT  RECURRENCE  DEBT_PAYMENT  GOAL_CONTRIBUTION  ADJUSTMENT }
+enum TxSource         { MANUAL  IMPORT  RECURRENCE  DEBT_PAYMENT  GOAL_CONTRIBUTION  ADJUSTMENT  FEE }
 ```
 
 ### Decisions that must be respected
@@ -661,6 +694,7 @@ enum NotificationType {
   BUDGET_THRESHOLD  BUDGET_EXCEEDED  DEBT_DUE_SOON  DEBT_OVERDUE
   DEBT_PAID_OFF  GOAL_REACHED  RECURRENCE_DUE  IMPORT_COMPLETED
   IMPORT_FAILED  BALANCE_MISMATCH
+  ENTRY_REMINDER  RECONCILE_REMINDER              // the only proactive types (§ K)
 }
 enum Severity { INFO  WARNING  CRITICAL }
 ```
@@ -704,6 +738,20 @@ model BalanceCheck {
 ```
 
 Nightly task: for each account, recompute `opening balance + Σ transactions` and compare it to the stored balance. In case of a discrepancy, log it and notify (`BALANCE_MISMATCH`). Never silently correct it: a discrepancy signals a bug that needs to be seen.
+
+---
+
+## 16 bis. Reconciliation against reality
+
+`BalanceCheck` above answers "is my arithmetic self-consistent?". It does **not** answer "does this match the money that actually exists?". For a bank account fed by import, the two rarely diverge. For cash and mobile money — the dominant case for personas A and C — they diverge within days, because entry is manual and some operations are simply never entered.
+
+There is no new table. Reconciliation produces a normal transaction:
+
+- The user declares an account's **actual balance** at a date.
+- The difference against the computed balance is materialized as one transaction, `source = ADJUSTMENT`, `status = RECONCILED`, in the system category `category.adjustment`, typed `EXPENSE` or `INCOME` according to the sign.
+- `Account.lastReconciledAt` is set. It stays distinct from `balanceCheckedAt`: confusing a user action with the internal drift check would let a real bug hide behind a routine adjustment.
+
+Rules are in `04-modules.md § B`.
 
 ---
 
@@ -772,6 +820,24 @@ model PasswordResetToken {
   @@index([userId, expiresAt])
 }
 
+// Unlike the two tokens above, there is no `userId` yet: a brand-new OAuth identity has no
+// `User` row until `baseCurrency` is chosen (docs/07 §2) — this table is what the provider's
+// callback creates in the meantime. Same opaque-token shape (never a JWT: nothing PII-bearing
+// belongs in a URL/browser history/referrer header).
+model PendingOAuthSignup {
+  id                String        @id @default(uuid())
+  tokenHash         String        @unique
+  provider          OAuthProvider
+  providerAccountId String
+  email             String
+  name              String?
+  expiresAt         Dt                          // creation + 10 min
+  usedAt            Dt?
+  createdAt         Dt            @default(now())
+
+  @@index([expiresAt])
+}
+
 model ExportJob {
   id          String       @id @default(uuid())
   userId      String
@@ -797,7 +863,7 @@ enum JobStatus  { PENDING  RUNNING  COMPLETED  FAILED }
 Notes:
 
 - `IdempotencyKey.requestHash` is essential: replaying the same key with a different body must return a `409` error, not the original response.
-- A daily task purges expired `IdempotencyKey`, `PasswordResetToken`, and `ExportJob` entries.
+- A daily task purges expired `IdempotencyKey`, `PasswordResetToken`, `PendingOAuthSignup`, and `ExportJob` entries.
 - `NotificationPreference` is created on the fly with default values: the absence of a row is equivalent to "in-app enabled, push disabled".
 - `DeviceToken` contains **no financial data**. An `endpoint` that fails 5 times in a row is set to `isActive = false`: browsers silently invalidate subscriptions, and without this counter the table would fill up with dead entries.
 - Logging out of a session revokes the `DeviceToken` entries associated with that device.
@@ -833,6 +899,7 @@ User
 ├── Notification ───── NotificationPreference
 ├── DeviceToken
 ├── Session
+├── OAuthAccount
 ├── PasswordResetToken
 ├── IdempotencyKey
 ├── ExportJob
@@ -862,6 +929,8 @@ User
 | `category.savings` | Épargne | Savings |
 | `category.debt_repayment` | Remboursements | Debt repayment |
 | `category.bank_fees` | Frais bancaires | Bank fees |
+| `category.transaction_fees` | Frais de transaction | Transaction fees |
+| `category.adjustment` | Ajustement | Adjustment |
 | `category.other_expense` | Divers | Other |
 | `category.salary` | Salaire | Salary |
 | `category.freelance` | Activité indépendante | Freelance income |

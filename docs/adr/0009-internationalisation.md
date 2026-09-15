@@ -1,73 +1,74 @@
-# ADR-0009 — Français et anglais dès le MVP, aucune chaîne rendue en base
+# ADR-0009 — French and English from the MVP, no rendered strings in the database
 
-## Statut
-Accepté — 2026-07-28
+## Status
+Accepted — 2026-07-28.
+Amended on 2026-09-14 by [ADR-0014](0014-english-as-sole-documentation-language.md), which changes the language of the **documentation** (not of the product): technical documentation, ADRs and commits move to English. The rest of this ADR is unchanged.
 
-## Contexte
+## Context
 
-La conception initiale prévoyait une interface en français, avec l'internationalisation « prévue » mais repoussée. En pratique, trois endroits figeaient déjà le français dans la **donnée**, pas seulement dans l'affichage :
+The initial design assumed a French interface, with internationalization "planned" but deferred. In practice, three places were already freezing French into the **data**, not just the display:
 
-1. `Notification.title` et `Notification.body` stockaient du texte rendu. Une notification créée en français le restait pour toujours, même après changement de langue.
-2. Les catégories système du seed portaient des noms français en dur (`Alimentation`, `Transport`…), hérités par tout nouvel utilisateur.
-3. Le format d'erreur de l'API renvoyait un `message` en français depuis le serveur.
+1. `Notification.title` and `Notification.body` stored rendered text. A notification created in French stayed French forever, even after a language change.
+2. System categories in the seed carried hardcoded French names (`Alimentation`, `Transport`…), inherited by every new user.
+3. The API error format returned a French `message` from the server.
 
-Ces trois points sont des décisions de **schéma et de contrat**, pas de présentation. Les corriger avant qu'il n'existe des données de production coûte quelques heures ; après, il faut une migration de données sur du texte libre, ce qui n'est jamais propre.
+These three points are **schema and contract** decisions, not presentation ones. Fixing them before production data exists costs a few hours; afterwards, it takes a data migration over free text, which is never clean.
 
-Par ailleurs, l'expérience courante est qu'une application développée en une seule langue accumule des chaînes en dur, quelle que soit la discipline affichée : c'est la deuxième langue qui révèle les oublis, pas la relecture.
+Moreover, common experience is that an application developed in a single language accumulates hardcoded strings, whatever the discipline claimed: it is the second language that reveals what was missed, not proofreading.
 
-## Décision
+## Decision
 
-**Deux locales complètes dès le MVP : `fr` et `en`.**
+**Two complete locales from the MVP: `fr` and `en`.**
 
-Principe directeur, applicable partout :
+Guiding principle, applicable everywhere:
 
-> La base de données et l'API ne contiennent **jamais** de texte destiné à être lu par un humain dans une langue donnée. Elles transportent des identifiants stables et des paramètres. Le rendu dans une langue est fait au dernier moment, côté client.
+> The database and the API **never** contain text intended to be read by a human in a given language. They carry stable identifiers and parameters. Rendering in a language happens at the last moment, client-side.
 
-Trois conséquences structurelles :
+Three structural consequences:
 
-| Domaine | Avant | Après |
+| Area | Before | After |
 |---|---|---|
-| Notifications | `title` et `body` en texte français | `type` + `params` (JSON), rendus à l'affichage |
-| Catégories système | Nom français en dur | `i18nKey` stable + `name` optionnel si l'utilisateur renomme |
-| Erreurs API | `message` en français | `code` stable + `params`, traduits côté client |
+| Notifications | `title` and `body` as French text | `type` + `params` (JSON), rendered at display time |
+| System categories | Hardcoded French name | Stable `i18nKey` + optional `name` if the user renames |
+| API errors | French `message` | Stable `code` + `params`, translated client-side |
 
-### Ce qui reste explicitement en une seule langue
+### What explicitly stays in a single language
 
-- **Le code, les identifiants, les noms de tables et de champs** : anglais, toujours.
-- **La documentation technique et les commits** : français.
-- **Les données saisies par l'utilisateur** (libellés de transaction, noms de comptes, notes) : elles sont dans la langue de l'utilisateur et ne sont jamais traduites. Ce sont ses données, pas de l'interface.
+- **Code, identifiers, table and field names**: English, always.
+- **Technical documentation and commits**: English (see [ADR-0014](0014-english-as-sole-documentation-language.md); originally French).
+- **Data entered by the user** (transaction labels, account names, notes): it is in the user's language and is never translated. It is their data, not interface.
 
-### Séparation langue / devise / fuseau
+### Separation of language / currency / timezone
 
-Ces trois dimensions restent indépendantes, comme elles l'étaient déjà : `user.locale`, `user.baseCurrency`, `user.timezone`. Un utilisateur peut lire l'interface en anglais, compter en XOF et vivre à Cotonou. Les lier serait une erreur fréquente et coûteuse.
+These three dimensions stay independent, as they already were: `user.locale`, `user.baseCurrency`, `user.timezone`. A user can read the interface in English, count in XOF and live in Cotonou. Linking them would be a frequent and costly mistake.
 
-## Conséquences
+## Consequences
 
-**Bénéfices**
+**Benefits**
 
-- Changer de langue met à jour l'intégralité de l'interface, y compris l'historique des notifications.
-- Ajouter une troisième langue devient un travail de traduction pur, sans toucher au schéma ni à l'API.
-- Le format d'erreur par code est de toute façon une meilleure pratique d'API : il rend les erreurs testables et interprétables par un client, ce qu'un message en langue naturelle n'est pas.
+- Changing language updates the whole interface, including notification history.
+- Adding a third language becomes pure translation work, with no schema or API change.
+- The error-code format is better API practice anyway: it makes errors testable and interpretable by a client, which a natural-language message is not.
 
-**Coûts**
+**Costs**
 
-- Deux fichiers de traduction à maintenir en parallèle dès le premier écran. Un contrôle automatisé de parité des clés est nécessaire (voir `10-conventions-dev.md`).
-- Le rendu des notifications côté client suppose que le client connaisse tous les types. Une notification d'un type inconnu (client non à jour) doit avoir un rendu de repli, jamais un écran vide.
-- La pluralisation et l'ordre des mots diffèrent entre langues : les messages doivent être des phrases complètes paramétrées, jamais des fragments concaténés.
+- Two translation files to maintain in parallel from the first screen onward. An automated key-parity check is necessary (see `10-conventions-dev.md`).
+- Client-side notification rendering assumes the client knows every type. A notification of an unknown type (out-of-date client) must have a fallback rendering, never an empty screen.
+- Pluralization and word order differ between languages: messages must be complete parameterized sentences, never concatenated fragments.
 
-**Deux dettes connues, assumées**
+**Two known debts, accepted**
 
-Elles ne sont pas corrigées maintenant parce qu'elles ne touchent pas au schéma et restent réparables à tout moment :
+They are not fixed now because they do not touch the schema and stay repairable at any time:
 
-1. **En-têtes des fichiers d'export** (`date_operation`, `compte`…) — figés en français dans `06-import-export.md`. Un utilisateur anglophone recevra un CSV à en-têtes françaises. Corrigeable en suivant `user.locale` au moment de la génération, sans migration.
-2. **`Currency.name`** — stocke un libellé lisible (« Franc CFA »). Le code ISO étant lui-même la clé, le client peut résoudre le nom via son dictionnaire et ignorer le champ. Aucune donnée à migrer.
+1. **Export file headers** (`date_operation`, `compte`…) — frozen in French in `06-import-export.md`. An English-speaking user will receive a CSV with French headers. Fixable by following `user.locale` at generation time, with no migration.
+2. **`Currency.name`** — stores a readable label ("Franc CFA"). Since the ISO code is itself the key, the client can resolve the name from its own dictionary and ignore the field. No data to migrate.
 
-Les signaler ici évite qu'elles soient découvertes comme des incohérences plus tard.
+Flagging them here avoids their being discovered later as inconsistencies.
 
-**Hors périmètre pour l'instant**
+**Out of scope for now**
 
-Le RTL (arabe, hébreu) n'est pas au programme. Si une telle langue arrive un jour, l'usage de propriétés CSS logiques (`margin-inline-start` plutôt que `margin-left`) dès maintenant limitera le coût — c'est une convention gratuite à adopter, pas un chantier.
+RTL (Arabic, Hebrew) is not planned. If such a language ever arrives, using logical CSS properties (`margin-inline-start` rather than `margin-left`) from now on will limit the cost — a free convention to adopt, not a project.
 
-## Réexamen
+## Re-examination
 
-Une troisième langue ne nécessitera pas de nouvelle ADR tant qu'elle est LTR. Une langue RTL, oui.
+A third language will not require a new ADR as long as it is LTR. An RTL language will.

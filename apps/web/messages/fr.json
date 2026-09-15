@@ -432,6 +432,20 @@
       "backToLogin": "Retour à la connexion",
       "successTitle": "Vérifiez votre boîte mail",
       "successBody": "Si un compte existe pour cette adresse, vous recevrez un lien de réinitialisation dans quelques minutes."
+    },
+    "oauth": {
+      "continueWithGoogle": "Continuer avec Google",
+      "continueWithGithub": "Continuer avec GitHub",
+      "orDivider": "ou"
+    },
+    "oauthComplete": {
+      "title": "Presque terminé",
+      "subtitle": "Choisissez la devise dans laquelle suivre votre argent — vous ne pourrez plus la changer ensuite.",
+      "baseCurrencyLabel": "Devise de référence",
+      "submit": "Terminer la création du compte",
+      "submitting": "Création du compte...",
+      "missingToken": "Ce lien est invalide ou a expiré. Merci de vous reconnecter.",
+      "loginLink": "Retour à la connexion"
     }
   },
   "accounts": {
@@ -461,7 +475,15 @@
     "columnCurrency": "Devise",
     "columnEntries": "Entrées",
     "columnExits": "Sorties",
-    "columnBalance": "Solde"
+    "columnBalance": "Solde",
+    "reconcile": "Rapprocher",
+    "reconcileTitle": "Rapprocher {name}",
+    "reconcileDescription": "Indiquez le solde réel constaté. La différence est enregistrée comme un ajustement — rien n'est corrigé silencieusement.",
+    "actualBalanceLabel": "Solde réel",
+    "asOfDateLabel": "Date du constat",
+    "reconcileSubmit": "Rapprocher",
+    "reconcileNoChange": "Votre solde correspondait déjà — aucun ajustement nécessaire.",
+    "reconcileAdjusted": "Ajusté de {amount}."
   },
   "account": {
     "type": {
@@ -512,6 +534,8 @@
       "category_expense_subscriptions": "Abonnements",
       "category_expense_taxes": "Impôts et taxes",
       "category_expense_other_expense": "Autres dépenses",
+      "category_expense_transaction_fees": "Frais de transaction",
+      "category_expense_adjustment": "Ajustement",
       "category_income_salary": "Salaire",
       "category_income_business": "Revenus d'entreprise",
       "category_income_investments": "Investissements",
@@ -604,7 +628,9 @@
     "columnAmount": "Montant",
     "paginationRange": "Affichage {from}–{to} sur {total}",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "feeLabel": "Frais ({currency}, facultatif)",
+    "feeInline": "dont {amount} de frais"
   },
   "import": {
     "title": "Importer un relevé",
@@ -903,6 +929,8 @@
       "IMPORT_COMPLETED": "Import terminé",
       "IMPORT_FAILED": "Échec de l'import",
       "BALANCE_MISMATCH": "Écart de solde détecté",
+      "ENTRY_REMINDER": "Aucune saisie depuis {daysSinceLastEntry} jours",
+      "RECONCILE_REMINDER": "Pensez à rapprocher {accountName}",
       "UNKNOWN": "Notification"
     }
   },
@@ -923,6 +951,8 @@
     "timezoneLabel": "Fuseau horaire",
     "weekStartsOnLabel": "Premier jour de la semaine",
     "monthStartDayLabel": "Jour de début du mois",
+    "entryReminderDaysLabel": "Me rappeler après ce nombre de jours d'inactivité",
+    "entryReminderDaysDisabled": "Désactivé",
     "save": "Enregistrer",
     "pinSection": "Verrouillage par code PIN",
     "pinEnabled": "Code PIN activé",
@@ -938,6 +968,9 @@
     "pushEnable": "Activer les notifications sur cet appareil",
     "pushRemove": "Retirer",
     "pushTest": "Envoyer une notification de test",
+    "connectedAccountsSection": "Comptes liés",
+    "connectedAccountsEmpty": "Aucun compte social lié.",
+    "connectedAccountsUnlink": "Dissocier",
     "deleteAccountSection": "Supprimer mon compte",
     "deleteAccount": "Supprimer définitivement mon compte",
     "exportSection": "Export intégral",
@@ -980,6 +1013,12 @@
     "INVALID_VERIFICATION_TOKEN": "Ce lien de confirmation est invalide ou a expiré.",
     "CURRENCY_UNKNOWN": "Devise inconnue.",
     "LOGIN_LOCKED": "Trop de tentatives, réessayez plus tard.",
+    "OAUTH_FAILED": "Une erreur est survenue lors de la connexion — veuillez réessayer.",
+    "OAUTH_EMAIL_UNAVAILABLE": "Ce fournisseur n'a pas communiqué d'adresse e-mail vérifiée, la connexion n'est pas possible ainsi.",
+    "OAUTH_EMAIL_UNVERIFIED_CONFLICT": "Cette adresse e-mail est déjà utilisée par un compte, mais le fournisseur ne l'a pas vérifiée — connectez-vous avec votre mot de passe.",
+    "OAUTH_LAST_AUTH_METHOD": "Impossible de dissocier ce compte — c'est votre seul moyen de connexion. Définissez d'abord un mot de passe.",
+    "OAUTH_PROVIDER_DISABLED": "Ce moyen de connexion n'est pas disponible pour le moment.",
+    "INVALID_OAUTH_SIGNUP_TOKEN": "Ce lien est invalide ou a expiré. Merci de vous reconnecter.",
     "CATEGORY_NOT_FOUND": "Catégorie introuvable.",
     "CATEGORY_NAME_TAKEN": "Une catégorie avec ce nom existe déjà.",
     "CATEGORY_MAX_DEPTH_EXCEEDED": "Une sous-catégorie ne peut pas avoir d'enfant.",

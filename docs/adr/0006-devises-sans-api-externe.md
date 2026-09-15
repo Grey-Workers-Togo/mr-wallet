@@ -1,15 +1,15 @@
-# ADR-0006 — Multi-devises sans dépendance à une API de taux
+# ADR-0006 — Multi-currency without depending on a rate API
 
-## Statut
-Accepté — 2026-07-28
+## Status
+Accepted — 2026-07-28
 
-## Contexte
-Les API de taux de change fiables sont payantes au-delà de quotas très bas, et les offres gratuites changent ou disparaissent. Faire dépendre la consolidation multi-devises d'un tel service crée une fragilité disproportionnée.
+## Context
+Reliable exchange rate APIs are paid beyond very low quotas, and free offerings change or disappear. Making multi-currency consolidation depend on such a service creates a disproportionate fragility.
 
-## Décision
-Le module `currency` résout les taux en cascade : parités fixes (XOF/XAF ↔ EUR, chargées en seed), puis taux saisis manuellement par l'utilisateur, puis fournisseur externe **optionnel et désactivé par défaut**. Si aucun taux n'est disponible, l'API renvoie une erreur explicite invitant à la saisie — jamais de conversion approximative silencieuse.
+## Decision
+The `currency` module resolves rates in cascade: fixed pegs (XOF/XAF ↔ EUR, loaded as seed data), then rates entered manually by the user, then an external provider that is **optional and disabled by default**. If no rate is available, the API returns an explicit error prompting for manual entry — never a silent approximate conversion.
 
-## Conséquences
-- **Bénéfice** : l'application fonctionne intégralement sans abonnement. Pour les utilisateurs de la zone franc CFA travaillant aussi en euro, les parités fixes couvrent le besoin entièrement.
-- **Coût** : l'utilisateur avec des devises hors parité fixe doit saisir ses taux. Acceptable pour quelques transactions par an ; à réévaluer si le multi-devises devient un usage central.
-- **Règle associée** : la conversion applique le taux à la date de la transaction, jamais le taux du jour, pour que l'historique consolidé reste stable.
+## Consequences
+- **Benefit**: the application works entirely without a subscription. For users in the CFA franc zone who also work in euros, the fixed pegs cover the need completely.
+- **Cost**: a user with currencies outside a fixed peg has to enter their rates. Acceptable for a few transactions a year; to be reassessed if multi-currency becomes a central use.
+- **Associated rule**: conversion applies the rate at the transaction's date, never the current day's rate, so that consolidated history stays stable.

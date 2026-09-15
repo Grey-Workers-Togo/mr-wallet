@@ -68,7 +68,8 @@ interface Transaction {
   description: string;
   categoryId: string | null;
   transferGroupId: string | null;
-  source: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT';
+  source: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'ADJUSTMENT' | 'FEE';
+  feeMinor?: string;
 }
 
 interface Summary {
@@ -180,6 +181,7 @@ export default function TransactionsPage() {
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [amount, setAmount] = useState('');
+  const [feeMinor, setFeeMinor] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [occurredAt, setOccurredAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
@@ -260,6 +262,7 @@ export default function TransactionsPage() {
     setType('EXPENSE');
     setCurrency('XOF');
     setAmount('');
+    setFeeMinor('');
     setCategoryId('');
     setOccurredAt(new Date().toISOString().slice(0, 10));
     setNotes('');
@@ -273,6 +276,7 @@ export default function TransactionsPage() {
     setCurrency(tx.currency);
     setAccountId(tx.accountId);
     setAmount(tx.amountMinor);
+    setFeeMinor(tx.feeMinor ?? '');
     setCategoryId(tx.categoryId ?? '');
     setOccurredAt(tx.occurredAt.slice(0, 10));
     setNotes(tx.description ?? '');
@@ -350,6 +354,7 @@ export default function TransactionsPage() {
           occurredAt,
           description: notes || '-',
           categoryId: categoryId || null,
+          feeMinor: feeMinor || null,
         });
       } else if (type === 'TRANSFER') {
         await apiClient.post('/transactions/transfer', {
@@ -358,6 +363,7 @@ export default function TransactionsPage() {
           amountMinor: amount,
           occurredAt,
           description: notes || 'Transfer',
+          feeMinor: feeMinor || undefined,
         });
       } else {
         await apiClient.post('/transactions', {
@@ -367,6 +373,7 @@ export default function TransactionsPage() {
           occurredAt,
           description: notes || '-',
           categoryId: categoryId || undefined,
+          feeMinor: feeMinor || undefined,
         });
       }
       setDialogOpen(false);
@@ -670,7 +677,8 @@ export default function TransactionsPage() {
                   const account = accountsById.get(tx.accountId);
                   const category = tx.categoryId ? categoriesByAccount.get(tx.categoryId) : null;
                   const isTransfer = !!tx.transferGroupId;
-                  const isEditable = !isTransfer && tx.source !== 'DEBT_PAYMENT';
+                  const isFeeLine = tx.source === 'FEE';
+                  const isEditable = !isTransfer && tx.source !== 'DEBT_PAYMENT' && !isFeeLine;
                   const minorUnits = minorUnitsByCode[tx.currency] ?? 0;
                   const isNegative = tx.type === 'EXPENSE';
                   return (
@@ -695,6 +703,11 @@ export default function TransactionsPage() {
                       <td className={`px-5 py-3 font-semibold ${isNegative ? 'text-red-600' : 'text-emerald-600'}`}>
                         {isNegative ? '-' : '+'}
                         {formatMinor(tx.amountMinor, tx.currency, minorUnits)}
+                        {tx.feeMinor && (
+                          <p className="mt-0.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                            {t('feeInline', { amount: formatMinor(tx.feeMinor, tx.currency, minorUnits) })}
+                          </p>
+                        )}
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-1">
@@ -713,6 +726,7 @@ export default function TransactionsPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={t('delete')}
+                            disabled={isFeeLine}
                             onClick={() => setConfirmDelete({ id: tx.id, label: tx.description })}
                           >
                             <Trash2 className="size-3.5 text-red-600" />
@@ -772,6 +786,10 @@ export default function TransactionsPage() {
                 <Label htmlFor="amount" required>{t('amountCurrencyLabel', { currency })}</Label>
                 <AmountInput id="amount" value={amount} onValueChange={setAmount} required />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="feeMinor">{t('feeLabel', { currency })}</Label>
+              <AmountInput id="feeMinor" value={feeMinor} onValueChange={setFeeMinor} placeholder="0" />
             </div>
             <div>
               <Label htmlFor="currency" required>{t('currencyLabel')}</Label>

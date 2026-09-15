@@ -12,6 +12,10 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "npm run build:packages",
+    "build:packages": "npm run build -w packages/contracts -w packages/sync-protocol",
+    "pretypecheck": "npm run build:packages",
+    "pretest": "npm run build:packages",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

@@ -1,59 +1,62 @@
-# ADR-0008 — Cache de consultation hors ligne, en lecture seule
+# ADR-0008 — Offline consultation cache, read-only
 
-## Statut
-Accepté — 2026-07-28
-Nuance l'[ADR-0004](0004-abandon-offline-first.md), qui reste en vigueur.
+## Status
+Accepted — 2026-07-28. **Scope restricted to the web since 2026-09-03** ([ADR-0010](0010-offline-first-mobile.md)).
 
-## Contexte
+This consultation cache remains the strategy for the Next.js web front. It does **not** apply to the mobile client, which is offline-first: on mobile, RG-OF1 (no buffered writes) is explicitly lifted and replaced by the protocol in `14-sync-protocol.md`.
 
-L'ADR-0004 écarte l'offline-first : pas de base locale synchronisée, pas de résolution de conflits. La raison tient toujours — c'est l'**écriture** hors ligne qui crée la complexité (deux appareils modifient la même transaction, quel solde fait foi ?).
+Qualifies [ADR-0004](0004-abandon-offline-first.md), which is likewise restricted to the web.
 
-Mais avec le choix d'une PWA installable (ADR-0007), l'usage mobile devient central, et l'attente change : ouvrir son application de budget dans un transport souterrain pour vérifier un solde est un cas d'usage banal. Un écran vide dans cette situation est perçu comme une panne.
+## Context
 
-La distinction utile n'est donc pas « en ligne / hors ligne » mais **« lecture / écriture »**. La lecture hors ligne coûte une fraction d'un offline-first et couvre l'essentiel de la frustration.
+ADR-0004 rules out offline-first: no synchronized local database, no conflict resolution. The reasoning still holds — it is **writes** offline that create the complexity (two devices modify the same transaction; which balance is authoritative?).
 
-## Décision
+But with the choice of an installable PWA (ADR-0007), mobile usage becomes central, and the expectation changes: opening your budget application in an underground train to check a balance is an ordinary use case. An empty screen in that situation is perceived as a breakdown.
 
-Un service worker met en cache un **sous-ensemble borné de données, en lecture seule**.
+The useful distinction is therefore not "online / offline" but **"read / write"**. Reading offline costs a fraction of offline-first and covers most of the frustration.
 
-### Périmètre du cache
+## Decision
 
-| Donnée | Mise en cache |
+A service worker caches a **bounded subset of data, read-only**.
+
+### Cache scope
+
+| Data | Cached |
 |---|---|
-| Comptes et soldes courants | Oui |
-| 90 derniers jours de transactions | Oui |
-| Catégories, tags | Oui |
-| Périodes budgétaires en cours | Oui |
-| Dettes : synthèse et prochaine échéance | Oui |
-| Objectifs et progression | Oui |
-| Rapports et prévisions | **Non** — calculés serveur, potentiellement lourds |
-| Journal d'audit | **Non** |
-| Historique au-delà de 90 jours | **Non** |
+| Accounts and current balances | Yes |
+| Last 90 days of transactions | Yes |
+| Categories, tags | Yes |
+| Current budget periods | Yes |
+| Debts: summary and next due date | Yes |
+| Goals and progress | Yes |
+| Reports and forecasts | **No** — computed server-side, potentially heavy |
+| Audit log | **No** |
+| History beyond 90 days | **No** |
 
-### Comportement en l'absence de réseau
+### Behavior with no network
 
-- Les écrans de consultation s'affichent depuis le cache, avec un bandeau permanent indiquant **« Hors ligne — données du <date/heure de dernière synchronisation> »**.
-- Toute action d'écriture est **désactivée**, pas mise en file. Les boutons sont grisés avec une explication, jamais une erreur après coup.
-- Au retour du réseau, le cache est rafraîchi et le bandeau disparaît.
+- Consultation screens render from the cache, with a permanent banner reading **"Offline — data as of <date/time of last sync>"**.
+- Every write action is **disabled**, not queued. Buttons are greyed out with an explanation, never an error after the fact.
+- When the network returns, the cache is refreshed and the banner disappears.
 
-### Règles
+### Rules
 
-| Règle | Énoncé |
+| Rule | Statement |
 |---|---|
-| RG-OF1 | Aucune écriture n'est jamais bufferisée localement. Pas de file d'attente d'opérations, pas de synchronisation différée. C'est ce qui distingue ce cache d'un offline-first. |
-| RG-OF2 | Toute donnée servie depuis le cache est visuellement marquée comme telle, avec sa date de fraîcheur. Un solde périmé affiché comme un solde à jour est pire que pas de solde du tout. |
-| RG-OF3 | Le cache est chiffré au repos et **purgé à la déconnexion**, ainsi qu'à l'expiration du refresh token. |
-| RG-OF4 | Le cache expire au bout de 7 jours sans rafraîchissement. Au-delà, l'application affiche un écran « données trop anciennes » plutôt que des chiffres douteux. |
-| RG-OF5 | Le verrouillage applicatif (PIN) s'applique aussi à l'accès aux données en cache. |
+| RG-OF1 | No write is ever buffered locally. No operation queue, no deferred synchronization. This is what distinguishes this cache from offline-first. |
+| RG-OF2 | Any data served from the cache is visually marked as such, with its freshness date. A stale balance displayed as a current one is worse than no balance at all. |
+| RG-OF3 | The cache is encrypted at rest and **purged on logout**, as well as on refresh token expiry. |
+| RG-OF4 | The cache expires after 7 days without refresh. Beyond that, the application shows a "data too old" screen rather than doubtful figures. |
+| RG-OF5 | The application lock (PIN) also applies to access to cached data. |
 
-## Conséquences
+## Consequences
 
-**Bénéfices** — L'application reste utile sans réseau pour ce qui compte le plus (« combien il me reste »). Aucune complexité de résolution de conflits : le serveur reste la seule source de vérité, en permanence.
+**Benefits** — The application stays useful without a network for what matters most ("how much do I have left"). No conflict-resolution complexity: the server remains the sole source of truth at all times.
 
-**Coûts** — Un service worker à maintenir, une stratégie d'invalidation, et des données financières stockées sur l'appareil (d'où le chiffrement et la purge à la déconnexion). L'interface doit gérer proprement trois états au lieu de deux : en ligne, hors ligne avec cache valide, hors ligne avec cache périmé.
+**Costs** — A service worker to maintain, an invalidation strategy, and financial data stored on the device (hence the encryption and the purge on logout). The interface must handle three states instead of two: online, offline with a valid cache, offline with a stale cache.
 
-**Position** — Cette décision ne rouvre pas l'offline-first. Si un besoin d'écriture hors ligne apparaît, il fera l'objet d'une ADR distincte, avec le chantier de synchronisation que cela suppose.
+**Position** — This decision does not reopen offline-first. If a need for offline writes appears, it will be the subject of a separate ADR, with the synchronization work that implies. *(That ADR is [ADR-0010](0010-offline-first-mobile.md), for the mobile client.)*
 
-## Séquencement
+## Sequencing
 
-Implémenté au **lot 7** (finition MVP), pas avant. Le cache s'ajoute à une application qui fonctionne ; l'introduire trop tôt complique le débogage de tout le reste.
+Implemented at **lot 7** (MVP finishing), not before. The cache is added to an application that works; introducing it too early complicates debugging everything else.

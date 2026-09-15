@@ -18,6 +18,8 @@ const notificationTypeEnum = z.enum([
   'IMPORT_COMPLETED',
   'IMPORT_FAILED',
   'BALANCE_MISMATCH',
+  'ENTRY_REMINDER',
+  'RECONCILE_REMINDER',
 ]);
 
 export const updatePreferencesSchema = z

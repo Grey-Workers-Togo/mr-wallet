@@ -9,4 +9,8 @@ export class NotificationsFacade {
   create(input: Parameters<NotificationsService['create']>[0]) {
     return this.notificationsService.create(input);
   }
+
+  markRead(userId: string, id: string) {
+    return this.notificationsService.markRead(userId, id);
+  }
 }

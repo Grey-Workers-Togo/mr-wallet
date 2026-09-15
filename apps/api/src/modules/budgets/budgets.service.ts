@@ -54,12 +54,19 @@ export class BudgetsService {
   }
 
   async create(userId: string, dto: CreateBudgetDto) {
+    if (dto.id) {
+      // RG-SY3: an id already used by this user is a replay, not an error.
+      const existing = await this.prisma.budget.findFirst({ where: { userId, id: dto.id } });
+      if (existing) return existing;
+    }
+
     await this.assertNoOverlap(userId, dto.categoryId ?? null, dto.startsOn, dto.endsOn ?? null);
 
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { monthStartDay: true } });
 
     const budget = await this.prisma.budget.create({
       data: {
+        id: dto.id,
         userId,
         name: dto.name,
         categoryId: dto.categoryId,

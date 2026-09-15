@@ -76,6 +76,16 @@ describe('notifications', () => {
     expect(list.find((n) => n.type === 'BUDGET_EXCEEDED')).toBeUndefined();
   });
 
+  it('RG-A11/RG-N14 (lot 19): a balance-mismatch event creates one notification, no amount, deduped per day', async () => {
+    await service.onAccountBalanceMismatch({ userId, accountId: 'acc-1', accountName: 'Cash wallet' });
+    await service.onAccountBalanceMismatch({ userId, accountId: 'acc-1', accountName: 'Cash wallet' });
+
+    const list = await service.list(userId, false);
+    const mismatches = list.filter((n) => n.type === 'BALANCE_MISMATCH');
+    expect(mismatches).toHaveLength(1);
+    expect(mismatches[0]?.params).toEqual({ accountName: 'Cash wallet' });
+  });
+
   it('subscribes a device, lists it, then removes it — scoped to the owner', async () => {
     const other = await prisma.user.create({ data: { email: `notif-other-${Date.now()}@example.com`, passwordHash: 'x', baseCurrency: 'EUR' } });
 

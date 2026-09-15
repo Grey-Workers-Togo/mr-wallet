@@ -1,15 +1,15 @@
-# ADR-0003 — Solde de compte stocké, avec réconciliation
+# ADR-0003 — Stored account balance, with reconciliation
 
-## Statut
-Accepté — 2026-07-28
+## Status
+Accepted — 2026-07-28
 
-## Contexte
-Le solde d'un compte peut être recalculé à la demande (solde d'ouverture + somme des transactions) ou stocké et maintenu de façon incrémentale. Le recalcul est toujours juste mais devient lent au-delà de quelques milliers de transactions, sur des écrans consultés en permanence. Le solde stocké est rapide mais peut dériver silencieusement si une écriture échoue partiellement.
+## Context
+An account's balance can be recomputed on demand (opening balance + sum of transactions) or stored and maintained incrementally. Recomputation is always correct but becomes slow beyond a few thousand transactions, on screens that are consulted constantly. A stored balance is fast but can drift silently if a write partially fails.
 
-## Décision
-Solde stocké sur `Account.currentBalanceMinor`, mis à jour dans la **même transaction SQL** que toute création, modification ou suppression de transaction. Une tâche nocturne recalcule le solde de chaque compte et journalise tout écart dans `BalanceCheck`, en notifiant l'utilisateur.
+## Decision
+Balance stored on `Account.currentBalanceMinor`, updated in the **same SQL transaction** as any creation, modification or deletion of a transaction. A nightly task recomputes every account's balance and logs any discrepancy in `BalanceCheck`, notifying the user.
 
-## Conséquences
-- **Bénéfice** : lecture instantanée sur tous les écrans.
-- **Coût** : une tâche de réconciliation à maintenir, et un mécanisme d'alerte.
-- **Règle** : un écart détecté n'est **jamais** corrigé silencieusement — il signale un bug qu'il faut voir.
+## Consequences
+- **Benefit**: instant reads on every screen.
+- **Cost**: a reconciliation task to maintain, and an alerting mechanism.
+- **Rule**: a detected discrepancy is **never** silently corrected — it signals a bug that must be seen.

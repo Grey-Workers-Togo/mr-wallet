@@ -1,14 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto, CreateTransferDto } from './dto/transaction.dto';
+import {
+  BulkUpdateDto,
+  CreateTransactionDto,
+  CreateTransferDto,
+  UpdateTransactionDto,
+} from './dto/transaction.dto';
 
-/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`. */
+/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`, `reconciliation`, `sync`. */
 @Injectable()
 export class TransactionsFacade {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   getById(userId: string, id: string) {
     return this.transactionsService.getById(userId, id);
+  }
+
+  create(userId: string, dto: CreateTransactionDto) {
+    return this.transactionsService.create(userId, dto);
+  }
+
+  update(userId: string, id: string, dto: UpdateTransactionDto) {
+    return this.transactionsService.update(userId, id, dto);
+  }
+
+  bulkUpdate(userId: string, dto: BulkUpdateDto) {
+    return this.transactionsService.bulkUpdate(userId, dto);
   }
 
   /** docs/06 §9: `import` never writes to the DB directly — always through this facade (docs/02 §4). */
@@ -34,6 +51,11 @@ export class TransactionsFacade {
   /** A debt linked to an account books its principal as a transaction — never written to the DB directly. */
   createFromDebtCreation(userId: string, dto: CreateTransactionDto, debtId: string) {
     return this.transactionsService.create(userId, dto, { source: 'DEBT_CREATION', debtId });
+  }
+
+  /** RG-A9 (docs/04 §B, lot 19): the difference from a declared-balance reconciliation, never written to the DB directly. */
+  createFromReconciliation(userId: string, dto: CreateTransactionDto) {
+    return this.transactionsService.create(userId, dto, { source: 'ADJUSTMENT' });
   }
 
   /** Deleting a debt cascades to the transaction that booked its principal — the only caller allowed to bypass the guard. */
