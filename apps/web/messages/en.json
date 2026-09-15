@@ -527,6 +527,7 @@
       "category_expense_taxes": "Taxes",
       "category_expense_other_expense": "Other expenses",
       "category_expense_transaction_fees": "Transaction fees",
+      "category_expense_adjustment": "Adjustment",
       "category_income_salary": "Salary",
       "category_income_business": "Business income",
       "category_income_investments": "Investments",

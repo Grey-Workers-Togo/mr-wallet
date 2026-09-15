@@ -126,6 +126,10 @@ model Account {
   openingBalanceAt    DateTime    @db.Timestamptz(6)
   currentBalanceMinor BigInt      @default(0)
   balanceCheckedAt    DateTime?   @db.Timestamptz(6)
+  // RG-A12 (docs/04 §B, lot 19): last time the user reconciled against the real-world balance.
+  // Deliberately distinct from balanceCheckedAt (the nightly internal drift check, RG-A11) — merging
+  // the two would let a genuine bug hide behind a routine user adjustment.
+  lastReconciledAt    DateTime?   @db.Timestamptz(6)
   creditLimitMinor    BigInt?
   institution         String?
   color               String?

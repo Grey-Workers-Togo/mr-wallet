@@ -24,6 +24,11 @@ const SYSTEM_CATEGORY_LABELS: Record<string, { fr: string; en: string }> = {
   // backfilled for existing users by migration
   // (see prisma/migrations/*_backfill_transaction_fees_category).
   'category.expense.transaction_fees': { fr: 'Frais de transaction', en: 'Transaction fees' },
+  // Lot 19 (docs/04 §B, RG-A9): default category for a reconciliation adjustment. Real spec spells
+  // it `category.adjustment` (docs/03 §19); kept under the `category.expense.*` prefix instead to
+  // match this file's actual seed convention (same accepted drift as transaction_fees in lot 18) —
+  // its EXPENSE kind is a placeholder the create path bypasses for INCOME-signed adjustments.
+  'category.expense.adjustment': { fr: 'Ajustement', en: 'Adjustment' },
   'category.income.salary': { fr: 'Salaire', en: 'Salary' },
   'category.income.business': { fr: 'Revenus d’entreprise', en: 'Business income' },
   'category.income.investments': { fr: 'Investissements', en: 'Investments' },
@@ -34,7 +39,7 @@ const SYSTEM_CATEGORY_LABELS: Record<string, { fr: string; en: string }> = {
   'category.income.other_income': { fr: 'Autres revenus', en: 'Other income' },
 };
 
-/** Single source of truth for the seeded system categories (roadmap Lot 2: 16 expense + 8 income, + 1 more expense category added in lot 18). */
+/** Single source of truth for the seeded system categories (roadmap Lot 2: 16 expense + 8 income, + 1 more expense category each added in lots 18 and 19). */
 export const SYSTEM_CATEGORY_DEFINITIONS: { i18nKey: string; kind: 'EXPENSE' | 'INCOME' }[] = Object.keys(
   SYSTEM_CATEGORY_LABELS,
 ).map((i18nKey) => ({ i18nKey, kind: i18nKey.startsWith('category.expense.') ? 'EXPENSE' : 'INCOME' }));
