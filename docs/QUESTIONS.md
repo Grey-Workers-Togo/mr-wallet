@@ -1,5 +1,21 @@
 # Open questions
 
+## `RECONCILE_REMINDER` skips an account already reconciled this month (lot 20)
+
+RG-N15 states the reminder is "monthly" for `CASH`/`MOBILE_MONEY` accounts but doesn't say whether
+it should still fire on schedule for an account the user has already reconciled since the last
+run — a purely calendar-driven nudge would do that; a reminder that ignores what the user already
+did would be exactly the "nags" behavior RG-N13 explicitly calls out as a reason to uninstall
+(stated for `ENTRY_REMINDER`, but the same product reasoning applies here).
+
+**Implemented behavior (conservative):** `notifyReconcileReminders()` skips an account whose
+`Account.lastReconciledAt` already falls in the current calendar month, on top of the required
+monthly cadence and per-(account, month) dedupe.
+
+Impact: a user who reconciles early in the month gets no further nudge until next month, even if
+the cron's own monthly tick would otherwise have fired. Revisit if product feedback wants a purely
+schedule-driven reminder regardless of recent activity.
+
 ## `attachment.create` excluded from the M0 sync catalogue
 
 `docs/14-sync-protocol.md § 2.1` lists `attachment.create` as metadata-only — the binary is

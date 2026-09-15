@@ -138,7 +138,7 @@ API-driven: the API owns the redirect and the callback, not a client-side SDK ex
 | Method | Path | Description |
 |---|---|---|
 | GET | `/me` | Profile and preferences |
-| PATCH | `/me` | Modify displayName, locale, timezone, weekStartsOn, monthStartDay |
+| PATCH | `/me` | Modify displayName, locale, timezone, weekStartsOn, monthStartDay, entryReminderDays (lot 20, RG-N12 — `null` disables `ENTRY_REMINDER`) |
 | PATCH | `/me/base-currency` | Change the reference currency (heavy operation: recomputes cached reports) |
 | DELETE | `/me` | Account deletion (soft delete + scheduled purge at D+30) |
 | GET | `/me/export` | Triggers a full export |

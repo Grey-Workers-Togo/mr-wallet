@@ -255,6 +255,8 @@ The application refuses to start if a mandatory variable is missing — environm
 | `purgeDeletedAccounts` | daily | Physical purge of accounts deleted more than 30 days ago |
 | `purgeStaleDeviceTokens` | weekly | Deletes push subscriptions inactive or failing for 90 days |
 | `purgeExpiredSupportRows` | daily | Purges expired `IdempotencyKey`, `PasswordResetToken`, and `ExportJob` |
+| `notifyEntryReminders` (`NotificationsService`) | daily | `ENTRY_REMINDER` after `user.entryReminderDays` days of inactivity, one per streak (RG-N12/RG-N13, lot 20) |
+| `notifyReconcileReminders` (`NotificationsService`) | monthly | `RECONCILE_REMINDER` for `CASH`/`MOBILE_MONEY` accounts not yet reconciled this month (RG-N15, lot 20) |
 
 All tasks are **idempotent** and logged with `actorType = SCHEDULER`.
 
