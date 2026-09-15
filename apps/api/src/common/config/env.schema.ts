@@ -39,6 +39,10 @@ export const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().default(''),
   /** This API's own public base URL, used to build the exact redirect_uri registered with each OAuth provider. */
   API_PUBLIC_URL: z.string().default(''),
+  /** RG-SY14/RG-RE5: floor below which a sync client is forced to upgrade (CLIENT_TOO_OLD). '0.0.0' = no floor yet — no mobile client is published. */
+  MIN_CLIENT_VERSION_IOS: z.string().default('0.0.0'),
+  MIN_CLIENT_VERSION_ANDROID: z.string().default('0.0.0'),
+  MIN_CLIENT_VERSION_WEB: z.string().default('0.0.0'),
 })
   .refine((env) => (env.GOOGLE_CLIENT_ID === '') === (env.GOOGLE_CLIENT_SECRET === ''), {
     message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be both set or both empty',
