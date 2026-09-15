@@ -880,6 +880,26 @@ model PendingOAuthSignup {
   @@index([expiresAt])
 }
 
+// A returning OAuth login (existing User, provider already linked or email auto-linked) lands via
+// a plain HTTP redirect - no access token can travel in that URL (it's sensitive and would leak
+// via browser history/referrer/logs), and the HttpOnly refresh cookie set on that same redirect is
+// cross-site from the web app's origin, so browsers that block third-party cookies (Safari ITP,
+// Firefox ETP strict) never store it, leaving the dashboard permanently "unauthorized" on first
+// load. This ticket is the same opaque single-use handshake PendingOAuthSignup already uses for
+// brand-new signups, just for an already-resolved user/session: the redirect carries only this
+// opaque token, exchanged once via POST for a real access token - no cookie dependency.
+model OAuthLoginTicket {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  sessionId String
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([expiresAt])
+}
+
 enum ExportKind {
   TRANSACTIONS
   FULL
