@@ -138,6 +138,7 @@ model Account {
   deletedAt           DateTime?   @db.Timestamptz(6)
 
   @@index([userId, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +168,7 @@ model Category {
 
   @@index([userId, deletedAt])
   @@index([userId, parentId])
+  @@index([userId, updatedAt, id])
 }
 
 model Tag {
@@ -179,6 +181,7 @@ model Tag {
   deletedAt DateTime? @db.Timestamptz(6)
 
   @@unique([userId, name])
+  @@index([userId, updatedAt, id])
 }
 
 model TransactionTag {
@@ -283,6 +286,7 @@ model Transaction {
   @@index([userId, categoryId, occurredAt])
   @@index([userId, fingerprint])
   @@index([transferGroupId])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -329,6 +333,7 @@ model RecurrenceRule {
   deletedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, isActive, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 // ---------------------------------------------------------------------------
@@ -361,6 +366,7 @@ model Budget {
   deletedAt       DateTime?        @db.Timestamptz(6)
 
   @@index([userId, isActive, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 model BudgetPeriod {
@@ -459,6 +465,7 @@ model Debt {
   deletedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, status, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 enum InstallmentStatus {
@@ -540,6 +547,7 @@ model SavingsGoal {
   deletedAt       DateTime?  @db.Timestamptz(6)
 
   @@index([userId, status, deletedAt])
+  @@index([userId, updatedAt, id])
 }
 
 model GoalContribution {
