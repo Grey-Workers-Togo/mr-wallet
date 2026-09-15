@@ -11,6 +11,12 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7"
+  },
   "scripts": {
     "postinstall": "npm run build:packages",
     "build:packages": "npm run build -w packages/contracts -w packages/sync-protocol",
