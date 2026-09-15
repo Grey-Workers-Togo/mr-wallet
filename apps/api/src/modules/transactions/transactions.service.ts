@@ -203,7 +203,7 @@ export class TransactionsService {
     userId: string,
     dto: CreateTransactionDto,
     opts?: {
-      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'DEBT_CREATION';
+      source?: 'MANUAL' | 'IMPORT' | 'RECURRENCE' | 'DEBT_PAYMENT' | 'DEBT_CREATION' | 'ADJUSTMENT';
       importBatchId?: string;
       externalRef?: string;
       recurrenceId?: string;
@@ -220,7 +220,9 @@ export class TransactionsService {
     const amountMinor = BigInt(dto.amountMinor);
     const account = await this.validateAgainstAccount(userId, dto.accountId, amountMinor, dto.occurredAt);
 
-    if (dto.categoryId) {
+    if (dto.categoryId && opts?.source !== 'ADJUSTMENT') {
+      // RG-A9 (lot 19): a reconciliation adjustment is system-assigned to one category regardless
+      // of sign — the kind-mismatch guard exists to stop a *user* mis-filing, which doesn't apply here.
       const category = await this.categoriesFacade.getById(userId, dto.categoryId);
       if (category.kind !== dto.type) {
         throw new ValidationAppError('CATEGORY_KIND_MISMATCH');

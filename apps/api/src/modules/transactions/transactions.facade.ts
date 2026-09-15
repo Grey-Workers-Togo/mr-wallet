@@ -7,7 +7,7 @@ import {
   UpdateTransactionDto,
 } from './dto/transaction.dto';
 
-/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`, `sync`. */
+/** Public interface of the `transactions` module (docs/02-architecture.md §4) — consumed by `budgets`, `goals`, `import`, `debts`, `reconciliation`, `sync`. */
 @Injectable()
 export class TransactionsFacade {
   constructor(private readonly transactionsService: TransactionsService) {}
@@ -51,6 +51,11 @@ export class TransactionsFacade {
   /** A debt linked to an account books its principal as a transaction — never written to the DB directly. */
   createFromDebtCreation(userId: string, dto: CreateTransactionDto, debtId: string) {
     return this.transactionsService.create(userId, dto, { source: 'DEBT_CREATION', debtId });
+  }
+
+  /** RG-A9 (docs/04 §B, lot 19): the difference from a declared-balance reconciliation, never written to the DB directly. */
+  createFromReconciliation(userId: string, dto: CreateTransactionDto) {
+    return this.transactionsService.create(userId, dto, { source: 'ADJUSTMENT' });
   }
 
   /** Deleting a debt cascades to the transaction that booked its principal — the only caller allowed to bypass the guard. */
