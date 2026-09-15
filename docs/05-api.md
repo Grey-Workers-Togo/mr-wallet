@@ -191,6 +191,18 @@ API-driven: the API owns the redirect and the callback, not a client-side SDK ex
 | GET | `/transactions/search` | Advanced search (complex filter body as query or POST) |
 | GET | `/transactions/summary` | Aggregates on the current filter: total, average, count, by category |
 
+`currency` is never part of the request body — it's inferred server-side from the account
+(a transaction's currency is always its account's currency, docs/03 § 7).
+
+`feeMinor` (lot 18, RG-T11..RG-T16): optional on create/update, in and out. A fee is entered as
+one extra field, never a second transaction — it materializes server-side as its own linked
+`EXPENSE`/`FEE` transaction (`feeForTransactionId`) in the same account, in the same SQL
+transaction as the parent (RG-A3), and is computed back on read from that linked row — it is
+**never a database column** (RG-T12a). On update, `feeMinor: 0` or `feeMinor: null` deletes the
+fee line; a fee line itself cannot be created, moved, or deleted independently of its parent
+(RG-T14) — attempting to do so via `PATCH`/`DELETE /transactions/:id` on a fee line's own id
+returns `409 TRANSACTION_IS_FEE_LINE`.
+
 ### Example — creation
 
 ```http
@@ -201,13 +213,13 @@ Idempotency-Key: 9f1c...
   "accountId": "acc_...",
   "type": "EXPENSE",
   "amountMinor": "12500",
-  "currency": "XOF",
   "occurredAt": "2026-07-28",
   "description": "Taxi aéroport",
   "categoryId": "cat_...",
   "payee": "Gozem",
   "tagIds": ["tag_..."],
-  "notes": null
+  "notes": null,
+  "feeMinor": "175"
 }
 ```
 
@@ -220,13 +232,14 @@ POST /api/v1/transactions/transfer
   "fromAccountId": "acc_bank",
   "toAccountId": "acc_savings",
   "amountMinor": "50000",
-  "currency": "XOF",
   "occurredAt": "2026-07-28",
-  "description": "Épargne mensuelle"
+  "description": "Épargne mensuelle",
+  "feeMinor": "150"
 }
 ```
 
-Different currencies: add `toAmountMinor` and `toCurrency`.
+A fee attaches to the outbound leg (RG-T11) — it debits the source account, on top of the
+transferred amount; the destination account still receives exactly `amountMinor`.
 
 ---
 
