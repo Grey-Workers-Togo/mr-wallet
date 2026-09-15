@@ -75,7 +75,7 @@ type Operation = {
 
 ```jsonc
 // request
-{ "deviceId": "…", "clientVersion": "1.4.0", "operations": [ /* ≤ 100, ordered */ ] }
+{ "deviceId": "…", "platform": "IOS", "clientVersion": "1.4.0", "operations": [ /* ≤ 100, ordered */ ] }
 
 // response
 {
@@ -89,6 +89,8 @@ type Operation = {
   "stoppedAt": null   // index of the first operation not processed, or null
 }
 ```
+
+`platform` (`WEB` / `IOS` / `ANDROID`) identifies which minimum-version floor applies (RG-SY14) — nothing else in the request does.
 
 Server-side processing is **sequential and stops at the first `conflict` or `rejected`**. Operations after it are not applied and come back in the next push. This preserves ordering: applying operation 5 after refusing operation 3 could apply an edit to an entity that was never created.
 
