@@ -56,6 +56,12 @@ interface GoalReachedPayload {
   goalName: string;
 }
 
+interface AccountBalanceMismatchPayload {
+  userId: string;
+  accountId: string;
+  accountName: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -371,6 +377,28 @@ export class NotificationsService {
       });
     } catch (error) {
       this.logger.warn(`Failed to create goal-reached notification for goal ${payload.goalId}: ${error}`);
+    }
+  }
+
+  /**
+   * RG-A11 (docs/04 §B, lot 19): the nightly drift check (`reconciliation` module) only ever logs
+   * and notifies — it never reaches this class directly, so it cannot create an adjustment itself.
+   * `entityId` encodes the day so a persisting drift notifies once per day, not once per account ever.
+   */
+  @OnEvent('account.balance_mismatch')
+  async onAccountBalanceMismatch(payload: AccountBalanceMismatchPayload): Promise<void> {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      await this.create({
+        userId: payload.userId,
+        type: 'BALANCE_MISMATCH',
+        params: { accountName: payload.accountName },
+        entityType: 'Account',
+        entityId: `${payload.accountId}:${today}`,
+        severity: 'WARNING',
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to create balance-mismatch notification for account ${payload.accountId}: ${error}`);
     }
   }
 
