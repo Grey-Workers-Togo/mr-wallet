@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OnEvent } from '@nestjs/event-emitter';
-import { NotificationType, Prisma, Severity } from '@prisma/client';
+import { NotificationType, Prisma, Severity } from '../../generated/prisma/client';
 import * as webpush from 'web-push';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundAppError } from '../../common/errors/app-error';

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { OperationName } from '@budget-manager/sync-protocol';
+import type { OperationName } from '@mr-wallet/sync-protocol';
 import { AccountsFacade } from '../../accounts/accounts.facade';
 import { createAccountSchema, updateAccountSchema } from '../../accounts/dto/account.dto';
 import { TransactionsFacade } from '../../transactions/transactions.facade';

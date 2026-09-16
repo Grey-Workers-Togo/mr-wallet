@@ -3,15 +3,15 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: budget_manager
-      POSTGRES_PASSWORD: budget_manager
-      POSTGRES_DB: budget_manager
+      POSTGRES_USER: mr_wallet
+      POSTGRES_PASSWORD: mr_wallet
+      POSTGRES_DB: mr_wallet
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U budget_manager"]
+      test: ["CMD-SHELL", "pg_isready -U mr_wallet"]
       interval: 5s
       timeout: 5s
       retries: 10

@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
-import type { Session, OAuthProvider as OAuthProviderName } from '@prisma/client';
+import type { Session, OAuthProvider as OAuthProviderName } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
 import { MailService } from '../../common/mail/mail.service';

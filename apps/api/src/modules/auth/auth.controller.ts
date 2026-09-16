@@ -16,7 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { randomBytes } from 'node:crypto';
 import { Request, Response } from 'express';
-import type { OAuthProvider as OAuthProviderName } from '@prisma/client';
+import type { OAuthProvider as OAuthProviderName } from '../../generated/prisma/client';
 import { Public } from '../../common/auth/public.decorator';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';

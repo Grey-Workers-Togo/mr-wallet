@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { clientSuppliedId } from '@budget-manager/contracts';
+import { clientSuppliedId } from '@mr-wallet/contracts';
 import { unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const nameField = z.string().trim().min(1).max(120);

@@ -1,11 +1,12 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
+// Connection URL moved to prisma.config.ts (CLI/migrate) and the PrismaPg adapter (runtime client) —
+// Prisma ORM v7 no longer accepts `url` here (https://pris.ly/d/config-datasource).
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------
