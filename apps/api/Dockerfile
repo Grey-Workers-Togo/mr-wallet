@@ -31,6 +31,7 @@ COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/sync-protocol/package.json packages/sync-protocol/package.json
 COPY --from=build /repo/apps/api/prisma apps/api/prisma
+COPY --from=build /repo/apps/api/prisma.config.ts apps/api/prisma.config.ts
 RUN npm ci --workspace=@mr-wallet/api --workspace=@mr-wallet/contracts --workspace=@mr-wallet/sync-protocol --include-workspace-root --omit=dev --ignore-scripts
 RUN npm run prisma:generate -w apps/api
 COPY --from=build /repo/packages/contracts/dist packages/contracts/dist
