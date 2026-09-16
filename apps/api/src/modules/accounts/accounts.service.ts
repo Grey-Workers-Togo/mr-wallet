@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConflictAppError, NotFoundAppError } from '../../common/errors/app-error';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';

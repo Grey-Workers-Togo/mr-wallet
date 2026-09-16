@@ -1,5 +1,5 @@
-const CACHE_NAME = 'budget-manager-readonly-v2';
-const DB_NAME = 'budget-manager-sw';
+const CACHE_NAME = 'mr-wallet-readonly-v1';
+const DB_NAME = 'mr-wallet-sw';
 const KEY_STORE = 'crypto-keys';
 const KEY_ID = 'offline-cache-key';
 const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;

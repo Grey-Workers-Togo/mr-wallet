@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { pushRequestSchema, PushRequest } from '@budget-manager/sync-protocol';
+import { pushRequestSchema, PushRequest } from '@mr-wallet/sync-protocol';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';

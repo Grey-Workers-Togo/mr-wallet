@@ -24,18 +24,18 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: budget_manager
-          POSTGRES_PASSWORD: budget_manager
-          POSTGRES_DB: budget_manager
+          POSTGRES_USER: mr_wallet
+          POSTGRES_PASSWORD: mr_wallet
+          POSTGRES_DB: mr_wallet
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U budget_manager"
+          --health-cmd "pg_isready -U mr_wallet"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://budget_manager:budget_manager@localhost:5432/budget_manager?schema=public
+      DATABASE_URL: postgresql://mr_wallet:mr_wallet@localhost:5432/mr_wallet?schema=public
       JWT_SECRET: ci-test-secret
       IP_HASH_SALT: ci-test-salt
 

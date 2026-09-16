@@ -1,5 +1,5 @@
 # Build context must be the repo root (npm workspaces monorepo):
-#   docker build -f apps/api/Dockerfile -t budget-manager-api .
+#   docker build -f apps/api/Dockerfile -t mr-wallet-api .
 
 FROM node:24-alpine AS deps
 WORKDIR /repo
@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/sync-protocol/package.json packages/sync-protocol/package.json
-RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --workspace=@budget-manager/sync-protocol --include-workspace-root --ignore-scripts
+RUN npm ci --workspace=@mr-wallet/api --workspace=@mr-wallet/contracts --workspace=@mr-wallet/sync-protocol --include-workspace-root --ignore-scripts
 
 FROM node:24-alpine AS build
 RUN apk add --no-cache openssl
@@ -31,7 +31,7 @@ COPY apps/api/package.json apps/api/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/sync-protocol/package.json packages/sync-protocol/package.json
 COPY --from=build /repo/apps/api/prisma apps/api/prisma
-RUN npm ci --workspace=@budget-manager/api --workspace=@budget-manager/contracts --workspace=@budget-manager/sync-protocol --include-workspace-root --omit=dev --ignore-scripts
+RUN npm ci --workspace=@mr-wallet/api --workspace=@mr-wallet/contracts --workspace=@mr-wallet/sync-protocol --include-workspace-root --omit=dev --ignore-scripts
 RUN npm run prisma:generate -w apps/api
 COPY --from=build /repo/packages/contracts/dist packages/contracts/dist
 COPY --from=build /repo/packages/sync-protocol/dist packages/sync-protocol/dist

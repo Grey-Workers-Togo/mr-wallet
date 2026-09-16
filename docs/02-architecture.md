@@ -148,7 +148,7 @@ Synchronous internal bus (`@nestjs/event-emitter`) in V1. No external broker: vo
 ## 6. Target tree structure
 
 ```
-budget-manager/
+mr-wallet/
 ├── apps/
 │   ├── api/
 │   │   ├── prisma/

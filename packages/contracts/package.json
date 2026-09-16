@@ -1,5 +1,5 @@
 {
-  "name": "@budget-manager/contracts",
+  "name": "@mr-wallet/contracts",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -11,10 +11,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "zod": "^3.23.8"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^5.0.1"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@budget-manager/sync-protocol",
+  "name": "@mr-wallet/sync-protocol",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -11,11 +11,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@budget-manager/contracts": "*",
-    "zod": "^3.23.8"
+    "@mr-wallet/contracts": "*",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^5.0.1"
   }
 }

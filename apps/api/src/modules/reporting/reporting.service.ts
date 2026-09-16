@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { DebtsFacade } from '../debts/debts.facade';

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { User } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundAppError, ValidationAppError } from '../../common/errors/app-error';
 import { SetPinDto, UpdateBaseCurrencyDto, UpdateMeDto, VerifyPinDto } from './dto/update-me.dto';

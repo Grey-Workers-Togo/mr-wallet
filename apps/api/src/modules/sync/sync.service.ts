@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { PushOperationResult, PushRequest } from '@budget-manager/sync-protocol';
-import { isClientVersionSupported } from '@budget-manager/sync-protocol';
+import type { PushOperationResult, PushRequest } from '@mr-wallet/sync-protocol';
+import { isClientVersionSupported } from '@mr-wallet/sync-protocol';
 import { PrismaService, RawPrismaService } from '../../common/prisma/prisma.service';
 import { AppError } from '../../common/errors/app-error';
 import { AccountsFacade } from '../accounts/accounts.facade';

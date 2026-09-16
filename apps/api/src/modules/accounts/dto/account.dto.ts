@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { clientSuppliedId } from '@budget-manager/contracts';
+import { clientSuppliedId } from '@mr-wallet/contracts';
 import { signedAmountMinor, unsignedAmountMinor } from '../../../common/validation/amount.schema';
 
 const accountTypeEnum = z.enum(['CASH', 'BANK', 'MOBILE_MONEY', 'CREDIT_CARD', 'SAVINGS', 'WALLET', 'OTHER']);

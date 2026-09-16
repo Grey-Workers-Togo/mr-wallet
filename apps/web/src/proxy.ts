@@ -11,7 +11,7 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(withoutLocale);
 }
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const response = intlMiddleware(request);
   if (!isPublicPath(request.nextUrl.pathname)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');

@@ -21,7 +21,7 @@ In two repositories, all three become a published-package dependency: a version 
 **A single monorepo. The mobile application is `apps/mobile`.**
 
 ```
-budget-manager/
+mr-wallet/
 ├── apps/
 │   ├── api/            # NestJS
 │   ├── web/            # Next.js (PWA, ADR-0007/0008)
