@@ -2,6 +2,8 @@
 
 Front (`apps/web`) on Vercel, API (`apps/api`) + Postgres on a VPS behind Caddy (auto HTTPS), database optionally on Neon if you'd rather not manage Postgres yourself.
 
+> This document describes the current single-front topology. A marketing site split is planned onto its own domain (`mister-wallet.com`) and repository, with `apps/web` moving to `app.mister-wallet.com` — see [ADR-0015](adr/0015-marketing-site-separation.md) and [16-marketing-site-split.md](16-marketing-site-split.md) for the target topology, domain table and env var changes.
+
 ---
 
 ## 1. Prerequisites

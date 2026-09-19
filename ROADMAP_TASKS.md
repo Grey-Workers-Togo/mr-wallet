@@ -387,6 +387,83 @@
 
 ---
 
+### Lot 17 — Marketing site separation (1.5 weeks)
+
+Splits the public site off `apps/web` into a standalone Astro repository.
+Reference: `docs/16-marketing-site-split.md`, `docs/adr/0015-marketing-site-separation.md`.
+
+- [ ] **Phase 0 — Prerequisites**
+  - [ ] ADR-0015 written and accepted
+  - [ ] `docs/16-marketing-site-split.md` committed, cross-linked from `docs/02`, `docs/11`, `HOMEPAGE_SPEC.md`
+  - [ ] DNS record for `app.mister-wallet.com`
+  - [ ] GitHub repo `Grey-Workers-Togo/mister-wallet-site` created
+  - [ ] Second hosting project provisioned for the app domain
+
+- [ ] **Phase 1 — Astro skeleton**
+  - [ ] Astro 5 + `@astrojs/mdx` + `@astrojs/react` + `@astrojs/sitemap` + `@tailwindcss/vite`
+  - [ ] `i18n: { locales: ['fr','en'], defaultLocale: 'fr', routing: { prefixDefaultLocale: true } }`
+  - [ ] Content collections: `blog`, `faq`, `legal` (glob loader + zod schema)
+  - [ ] `src/i18n/ui.ts` seeded from the `home` namespace of `apps/web/messages/*.json`
+  - [ ] Design tokens copied from `apps/web/src/styles/globals.css`
+  - [ ] i18n parity script ported; build fails on a missing key or a missing `en` MDX twin
+
+- [ ] **Phase 2 — Landing content migration**
+  - [ ] `HomeView.tsx` sections ported to `.astro`, zero JS by default
+  - [ ] React islands limited to `ScreenshotsGallery`, `ThemeToggle`, `LanguageSwitcher`, mobile menu
+  - [ ] Framer Motion replaced by CSS animations
+  - [ ] Screenshots, logos, OG images moved over
+  - [ ] Signed-in CTA behaviour decided; question logged in `docs/QUESTIONS.md`
+  - [ ] First blog post and FAQ entries authored in `fr` + `en`
+
+- [ ] **Phase 3 — SEO / AEO / GEO**
+  - [ ] `sitemap-index.xml` with hreflang alternates, `robots.txt`, absolute canonicals
+  - [ ] JSON-LD: `Organization`, `WebSite`, `SoftwareApplication`, `FAQPage`, `BlogPosting`, `BreadcrumbList`
+  - [ ] Self-contained 40-60 word answer paragraph at the top of every page and post
+  - [ ] `llms.txt` served from the marketing domain
+  - [ ] Unique meta description per page
+  - [ ] Lighthouse: Performance >= 95, SEO = 100, Accessibility >= 95
+
+- [ ] **Phase 4 — `apps/web` cleanup**
+  - [ ] `[locale]/page.tsx` + `HomeView.tsx` + `components/landing/*` + `public/screenshots/*` removed
+  - [ ] `[locale]/account-deletion/page.tsx` removed (migrated)
+  - [ ] `home` namespace dropped from `messages/*.json`; `applicationName` decoupled from `home.hero.title`
+  - [ ] `[locale]/page.tsx` turned into a redirect to `/accounts` or `/login`
+  - [ ] `robots.ts` set to `disallow: '/'`; `sitemap.ts` deleted
+  - [ ] `proxy.ts` applies `noindex` to every route
+  - [ ] JSON-LD removed from `[locale]/layout.tsx`
+  - [ ] Outbound links to the marketing site from `AuthLayout` and the app footer
+  - [ ] No dead imports: `rg "landing/|HomeView|namespace=.home."` returns nothing
+
+- [ ] **Phase 5 — Redirects and domain cutover**
+  - [ ] Permanent 301s for every auth and app route, path and query string preserved
+  - [ ] `/{locale}` and `/{locale}/account-deletion` still served with a 200 by the marketing site
+  - [ ] API `CORS_ORIGIN` and `WEB_APP_URL` updated
+  - [ ] OAuth provider redirect URIs updated
+  - [ ] Verification and password-reset emails point at `app.mister-wallet.com`
+
+- [ ] **Phase 6 — PWA and TWA**
+  - [ ] `manifest.json`: `start_url` -> `/fr/accounts`
+  - [ ] `twa-manifest.json`: host and URLs on `app.`, `appVersionCode: 22`
+  - [ ] `assetlinks.json` served from `app.` with the unchanged SHA-256 fingerprint
+  - [ ] v22 built with the existing keystore and published before the DNS cutover
+  - [ ] Standalone mode verified on a real device
+
+- [ ] **Phase 7 — CI and docs**
+  - [ ] Marketing CI: `astro check`, build, i18n parity, Lighthouse CI, link checker
+  - [ ] `mr-wallet` CI green after the namespace removal
+  - [ ] `docs/02-architecture.md`, `docs/11-deploiement.md`, `docs/09-roadmap.md`, `HOMEPAGE_SPEC.md` updated
+  - [ ] `HOMEPAGE_SPEC.md`: `/dashboard` corrected to `/accounts`
+
+- [ ] **Definition of done**
+  - [ ] `npm run lint && npm run typecheck && npm run test` passes on `mr-wallet`
+  - [ ] Full signup -> email verification -> login -> account -> transaction run on `app.mister-wallet.com`
+  - [ ] Multi-user isolation tests still pass
+  - [ ] Every redirect returns 301 with the expected `Location`
+  - [ ] `app.mister-wallet.com` added to Search Console, marketing sitemap resubmitted
+  - [ ] Positions on `/fr` and `/en` unchanged after two weeks
+
+---
+
 ## V3 — Extensions structurantes (hors périmètre V2)
 
 - [ ] Budget partagé / foyer (nécessite `spaceId` anticipé dans le modèle — non implémenté en V2)
