@@ -436,10 +436,15 @@ Reference: `docs/16-marketing-site-split.md`, `docs/adr/0015-marketing-site-sepa
 
 - [ ] **Phase 5 — Redirects and domain cutover**
   - [ ] Permanent 301s for every auth and app route, path and query string preserved
+    - Rules written in `mr-wallet-site/vercel.json` (with and without locale prefix, plus `manifest.json`, `sw.js`, `assetlinks.json`, `www` -> apex). Uses `statusCode: 301` (Vercel's `permanent` is 308). Not yet checked against a live deployment, query-string preservation in particular.
   - [ ] `/{locale}` and `/{locale}/account-deletion` still served with a 200 by the marketing site
+    - Pages exist in the Astro build and no redirect rule matches them; confirm with `curl -I` after deploy.
   - [ ] API `CORS_ORIGIN` and `WEB_APP_URL` updated
-  - [ ] OAuth provider redirect URIs updated
+    - Example env files updated. The real values on the VPS `.env` must be set to `https://app.mister-wallet.com` (no marketing origin in `CORS_ORIGIN`: the signed-in CTA stayed static, see `docs/QUESTIONS.md`), then `docker compose up -d` on the api service.
+  - [x] OAuth provider redirect URIs updated
+    - Nothing to change: the `redirect_uri` registered with Google/GitHub is built from `API_PUBLIC_URL` (the API domain, which does not move). Only the post-login browser redirect uses `WEB_APP_URL`.
   - [ ] Verification and password-reset emails point at `app.mister-wallet.com`
+    - Links are `${WEB_APP_URL}/verify-email` and `/reset-password`, so this follows the `WEB_APP_URL` change above. Links already sent before the cutover carry no locale prefix and still resolve through the locale-less redirect rules.
 
 - [ ] **Phase 6 — PWA and TWA**
   - [ ] `manifest.json`: `start_url` -> `/fr/accounts`
