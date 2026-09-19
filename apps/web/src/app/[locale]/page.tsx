@@ -1,50 +1,24 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { routing } from '@/i18n/routing';
-import HomeView from './HomeView';
+'use client';
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mister-wallet.com';
+import { useEffect } from 'react';
+import { useRouter } from '@/i18n/navigation';
+import { useAuthSession } from '@/hooks/useAuthSession';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'home' });
-  const appName = t('hero.title');
-  const title = t('seo.title');
-  const description = t('seo.description');
-
-  return {
-    metadataBase: new URL(SITE_URL),
-    title,
-    description,
-    applicationName: appName,
-    keywords: ['budget', 'finances personnelles', 'dépenses', 'épargne', 'personal finance', 'expense tracker'],
-    alternates: {
-      canonical: `/${locale}`,
-      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}`])),
-    },
-    openGraph: {
-      type: 'website',
-      url: `/${locale}`,
-      siteName: appName,
-      title,
-      description,
-      locale,
-      images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: ['/icon-512x512.png'],
-    },
-    robots: { index: true, follow: true },
-  };
-}
-
+/**
+ * Marketing content now lives on mister-wallet.com (separate Astro repo).
+ * This route only exists so old bookmarks/links to app.mister-wallet.com/[locale]
+ * land somewhere useful. No server-side session check is available here: the
+ * refresh-token cookie is scoped to the API's own origin (see auth.controller.ts),
+ * so we resolve the session client-side via the existing useAuthSession hook.
+ */
 export default function HomePage() {
-  return <HomeView />;
+  const router = useRouter();
+  const session = useAuthSession();
+
+  useEffect(() => {
+    if (session === 'loading') return;
+    router.replace(session === 'authenticated' ? '/accounts' : '/login');
+  }, [session, router]);
+
+  return null;
 }
