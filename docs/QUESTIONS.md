@@ -1,5 +1,24 @@
 # Open questions
 
+## Marketing site — dynamic vs. static signed-in CTA (Lot 17)
+
+`docs/16-marketing-site-split.md` (Phase 2) needs to decide what the landing page's primary CTA does for
+a visitor who already has a valid session. The current `apps/web` implementation calls
+`useAuthSession()` client-side and swaps the CTA to "Access my space" when a refresh cookie is present.
+Once the marketing site is a separate static Astro deployment, that check can no longer happen for free at
+build time, and doing it at runtime means calling `POST {API_URL}/auth/refresh` with `credentials: 'include'`
+from the marketing origin — which requires adding `https://mister-wallet.com` to the API's `CORS_ORIGIN`,
+widening the set of origins allowed to exchange the refresh cookie for an access token.
+
+**Implemented behavior (conservative):** a single static CTA ("Log in") linking to
+`app.mister-wallet.com/fr/login`, with no session check and no CORS change. A signed-in visitor lands on the
+login page and is redirected onward by the app's own session handling, rather than skipping it from the
+marketing site.
+
+Impact: a returning signed-in user sees one extra click/redirect through `/login` instead of a CTA that
+already reads "Access my space". Revisit if conversion data shows this costs meaningfully more than the
+CORS surface would.
+
 ## `RECONCILE_REMINDER` skips an account already reconciled this month (lot 20)
 
 RG-N15 states the reminder is "monthly" for `CASH`/`MOBILE_MONEY` accounts but doesn't say whether

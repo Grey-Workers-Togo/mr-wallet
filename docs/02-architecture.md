@@ -1,5 +1,7 @@
 # 02 — Technical architecture
 
+> The public marketing site is being split off this front-end onto its own domain and repository — see [ADR-0015](adr/0015-marketing-site-separation.md) and [16-marketing-site-split.md](16-marketing-site-split.md). Until that split lands, the diagram below still reflects `apps/web` serving both.
+
 ## 1. General form: modular monolith
 
 The back-end is **a single deployment**, split into modules with strict boundaries.
