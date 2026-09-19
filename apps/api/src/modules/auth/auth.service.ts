@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
-import type { Session, OAuthProvider as OAuthProviderName } from '@prisma/client';
+import type { Session, OAuthProvider as OAuthProviderName } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AppError, ConflictAppError, ValidationAppError } from '../../common/errors/app-error';
 import { MailService } from '../../common/mail/mail.service';
@@ -35,7 +35,7 @@ export interface AuthResult {
 }
 
 export type OAuthCallbackOutcome =
-  | ({ kind: 'login' } & AuthResult)
+  | { kind: 'login'; loginTicket: string; refreshToken: string; user: { id: string; email: string } }
   | { kind: 'pending'; redirectToken: string }
   | { kind: 'error'; code: string };
 
@@ -44,6 +44,12 @@ const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /** A brand-new OAuth identity has this long to pick a base currency and complete signup. */
 const PENDING_OAUTH_SIGNUP_TTL_MS = 10 * 60 * 1000;
+/**
+ * A returning OAuth login's handshake ticket, consumed within seconds by the front end's
+ * auto-redirect landing page - short-lived since, unlike the signup flow, no user input is
+ * involved.
+ */
+const OAUTH_LOGIN_TICKET_TTL_MS = 5 * 60 * 1000;
 /**
  * Refresh tokens rotate on every use. Two tabs/requests racing on the same expired
  * access token can both present the same (about-to-be-superseded) refresh token; without
@@ -228,8 +234,7 @@ export class AuthService {
       if (!user) {
         return { kind: 'error', code: 'OAUTH_FAILED' };
       }
-      const result = await this.createSessionAndTokens(user.id, user.email, ipHash, userAgent);
-      return { kind: 'login', ...result };
+      return this.loginViaOAuth(user.id, user.email, ipHash, userAgent);
     }
 
     const existingUser = profile.email ? await this.users.findByEmail(profile.email) : null;
@@ -245,8 +250,7 @@ export class AuthService {
         create: { userId: existingUser.id, provider, providerAccountId: profile.providerAccountId, email: profile.email as string },
         update: { userId: existingUser.id, email: profile.email as string, deletedAt: null },
       });
-      const result = await this.createSessionAndTokens(existingUser.id, existingUser.email, ipHash, userAgent);
-      return { kind: 'login', ...result };
+      return this.loginViaOAuth(existingUser.id, existingUser.email, ipHash, userAgent);
     }
 
     if (!profile.email || !profile.emailVerified) {
@@ -344,7 +348,7 @@ export class AuthService {
     email: string,
     ipHash: string | null,
     userAgent: string | null,
-  ): Promise<AuthResult> {
+  ): Promise<AuthResult & { sessionId: string }> {
     const sessionId = randomUUID();
     const { accessToken, refreshToken } = this.issueTokens(userId, sessionId);
     await this.prisma.session.create({
@@ -357,7 +361,57 @@ export class AuthService {
         userAgent,
       },
     });
-    return { accessToken, refreshToken, user: { id: userId, email } };
+    return { accessToken, refreshToken, sessionId, user: { id: userId, email } };
+  }
+
+  /**
+   * A returning OAuth login lands via a plain redirect, so the access token can't travel with it,
+   * and the refresh cookie set on that same redirect is a cross-site cookie the browser may
+   * simply refuse to store (Safari ITP, Firefox ETP strict) - the dashboard would then find
+   * itself permanently unauthorized on first load. The session/refresh-token pair is still
+   * created and the refresh cookie still set (best-effort, for browsers that do allow it on later
+   * reloads), but the caller gets back an opaque single-use ticket instead of the tokens
+   * themselves - the front end exchanges it via POST (`exchangeOAuthLoginTicket`) for a real
+   * access token with no cookie involved at all.
+   */
+  private async loginViaOAuth(
+    userId: string,
+    email: string,
+    ipHash: string | null,
+    userAgent: string | null,
+  ): Promise<OAuthCallbackOutcome> {
+    const { refreshToken, sessionId, user } = await this.createSessionAndTokens(userId, email, ipHash, userAgent);
+    const loginTicket = generateRefreshToken();
+    await this.prisma.oAuthLoginTicket.create({
+      data: {
+        tokenHash: hashRefreshToken(loginTicket),
+        userId,
+        sessionId,
+        expiresAt: new Date(Date.now() + OAUTH_LOGIN_TICKET_TTL_MS),
+      },
+    });
+    return { kind: 'login', loginTicket, refreshToken, user };
+  }
+
+  /** Exchanges a `loginViaOAuth` ticket for a real access token - see that method's comment. */
+  async exchangeOAuthLoginTicket(ticket: string): Promise<{ accessToken: string; user: { id: string; email: string } }> {
+    const hash = hashRefreshToken(ticket);
+    const record = await this.prisma.oAuthLoginTicket.findUnique({ where: { tokenHash: hash } });
+    if (!record || record.usedAt || record.expiresAt < new Date()) {
+      throw new AppError('INVALID_OAUTH_LOGIN_TICKET', HttpStatus.BAD_REQUEST);
+    }
+    await this.prisma.oAuthLoginTicket.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+
+    const user = await this.users.findById(record.userId);
+    if (!user) {
+      throw new AppError('OAUTH_FAILED', HttpStatus.UNAUTHORIZED);
+    }
+    const accessToken = signAccessToken(
+      { sub: user.id, sessionId: record.sessionId },
+      this.config.getOrThrow('JWT_SECRET'),
+      this.config.get('JWT_ACCESS_TTL') ?? '15m',
+    );
+    return { accessToken, user: { id: user.id, email: user.email } };
   }
 
   /**

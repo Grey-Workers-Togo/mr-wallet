@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { OperationEnvelope } from '@budget-manager/sync-protocol';
+import type { OperationEnvelope } from '@mr-wallet/sync-protocol';
 import { PrismaService, RawPrismaService } from '../../../common/prisma/prisma.service';
 import { buildSyncTestHarness } from './test-harness';
 

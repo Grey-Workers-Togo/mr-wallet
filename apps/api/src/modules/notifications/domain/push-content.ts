@@ -1,4 +1,4 @@
-import { NotificationType } from '@prisma/client';
+import { NotificationType } from '../../../generated/prisma/client';
 
 /**
  * Push notifications render server-side and never contain an amount or a transaction

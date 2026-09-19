@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OPERATION_NAMES } from '@budget-manager/sync-protocol';
+import { OPERATION_NAMES } from '@mr-wallet/sync-protocol';
 import { buildDispatchTable } from '../domain/dispatch';
 import type { AccountsFacade } from '../../accounts/accounts.facade';
 import type { TransactionsFacade } from '../../transactions/transactions.facade';

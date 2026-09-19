@@ -16,7 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { randomBytes } from 'node:crypto';
 import { Request, Response } from 'express';
-import type { OAuthProvider as OAuthProviderName } from '@prisma/client';
+import type { OAuthProvider as OAuthProviderName } from '../../generated/prisma/client';
 import { Public } from '../../common/auth/public.decorator';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { Audit } from '../../common/audit/audit.decorator';
@@ -29,6 +29,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   OAuthCompleteDto,
+  OAuthLoginExchangeDto,
   RegisterDto,
   ResendVerificationDto,
   ResetPasswordDto,
@@ -37,6 +38,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   oauthCompleteSchema,
+  oauthLoginExchangeSchema,
   registerSchema,
   resendVerificationSchema,
   resetPasswordSchema,
@@ -279,9 +281,27 @@ export class AuthController {
 
     // outcome.kind === 'login' — set the audit actor before returning so the AuditInterceptor,
     // which reads request.user after this handler resolves, attributes the row to this user.
+    // The refresh cookie is set here best-effort (helps on later reloads if the browser accepts
+    // a cross-site cookie), but the redirect itself carries only the opaque login ticket — the
+    // front end exchanges it for the actual access token with no cookie dependency (see
+    // AuthService.loginViaOAuth for why the cookie alone can't be trusted on this first load).
     req.user = { id: outcome.user.id };
     this.setRefreshCookie(res, outcome.refreshToken);
-    res.redirect(HttpStatus.FOUND, `${webAppUrl}/accounts`);
+    res.redirect(HttpStatus.FOUND, `${webAppUrl}/login/oauth?ticket=${outcome.loginTicket}`);
     return { outcome: 'login', email: outcome.user.email };
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('oauth/login-complete')
+  @Audit({ action: 'auth.oauth_login_complete', entityType: 'User' })
+  async completeOAuthLogin(
+    @Body(new ZodValidationPipe(oauthLoginExchangeSchema)) dto: OAuthLoginExchangeDto,
+    @Req() req: Request & { user?: { id: string } },
+  ) {
+    const result = await this.authService.exchangeOAuthLoginTicket(dto.ticket);
+    // Set the audit actor before returning, same reasoning as the callback handler above.
+    req.user = { id: result.user.id };
+    return result;
   }
 }

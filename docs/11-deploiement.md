@@ -60,7 +60,7 @@ curl -fsSL https://get.docker.com | sh
 
 # Clone the repo
 git clone <repo-url>
-cd budget_manager
+cd mr-wallet
 ```
 
 ---
@@ -159,7 +159,7 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d --build api
 ## Later updates
 
 ```bash
-cd budget_manager
+cd mr-wallet
 git pull
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build postgres api caddy
 ```
