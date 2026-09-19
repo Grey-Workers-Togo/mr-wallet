@@ -429,7 +429,7 @@ Reference: `docs/16-marketing-site-split.md`, `docs/adr/0015-marketing-site-sepa
   - [x] `home` namespace dropped from `messages/*.json`; `applicationName` decoupled from `home.hero.title` (moved to `src/lib/constants.ts`; `home.hero.tagline/description/trust.*` kept under a new `authLayout` namespace since `AuthLayout` still uses them)
   - [x] `[locale]/page.tsx` turned into a redirect to `/accounts` or `/login`
   - [x] `robots.ts` set to `disallow: '/'`; `sitemap.ts` deleted
-  - [x] `middleware.ts` (Next 16 renamed `proxy.ts` to `middleware.ts`) applies `noindex` to every route
+  - [x] `proxy.ts` applies `noindex` to every route
   - [x] JSON-LD removed from `[locale]/layout.tsx`
   - [x] Outbound links to the marketing site from `AuthLayout` (no dedicated app footer component exists)
   - [x] No dead imports: `rg "landing/|HomeView|namespace=.home."` returns nothing
