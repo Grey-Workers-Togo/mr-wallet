@@ -4,18 +4,9 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createMiddleware(routing);
 
-const PUBLIC_PATHS = new Set(['', '/login', '/register', '/account-deletion']);
-
-function isPublicPath(pathname: string): boolean {
-  const withoutLocale = pathname.replace(/^\/(fr|en)/, '') || '';
-  return PUBLIC_PATHS.has(withoutLocale);
-}
-
 export default function middleware(request: NextRequest) {
   const response = intlMiddleware(request);
-  if (!isPublicPath(request.nextUrl.pathname)) {
-    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-  }
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   return response;
 }
 

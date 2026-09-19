@@ -423,16 +423,16 @@ Reference: `docs/16-marketing-site-split.md`, `docs/adr/0015-marketing-site-sepa
   - [ ] Unique meta description per page
   - [ ] Lighthouse: Performance >= 95, SEO = 100, Accessibility >= 95
 
-- [ ] **Phase 4 — `apps/web` cleanup**
-  - [ ] `[locale]/page.tsx` + `HomeView.tsx` + `components/landing/*` + `public/screenshots/*` removed
-  - [ ] `[locale]/account-deletion/page.tsx` removed (migrated)
-  - [ ] `home` namespace dropped from `messages/*.json`; `applicationName` decoupled from `home.hero.title`
-  - [ ] `[locale]/page.tsx` turned into a redirect to `/accounts` or `/login`
-  - [ ] `robots.ts` set to `disallow: '/'`; `sitemap.ts` deleted
-  - [ ] `proxy.ts` applies `noindex` to every route
-  - [ ] JSON-LD removed from `[locale]/layout.tsx`
-  - [ ] Outbound links to the marketing site from `AuthLayout` and the app footer
-  - [ ] No dead imports: `rg "landing/|HomeView|namespace=.home."` returns nothing
+- [x] **Phase 4 — `apps/web` cleanup**
+  - [x] `[locale]/page.tsx` + `HomeView.tsx` + `components/landing/*` + `public/screenshots/*` removed
+  - [x] `[locale]/account-deletion/page.tsx` removed (migrated)
+  - [x] `home` namespace dropped from `messages/*.json`; `applicationName` decoupled from `home.hero.title` (moved to `src/lib/constants.ts`; `home.hero.tagline/description/trust.*` kept under a new `authLayout` namespace since `AuthLayout` still uses them)
+  - [x] `[locale]/page.tsx` turned into a redirect to `/accounts` or `/login`
+  - [x] `robots.ts` set to `disallow: '/'`; `sitemap.ts` deleted
+  - [x] `middleware.ts` (Next 16 renamed `proxy.ts` to `middleware.ts`) applies `noindex` to every route
+  - [x] JSON-LD removed from `[locale]/layout.tsx`
+  - [x] Outbound links to the marketing site from `AuthLayout` (no dedicated app footer component exists)
+  - [x] No dead imports: `rg "landing/|HomeView|namespace=.home."` returns nothing
 
 - [ ] **Phase 5 — Redirects and domain cutover**
   - [ ] Permanent 301s for every auth and app route, path and query string preserved
