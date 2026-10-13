@@ -6,6 +6,7 @@ Ce fichier s'adresse à l'agent (ou au développeur) qui implémente le projet. 
 
 1. Lire `docs/01-vision-perimetre.md`, `docs/02-architecture.md`, `docs/03-modele-donnees.md`.
 2. Lire `docs/09-roadmap.md` et implémenter **dans l'ordre des lots** — ne pas sauter de lot.
+   Pour l'assistant et la capture SMS : `docs/17-roadmap-assistant.md` (lots A0 à A5).
 3. Lire `docs/10-conventions-dev.md` avant le premier commit.
 
 ## Règles absolues
@@ -40,10 +41,26 @@ Ce fichier s'adresse à l'agent (ou au développeur) qui implémente le projet. 
 
 ### Périmètre
 
-- **Pas d'offline-first.** Pas de base locale synchronisée, pas de file d'écritures différées, pas de résolution de conflits. Un cache de **consultation** en lecture seule est prévu au lot 7 (ADR-0008) : il ne bufferise jamais d'écriture.
-- **Un seul front.** PWA installable, responsive-first, pas d'application native (ADR-0007). Corollaire : toute logique métier réutilisable vit dans `packages/contracts` ou dans les dossiers `domain/`, jamais dans un composant React.
-- **Pas de connecteur vers une API tierce** (banque, VTC, livraison) en V1 ou V2. L'ingestion se fait par import de fichier ou saisie manuelle.
+- **Offline-first sur mobile uniquement** (ADR-0010, qui remplace ADR-0004). Le client envoie des intentions, jamais des états ; le serveur reste seul juge ; aucun conflit n'est résolu silencieusement. Le web garde un cache de **consultation** en lecture seule (ADR-0008) qui ne bufferise jamais d'écriture.
+- **Clients.** Web : PWA installable, responsive-first. Natif : `apps/mobile` (Expo, ADR-0011/0012, pas encore commencé) et `apps/capture` (application Android de capture des SMS, ADR-0020). Toute logique métier réutilisable vit dans `packages/` ou dans les dossiers `domain/`, jamais dans un composant React. Une app n'importe jamais depuis une autre app (RG-RE1).
+- **Pas de connecteur vers une API tierce pour l'ingestion** (banque, VTC, livraison). L'ingestion se fait par saisie, import de fichier ou SMS d'opérateur (ADR-0005, ADR-0013, ADR-0020). Un fournisseur de LLM n'est pas un connecteur d'ingestion : il n'est appelé qu'à travers le port `LlmProvider` (ADR-0017).
 - **Pas d'appel à une API de taux de change payante** dans le cœur applicatif. Le module devises fonctionne avec des taux saisis manuellement ; un provider externe est branchable mais optionnel (voir `docs/08-devises.md`).
+
+### Assistant et capture SMS (ADR-0016 à ADR-0022)
+
+Feuille de route : `docs/17-roadmap-assistant.md`, lots **A0 à A5**, dans l'ordre, sur la branche `feat/assistant`. Lire les ADR 0016 à 0022 avant le premier lot.
+
+- **Le LLM ne calcule jamais.** Il choisit un outil en lecture seule ; chaque chiffre vient d'une façade existante (`ReportingFacade`, `AccountsFacade`…). Un outil ne contient aucune logique métier (ADR-0016).
+- **Le LLM n'écrit jamais un nombre.** Réponses à gabarits `{{r1.x}}`, validées (aucun chiffre hors repères), une correction puis repli déterministe. Les valeurs dérivées (pourcentages, écarts) sont calculées par le code, en entiers (ADR-0018).
+- **Le LLM ne produit ni date ni identifiant.** Périodes symboliques résolues côté serveur avec `users.timezone` ; catégories et comptes par alias (`c1`, `a1`).
+- **`userId` vient toujours du jeton**, jamais de la sortie du modèle. Test d'isolation A/B pour chaque outil.
+- **Aucun appel direct à un SDK de fournisseur** hors des adaptateurs du module `llm`. Tous les tests passent par l'adaptateur `fake` : aucun test ne fait d'appel réseau ni ne coûte d'argent (RG-LL5).
+- **Pas de LangChain ni de framework d'orchestration. Pas de modèle exécuté sur le téléphone** (ADR-0017).
+- **Rien n'est stocké** : ni question, ni réponse, ni prompt, ni SMS. Seule la table de compteurs `AssistantUsage` persiste, sans texte. Les traces Langfuse ne contiennent que des métadonnées (ADR-0019).
+- **Ce qui part au fournisseur est minimisé** : jamais la liste brute des transactions, jamais un identifiant interne, jamais un numéro de téléphone, jamais le nom d'une personne pour un transfert entre particuliers (ADR-0019, ADR-0021).
+- **SMS** : liste blanche d'expéditeurs appliquée dans le code natif ; aucune transaction créée sans confirmation de l'utilisateur ; les transactions confirmées passent par `/sync/push`. **Aucun vrai SMS dans ce dépôt (public)** : les tests utilisent des SMS synthétiques ; le corpus réel est dans le dépôt privé `mr-wallet-assistant-research` (ADR-0020).
+- **Tout est derrière `ASSISTANT_ENABLED` / `CAPTURE_ENABLED`**. Changements de schéma additifs et réversibles uniquement ; aucun endpoint existant ne change de forme (ADR-0022).
+- **Arrêt en fin de lot.** À la fin de chaque lot : vérifier le critère de sortie, lancer `npm run lint && npm run typecheck && npm run test`, résumer ce qui a été fait, les questions ouvertes et les écarts aux ADR, puis **attendre la validation** avant le lot suivant.
 
 ### Sécurité
 

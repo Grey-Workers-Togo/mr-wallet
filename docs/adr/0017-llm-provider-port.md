@@ -12,6 +12,8 @@ Two temptations exist:
 1. Call one vendor's SDK directly from the assistant code. The vendor then leaks into business code, and changing it is a refactor.
 2. Adopt an orchestration framework (LangChain or similar). It provides agents, chains, memory and tool abstractions. Here, the orchestration is a bounded loop of a few dozen lines. A framework would add a large dependency, its own release churn, and — most importantly — a layer between our code and what is actually sent to the provider. ADR-0019 requires knowing exactly what leaves the server.
 
+A third option was also rejected: **running a model on the phone.** It would remove the network dependency and the transfer of data. But the target devices are often entry- or mid-range: a model small enough to run there would be slow, drain the battery, and answer French questions noticeably worse. What must work offline — SMS extraction (ADR-0020) and rule-based categorization (ADR-0021) — runs on the device without a model. The model is only ever called server-side, through this port.
+
 ## Decision
 
 **A cross-cutting `llm` module exposes a single port. Adapters implement it. No orchestration framework.**
