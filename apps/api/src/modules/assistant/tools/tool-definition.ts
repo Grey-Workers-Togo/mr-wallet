@@ -11,6 +11,8 @@ export interface ToolContext {
   userId: string;
   /** `users.timezone`, applied only to period boundaries (docs/02-architecture.md §7). */
   timeZone: string;
+  /** Language of the generated text (ADR-0018 §4): the user's locale reduced to `fr` or `en`. */
+  locale: 'fr' | 'en';
   now: Date;
   aliases: { categories: AliasMapper; accounts: AliasMapper };
 }

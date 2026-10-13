@@ -35,10 +35,12 @@ describe('AssistantOrchestrator — end to end with the fake adapter', () => {
       bindings: {
         'r1.total': { type: 'money', amountMinor: '64500', currency: 'XOF' },
         'r1.share': { type: 'percent', basisPoints: 10_000 },
+        'r1.period': { type: 'period', from: '2026-09-01', to: '2026-09-30' },
       },
       labels: {
         'r1.total': { key: 'assistant.binding.spending_total' },
         'r1.share': { key: 'assistant.binding.spending_share' },
+        'r1.period': { key: 'assistant.binding.period' },
       },
       sources: [{ tool: 'spending_by_category', period: { from: '2026-09-01', to: '2026-09-30' } }],
     });
@@ -77,10 +79,12 @@ describe('AssistantOrchestrator — end to end with the fake adapter', () => {
       bindings: {
         'r1.total': { type: 'money', amountMinor: '64500', currency: 'XOF' },
         'r1.share': { type: 'percent', basisPoints: 10_000 },
+        'r1.period': { type: 'period', from: '2026-09-01', to: '2026-09-30' },
       },
       labels: {
         'r1.total': { key: 'assistant.binding.spending_total' },
         'r1.share': { key: 'assistant.binding.spending_share' },
+        'r1.period': { key: 'assistant.binding.period' },
       },
       sources: [{ tool: 'spending_by_category', period: { from: '2026-09-01', to: '2026-09-30' } }],
     });
@@ -158,7 +162,7 @@ describe('AssistantOrchestrator — bounds (RG-AS4, ADR-0022 §2)', () => {
     expect(answer.kind).toBe('fallback');
     expect(stats).toMatchObject({ fallbackReason: 'TOOL_ROUNDS_EXHAUSTED', toolRounds: 3, llmCalls: 4 });
     expect(fake.remainingSteps).toBe(1);
-    if (answer.kind === 'fallback') expect(Object.keys(answer.bindings)).toHaveLength(6);
+    if (answer.kind === 'fallback') expect(Object.keys(answer.bindings)).toHaveLength(9);
   });
 
   it('caps the calls executed inside one round and still answers every tool call id', async () => {

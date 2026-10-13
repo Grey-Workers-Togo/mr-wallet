@@ -246,6 +246,17 @@ export class AssistantOrchestrator {
       shown[name] = { type: binding.type, description };
     }
     const { period, comparedTo } = result.output;
+    // ADR-0018 §1: the period is a binding too, so an answer never has to write a date or a year.
+    for (const [key, covered, text] of [
+      ['period', period, 'Période couverte par les chiffres de cet appel'],
+      ['compared_period', comparedTo, 'Période de comparaison'],
+    ] as const) {
+      if (!covered) continue;
+      const name = qualifiedName(callIndex, key);
+      state.bindings[name] = { type: 'period', from: covered.localFrom, to: covered.localTo };
+      state.labels[name] = { key: `assistant.binding.${key}` };
+      shown[name] = { type: 'period', description: `${text} (du ${covered.localFrom} au ${covered.localTo})` };
+    }
     state.sources.push({
       tool: call.name,
       ...(period && { period: { from: period.localFrom, to: period.localTo } }),

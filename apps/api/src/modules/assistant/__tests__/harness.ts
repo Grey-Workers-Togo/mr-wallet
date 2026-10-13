@@ -32,6 +32,7 @@ export function contextFor(userId: string): ToolContext {
   return {
     userId,
     timeZone: 'Africa/Porto-Novo',
+    locale: 'fr',
     now: NOW,
     aliases: {
       categories: new AliasMapper('c', user.categories),

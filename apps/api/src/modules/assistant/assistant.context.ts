@@ -38,6 +38,7 @@ export async function buildToolContext(facades: ContextFacades, userId: string, 
   return {
     userId,
     timeZone: user.timezone,
+    locale,
     now,
     aliases: {
       categories: new AliasMapper(
