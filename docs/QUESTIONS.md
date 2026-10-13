@@ -176,3 +176,11 @@ would silently violate the one-entry-per-mutation rule.
 Impact: rare transient failures surface as errors on already-applied mutations, so clients retrying must
 tolerate replayed writes (idempotent POST replay is already required by docs/10 §6). Revisit if audit-table
 availability becomes an operational concern.
+
+## Assistant and SMS capture (ADR-0016 to ADR-0022)
+
+- **Model provider.** To be selected by the benchmark (French quality, template compliance, latency from Lomé, cost). Record its data-retention terms here when selected (RG-AP7).
+- **Langfuse hosting.** Cloud or self-hosted. Traces carry metadata only (RG-AP4), so either is acceptable; self-hosting removes one more third party.
+- **Initial quota values.** Daily questions per user and global monthly cost ceiling (RG-AQ1, RG-AQ2), to be set from the benchmark's cost per question.
+- **Operator sender whitelist.** Exact sender addresses used by Flooz and Mixx by Yas, to be confirmed on real devices.
+- **Real SMS corpus.** Collection with consent, anonymization procedure, storage in the private research repository (RG-CP7).

@@ -71,6 +71,8 @@ Imported files are parsed server-side, not in the browser. Reasons: consistent v
 | `forecasting` | Cash flow and net worth projection, scenarios | Persists nothing (on-the-fly computation + cache) |
 | `reporting` | Aggregates, time series, net worth, comparisons | Contains no business rules of its own |
 | `import` | Import sources, mapping, parsing, deduplication, batches | Does not write to the database directly: calls the `transactions` facade |
+| `assistant` | Conversational consultation: tool selection by the model, read-only tools over existing façades, template answers (ADR-0016, 0018) | Never computes a figure, never writes data, stores no conversation |
+| `capture` | Model-based fallback extraction of operator SMS, category suggestions (ADR-0020, 0021) | Never creates a transaction: confirmed captures arrive through `sync` |
 | `export` | CSV/XLSX generation, full export | |
 
 ### 3.2 Cross-cutting modules
@@ -83,6 +85,7 @@ Imported files are parsed server-side, not in the browser. Reasons: consistent v
 | `currency` | Supported currencies, exchange rates, conversion |
 | `audit` | Append-only log, global interceptor, consultation |
 | `notifications` | Budget alerts, upcoming debt due dates, goals reached |
+| `llm` | `LlmProvider` port and adapters (cloud, Ollama, fake) — ADR-0017 |
 
 ## 4. Module dependency rules
 
@@ -110,7 +113,12 @@ forecasting  → recurrence, debts, transactions, reporting
 notifications→ budgets, debts, goals, recurrence
 reconciliation → money, accounts, transactions, categories
 sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications, reconciliation
+llm          → (none)
+assistant    → llm, reporting, budgets, accounts, categories, forecasting, goals, debts
+capture      → llm, rules, categories
 ```
+
+`llm`, `assistant` and `capture` (ADR-0016 to ADR-0022) are depended on by no existing module. `llm` is cross-cutting and has no dependency (RG-LL1).
 
 `sync` (docs/14-sync-protocol.md § 5) is depended on by none — it exists to dispatch to the
 business facades above, not to be called by them.

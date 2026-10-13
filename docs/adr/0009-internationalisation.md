@@ -3,6 +3,7 @@
 ## Status
 Accepted — 2026-07-28.
 Amended on 2026-09-14 by [ADR-0014](0014-english-as-sole-documentation-language.md), which changes the language of the **documentation** (not of the product): technical documentation, ADRs and commits move to English. The rest of this ADR is unchanged.
+Amended on 2026-10-13 by [ADR-0018](0018-template-answers.md): the assistant's generated answer text is the only human-readable text the API returns. It is never stored, and values travel structured, as here.
 
 ## Context
 

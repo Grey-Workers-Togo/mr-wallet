@@ -65,3 +65,7 @@ The pipeline itself. Whatever the channel, the flow stays the one in `06-import-
 ## Re-examination
 
 If sample collection shows that local operators do publish usable CSV or XLSX statements, priorities 1 to 4 lose much of their value and the existing pipeline is sufficient. That is precisely why the collection comes first.
+
+## Later development
+
+[ADR-0020](0020-android-sms-capture.md) closes the eligibility spike of § 3: Google Play lists "SMS-based money management" as a permitted exception for `READ_SMS` / `RECEIVE_SMS`, subject to review. It also amends § 3: operator SMS that no rule recognizes may leave the device, phone numbers masked, for a transient model-based extraction (RG-CP3).
