@@ -65,8 +65,16 @@ export function spendingTool(spy: ToolSpy = { executions: [] }): Tool {
       return {
         period: resolvePeriod(args.period, { now: context.now, timeZone: context.timeZone }),
         values: {
-          total: { binding: { type: 'money', amountMinor: spent.toString(), currency: 'XOF' }, description: 'Total dépensé' },
-          share: { binding: { type: 'percent', basisPoints: share }, description: 'Part du total des dépenses' },
+          total: {
+            binding: { type: 'money', amountMinor: spent.toString(), currency: 'XOF' },
+            description: 'Total dépensé',
+            label: { key: 'assistant.binding.spending_total' },
+          },
+          share: {
+            binding: { type: 'percent', basisPoints: share },
+            description: 'Part du total des dépenses',
+            label: { key: 'assistant.binding.spending_share' },
+          },
         },
       };
     },

@@ -6,6 +6,7 @@ import {
   AssistantAnswer,
   BINDING_KEY_PATTERN,
   Binding,
+  BindingLabel,
   DeclineCode,
   SourceRef,
   qualifiedName,
@@ -112,6 +113,7 @@ export class AssistantOrchestrator {
     ];
 
     const bindings: Record<string, Binding> = {};
+    const labels: Record<string, BindingLabel> = {};
     const sources: SourceRef[] = [];
     const stats: AskStats = {
       llmCalls: 0,
@@ -130,7 +132,7 @@ export class AssistantOrchestrator {
     const fallback = (reason: FallbackReason): AskResult => {
       stats.outcome = 'fallback';
       stats.fallbackReason = reason;
-      return { answer: { kind: 'fallback', bindings, sources }, stats };
+      return { answer: { kind: 'fallback', bindings, labels, sources }, stats };
     };
 
     for (;;) {
@@ -167,7 +169,7 @@ export class AssistantOrchestrator {
         const executed = response.toolCalls.slice(0, MAX_TOOL_CALLS_PER_ROUND);
         for (const call of executed) {
           callIndex += 1;
-          const reply = await this.runTool(call, callIndex, input.context, { bindings, sources, stats });
+          const reply = await this.runTool(call, callIndex, input.context, { bindings, labels, sources, stats });
           messages.push({ role: 'tool', toolCallId: call.id, content: JSON.stringify(reply) });
         }
         for (const skipped of response.toolCalls.slice(MAX_TOOL_CALLS_PER_ROUND)) {
@@ -184,7 +186,7 @@ export class AssistantOrchestrator {
       const verdict = validateTemplate(template, new Set(Object.keys(bindings)));
       if (verdict.ok) {
         stats.outcome = corrected ? 'accepted_after_correction' : 'accepted';
-        return { answer: { kind: 'template', template, bindings, sources }, stats };
+        return { answer: { kind: 'template', template, bindings, labels, sources }, stats };
       }
 
       // RG-AT4: exactly one corrective retry; a second rejection never returns the rejected text.
@@ -211,6 +213,7 @@ export class AssistantOrchestrator {
     context: ToolContext,
     state: {
       bindings: Record<string, Binding>;
+      labels: Record<string, BindingLabel>;
       sources: SourceRef[];
       stats: AskStats;
     },
@@ -235,14 +238,19 @@ export class AssistantOrchestrator {
     }
 
     const shown: Record<string, { type: string; description: string }> = {};
-    for (const [key, { binding, description }] of entries) {
+    for (const [key, { binding, description, label }] of entries) {
       const name = qualifiedName(callIndex, key);
       state.bindings[name] = binding;
+      state.labels[name] = label;
       // The model is given the name, the type and what it means — never the value (ADR-0018 §1).
       shown[name] = { type: binding.type, description };
     }
-    const { period } = result.output;
-    state.sources.push({ tool: call.name, ...(period && { period: { from: period.localFrom, to: period.localTo } }) });
+    const { period, comparedTo } = result.output;
+    state.sources.push({
+      tool: call.name,
+      ...(period && { period: { from: period.localFrom, to: period.localTo } }),
+      ...(comparedTo && { comparedWith: { from: comparedTo.localFrom, to: comparedTo.localTo } }),
+    });
     return { results: shown };
   }
 }

@@ -20,6 +20,8 @@ export interface ToolOutput {
   values: Record<string, BoundValue>;
   /** The period the figures cover, for RG-AS7 sources. */
   period?: ResolvedPeriod;
+  /** The second period of a comparison. */
+  comparedTo?: ResolvedPeriod;
 }
 
 /** Stable, content-free error handed back to the model so it can correct a call (RG-AS2). */
