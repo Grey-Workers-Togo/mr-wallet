@@ -188,6 +188,7 @@ export async function seedDataset(prisma: PrismaService, live: Live, tag: string
 
 export async function cleanup(prisma: PrismaService, userIds: string[]): Promise<void> {
   const where = { userId: { in: userIds } };
+  await prisma.assistantUsage.deleteMany({ where });
   await prisma.debtInstallment.deleteMany({ where });
   await prisma.debtPayment.deleteMany({ where });
   await prisma.debt.deleteMany({ where });

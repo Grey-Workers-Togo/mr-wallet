@@ -931,3 +931,23 @@ model ExportJob {
 
   @@index([userId, createdAt])
 }
+
+// ---------------------------------------------------------------------------
+// Assistant (ADR-0022 §4, ADR-0019 RG-AP3)
+// ---------------------------------------------------------------------------
+
+/// Counters only, one row per user per UTC day. No question, answer, prompt or any text (RG-AP1, RG-AP3).
+model AssistantUsage {
+  userId              String
+  day                 DateTime @db.Date
+  requests            Int      @default(0)
+  inputTokens         Int      @default(0)
+  outputTokens        Int      @default(0)
+  /// Estimated cost in micro-USD (RG-AQ3).
+  estimatedCostMicros BigInt   @default(0)
+  createdAt           DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(6)
+
+  @@id([userId, day])
+  @@index([day])
+}
