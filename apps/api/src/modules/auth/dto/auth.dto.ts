@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { ianaTimeZone } from '../../../common/validation/timezone.schema';
 
 export const registerSchema = z
   .object({
     email: z.string().email(),
     password: z.string().min(12),
     baseCurrency: z.string().length(3),
-    timezone: z.string().min(1).optional(),
+    timezone: ianaTimeZone().optional(),
   })
   .strict();
 export type RegisterDto = z.infer<typeof registerSchema>;

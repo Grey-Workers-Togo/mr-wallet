@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { ianaTimeZone } from '../../../common/validation/timezone.schema';
 
 export const updateMeSchema = z
   .object({
     displayName: z.string().min(1).max(100).optional(),
     locale: z.enum(['fr-FR', 'en-US', 'fr', 'en']).optional(),
-    timezone: z.string().min(1).optional(),
+    timezone: ianaTimeZone().optional(),
     weekStartsOn: z.number().int().min(0).max(6).optional(),
     monthStartDay: z.number().int().min(1).max(31).optional(),
     hasSeenOnboarding: z.boolean().optional(),
