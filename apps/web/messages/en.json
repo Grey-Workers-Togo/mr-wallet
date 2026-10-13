@@ -45,7 +45,8 @@
     "logoutConfirmCancel": "Cancel",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "more": "More"
+    "more": "More",
+    "assistant": "Assistant"
   },
   "auth": {
     "register": {
@@ -736,7 +737,11 @@
     "EXCHANGE_RATE_UNAVAILABLE": "No exchange rate is available for this conversion.",
     "PIN_NOT_SET": "No PIN has been set for this account.",
     "DEVICE_TOKEN_NOT_FOUND": "This device is not registered for push notifications.",
-    "OFFLINE_WRITE_DISABLED": "You're offline — changes can't be saved right now."
+    "OFFLINE_WRITE_DISABLED": "You're offline — changes can't be saved right now.",
+    "ASSISTANT_DISABLED": "The assistant is not available right now.",
+    "ASSISTANT_QUOTA_EXCEEDED": "You have reached your question limit for today. Come back tomorrow.",
+    "LLM_UNAVAILABLE": "The assistant is temporarily unavailable. The rest of the app works as usual.",
+    "USER_TIMEZONE_INVALID": "Your timezone is not valid. Fix it in your preferences."
   },
   "authLayout": {
     "tagline": "Pilot your cash, budgets and projects.",
@@ -748,6 +753,105 @@
       "ledgerDescription": "Reliable balances",
       "mobileTitle": "Mobile",
       "mobileDescription": "Daily use"
+    }
+  },
+  "assistant": {
+    "title": "Assistant",
+    "subtitle": "Ask a question about your finances. Figures come from your reports, never from the model.",
+    "unavailableTitle": "Assistant unavailable",
+    "unavailableBody": "The assistant is not open on your account yet.",
+    "optIn": {
+      "title": "Turn on the assistant?",
+      "intro": "The assistant answers your questions in plain language, using your own data.",
+      "providerNotice": "Your questions are processed by an external model provider. The names of your categories and accounts are sent to it; your transactions, amounts and identity are not.",
+      "storageNotice": "Nothing is stored: neither your questions nor the answers. The conversation disappears when you leave the page.",
+      "accept": "I agree, turn it on",
+      "decline": "Not now",
+      "revoke": "Turn off the assistant"
+    },
+    "offline": "You are offline. The assistant needs a connection; your cached reports stay available.",
+    "questionLabel": "Your question",
+    "questionPlaceholder": "For example: how much did I spend on transport this month?",
+    "send": "Send",
+    "sending": "Looking it up…",
+    "remaining": "{count, plural, =0 {No questions left today} one {# question left today} other {# questions left today}}",
+    "characters": "{count} / {max}",
+    "emptyTitle": "No questions yet",
+    "emptyBody": "Try: \"What is my balance?\" or \"Am I within my budgets?\"",
+    "you": "You",
+    "assistant": "Assistant",
+    "sources": "Sources",
+    "comparedWith": "compared with",
+    "periodPhrase": "from {from} to {to}",
+    "rank": "No. {rank}",
+    "noPeriod": "current period",
+    "fallback": {
+      "notice": "I could not phrase a reliable answer. Here are the figures computed for your question.",
+      "label": "Item",
+      "about": "About",
+      "value": "Value"
+    },
+    "declined": {
+      "WRITE_REQUEST": "The assistant reads your data: it cannot create, change or delete anything.",
+      "FINANCIAL_ADVICE": "The assistant does not give financial advice. It can show you your figures.",
+      "OFF_TOPIC": "That question is not about your finances in the app."
+    },
+    "tool": {
+      "spending_by_category": "Spending by category",
+      "monthly_summary": "Monthly summary",
+      "cashflow": "Cash flow",
+      "compare_periods": "Period comparison",
+      "top_expenses": "Largest expenses",
+      "budget_status": "Budget status",
+      "account_balances": "Account balances",
+      "net_worth": "Net worth",
+      "cashflow_forecast": "Cash flow forecast",
+      "goals_progress": "Goal progress",
+      "debts_summary": "Debts summary"
+    },
+    "binding": {
+      "period": "Period",
+      "compared_period": "Comparison period",
+      "spending_total": "Total spending",
+      "spending_unaccounted": "Unidentified spending (adjustments)",
+      "category_total": "Category spending",
+      "category_share": "Share of spending",
+      "top_expense_amount": "Expense amount",
+      "top_expense_date": "Expense date",
+      "income": "Income",
+      "expense": "Spending",
+      "surplus": "Surplus",
+      "deficit": "Deficit",
+      "income_current": "Income, current period",
+      "income_previous": "Income, previous period",
+      "income_increase": "Income increase",
+      "income_decrease": "Income decrease",
+      "income_increase_pct": "Income increase (%)",
+      "income_decrease_pct": "Income decrease (%)",
+      "expense_current": "Spending, current period",
+      "expense_previous": "Spending, previous period",
+      "expense_increase": "Spending increase",
+      "expense_decrease": "Spending decrease",
+      "expense_increase_pct": "Spending increase (%)",
+      "expense_decrease_pct": "Spending decrease (%)",
+      "budget_allocated": "Budget allocated",
+      "budget_spent": "Budget spent",
+      "budget_remaining": "Budget remaining",
+      "budget_overrun": "Budget overrun",
+      "budget_used": "Share of budget used",
+      "account_balance": "Account balance",
+      "assets": "Assets",
+      "liabilities": "Liabilities",
+      "net_worth": "Net worth",
+      "net_worth_deficit": "Negative net worth",
+      "forecast_balance": "Estimated balance",
+      "forecast_shortfall": "Estimated overdraft",
+      "goal_target": "Goal target",
+      "goal_saved": "Saved so far",
+      "goal_progress": "Progress",
+      "goal_target_date": "Target date",
+      "debts_owed_by_me": "Debts to repay",
+      "debts_owed_to_me": "Amounts owed to me"
     }
   }
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 export interface Me {
+  id: string;
   email: string;
   displayName: string | null;
   hasSeenOnboarding: boolean;

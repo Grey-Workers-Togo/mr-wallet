@@ -17,6 +17,7 @@ import {
   Upload,
   Download,
   Bell,
+  Sparkles,
   Menu,
   X,
   LogOut,
@@ -29,6 +30,7 @@ import { Logo } from '@/components/shared/Logo';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { UserMenu } from '@/components/shared/UserMenu';
 import { ProductTour } from '@/components/onboarding/ProductTour';
+import { useAssistantStatus } from '@/hooks/useAssistantStatus';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,7 +62,10 @@ const SECONDARY_NAV_ITEMS = [
   { href: '/notifications', icon: Bell, key: 'notifications' },
 ] as const;
 
-const NAV_ITEMS = [...PRIMARY_NAV_ITEMS, ...SECONDARY_NAV_ITEMS] as const;
+/** Shown only where the assistant is open for the account (ADR-0022 §5): flag, allowlist and cost ceiling. */
+const ASSISTANT_NAV_ITEM = { href: '/assistant', icon: Sparkles, key: 'assistant' } as const;
+
+type NavItem = (typeof PRIMARY_NAV_ITEMS)[number] | (typeof SECONDARY_NAV_ITEMS)[number] | typeof ASSISTANT_NAV_ITEM;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const t = useTranslations('nav');
@@ -68,6 +73,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const { status: assistantStatus } = useAssistantStatus();
+  const navItems: readonly NavItem[] = [
+    ...PRIMARY_NAV_ITEMS,
+    ...(assistantStatus?.enabled ? [ASSISTANT_NAV_ITEM] : []),
+    ...SECONDARY_NAV_ITEMS,
+  ];
 
   async function onLogout() {
     try {
@@ -79,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.push('/login');
   }
 
-  function renderNavItems(items: readonly (typeof NAV_ITEMS)[number][]) {
+  function renderNavItems(items: readonly NavItem[]) {
     return items.map(({ href, icon: Icon, key }) => {
       const active = pathname === href || pathname.startsWith(`${href}/`);
       return (
@@ -105,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navList = (
     <nav aria-label={t('mainNavigation')} className="flex-1 space-y-1 px-3">
-      {renderNavItems(NAV_ITEMS)}
+      {renderNavItems(navItems)}
     </nav>
   );
 
@@ -135,7 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-x-0 bottom-16 z-40 flex max-h-[70vh] flex-col overflow-y-auto border-t border-border bg-white pb-3 shadow-lg md:hidden dark:bg-[#0a0a0d]">
           <nav aria-label={t('mainNavigation')} className="flex-1 space-y-1 px-3 pt-3">
-            {renderNavItems(SECONDARY_NAV_ITEMS)}
+            {renderNavItems(navItems.filter((item) => !PRIMARY_NAV_ITEMS.some((primary) => primary.href === item.href)))}
           </nav>
           <div className="px-3 pt-2">
             <button

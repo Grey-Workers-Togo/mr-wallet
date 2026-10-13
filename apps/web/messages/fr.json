@@ -45,7 +45,8 @@
     "logoutConfirmCancel": "Annuler",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
-    "more": "Plus"
+    "more": "Plus",
+    "assistant": "Assistant"
   },
   "auth": {
     "register": {
@@ -736,7 +737,11 @@
     "EXCHANGE_RATE_UNAVAILABLE": "Aucun taux de change disponible pour cette conversion.",
     "PIN_NOT_SET": "Aucun code PIN n'est défini pour ce compte.",
     "DEVICE_TOKEN_NOT_FOUND": "Cet appareil n'est pas enregistré pour les notifications push.",
-    "OFFLINE_WRITE_DISABLED": "Vous êtes hors ligne — les modifications ne peuvent pas être enregistrées."
+    "OFFLINE_WRITE_DISABLED": "Vous êtes hors ligne — les modifications ne peuvent pas être enregistrées.",
+    "ASSISTANT_DISABLED": "L’assistant n’est pas disponible pour le moment.",
+    "ASSISTANT_QUOTA_EXCEEDED": "Vous avez atteint votre limite de questions pour aujourd’hui. Revenez demain.",
+    "LLM_UNAVAILABLE": "L’assistant est momentanément indisponible. Le reste de l’application fonctionne normalement.",
+    "USER_TIMEZONE_INVALID": "Votre fuseau horaire n’est pas valide. Corrigez-le dans les préférences."
   },
   "authLayout": {
     "tagline": "Pilote ton cash, tes budgets et tes projets.",
@@ -748,6 +753,105 @@
       "ledgerDescription": "Soldes fiables",
       "mobileTitle": "Mobile",
       "mobileDescription": "Usage quotidien"
+    }
+  },
+  "assistant": {
+    "title": "Assistant",
+    "subtitle": "Posez une question sur vos finances. Les chiffres viennent de vos rapports, jamais du modèle.",
+    "unavailableTitle": "Assistant indisponible",
+    "unavailableBody": "L’assistant n’est pas encore ouvert sur votre compte.",
+    "optIn": {
+      "title": "Activer l’assistant ?",
+      "intro": "L’assistant répond à vos questions en langage naturel à partir de vos propres données.",
+      "providerNotice": "Vos questions sont traitées par un fournisseur de modèle externe. Les noms de vos catégories et de vos comptes lui sont transmis ; vos transactions, vos montants et votre identité ne le sont pas.",
+      "storageNotice": "Rien n’est enregistré : ni vos questions, ni les réponses. La conversation disparaît quand vous quittez la page.",
+      "accept": "J’accepte et j’active l’assistant",
+      "decline": "Pas maintenant",
+      "revoke": "Désactiver l’assistant"
+    },
+    "offline": "Vous êtes hors ligne. L’assistant a besoin d’une connexion ; vos consultations en cache restent disponibles.",
+    "questionLabel": "Votre question",
+    "questionPlaceholder": "Par exemple : combien ai-je dépensé en transport ce mois-ci ?",
+    "send": "Envoyer",
+    "sending": "Recherche en cours…",
+    "remaining": "{count, plural, =0 {Plus de question aujourd’hui} one {# question restante aujourd’hui} other {# questions restantes aujourd’hui}}",
+    "characters": "{count} / {max}",
+    "emptyTitle": "Aucune question pour l’instant",
+    "emptyBody": "Essayez : « Quel est mon solde ? » ou « Mes budgets sont-ils respectés ? »",
+    "you": "Vous",
+    "assistant": "Assistant",
+    "sources": "Sources",
+    "comparedWith": "comparé à",
+    "periodPhrase": "du {from} au {to}",
+    "rank": "n° {rank}",
+    "noPeriod": "période en cours",
+    "fallback": {
+      "notice": "Je n’ai pas pu formuler de réponse fiable. Voici les chiffres calculés pour votre question.",
+      "label": "Donnée",
+      "about": "Concerne",
+      "value": "Valeur"
+    },
+    "declined": {
+      "WRITE_REQUEST": "L’assistant consulte vos données : il ne peut ni créer, ni modifier, ni supprimer quoi que ce soit.",
+      "FINANCIAL_ADVICE": "L’assistant ne donne pas de conseil financier. Il peut vous montrer vos chiffres.",
+      "OFF_TOPIC": "Cette question n’est pas liée à vos finances dans l’application."
+    },
+    "tool": {
+      "spending_by_category": "Dépenses par catégorie",
+      "monthly_summary": "Résumé mensuel",
+      "cashflow": "Flux de trésorerie",
+      "compare_periods": "Comparaison de périodes",
+      "top_expenses": "Plus grosses dépenses",
+      "budget_status": "Situation des budgets",
+      "account_balances": "Soldes des comptes",
+      "net_worth": "Patrimoine net",
+      "cashflow_forecast": "Prévision de trésorerie",
+      "goals_progress": "Avancement des objectifs",
+      "debts_summary": "Synthèse des dettes"
+    },
+    "binding": {
+      "period": "Période",
+      "compared_period": "Période de comparaison",
+      "spending_total": "Total des dépenses",
+      "spending_unaccounted": "Dépenses non identifiées (ajustements)",
+      "category_total": "Dépenses de la catégorie",
+      "category_share": "Part des dépenses",
+      "top_expense_amount": "Montant de la dépense",
+      "top_expense_date": "Date de la dépense",
+      "income": "Revenus",
+      "expense": "Dépenses",
+      "surplus": "Excédent",
+      "deficit": "Déficit",
+      "income_current": "Revenus, période courante",
+      "income_previous": "Revenus, période précédente",
+      "income_increase": "Hausse des revenus",
+      "income_decrease": "Baisse des revenus",
+      "income_increase_pct": "Hausse des revenus (%)",
+      "income_decrease_pct": "Baisse des revenus (%)",
+      "expense_current": "Dépenses, période courante",
+      "expense_previous": "Dépenses, période précédente",
+      "expense_increase": "Hausse des dépenses",
+      "expense_decrease": "Baisse des dépenses",
+      "expense_increase_pct": "Hausse des dépenses (%)",
+      "expense_decrease_pct": "Baisse des dépenses (%)",
+      "budget_allocated": "Budget alloué",
+      "budget_spent": "Budget dépensé",
+      "budget_remaining": "Reste du budget",
+      "budget_overrun": "Dépassement du budget",
+      "budget_used": "Part du budget consommée",
+      "account_balance": "Solde du compte",
+      "assets": "Actifs",
+      "liabilities": "Passifs",
+      "net_worth": "Patrimoine net",
+      "net_worth_deficit": "Patrimoine net négatif",
+      "forecast_balance": "Solde estimé",
+      "forecast_shortfall": "Découvert estimé",
+      "goal_target": "Cible de l’objectif",
+      "goal_saved": "Déjà mis de côté",
+      "goal_progress": "Avancement",
+      "goal_target_date": "Date visée",
+      "debts_owed_by_me": "Dettes à rembourser",
+      "debts_owed_to_me": "Créances à recevoir"
     }
   }
 }
