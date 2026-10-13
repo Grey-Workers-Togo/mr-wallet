@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Post, Put } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Audit } from '../../common/audit/audit.decorator';
 import { CurrentUser, RequestUser } from '../../common/auth/current-user.decorator';
 import { ThrottlePerUser } from '../../common/throttling/per-user-throttling';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
@@ -29,5 +30,21 @@ export class AssistantController {
   @Get('status')
   status(@CurrentUser() user: RequestUser) {
     return this.assistantService.status(user.id);
+  }
+
+  /**
+   * RG-AP8: the consent is a write, so it is audited — the audit entry (who, when) is part of the
+   * proof. It carries a date and nothing about any question.
+   */
+  @Put('opt-in')
+  @Audit({ action: 'assistant.opt_in', entityType: 'User' })
+  optIn(@CurrentUser() user: RequestUser) {
+    return this.assistantService.optIn(user.id);
+  }
+
+  @Delete('opt-in')
+  @Audit({ action: 'assistant.opt_out', entityType: 'User' })
+  optOut(@CurrentUser() user: RequestUser) {
+    return this.assistantService.optOut(user.id);
   }
 }

@@ -55,4 +55,15 @@ export class UsersFacade {
   markEmailVerified(id: string): Promise<User> {
     return this.prisma.user.update({ where: { id }, data: { emailVerifiedAt: new Date() } });
   }
+
+  /** When the user accepted the assistant (ADR-0019, RG-AP8); `null` when they have not, or withdrew. */
+  async assistantOptInAt(id: string): Promise<Date | null> {
+    const user = await this.prisma.user.findFirst({ where: { id }, select: { assistantOptInAt: true } });
+    return user?.assistantOptInAt ?? null;
+  }
+
+  /** Records the consent date, or withdraws it with `null`. Only the `assistant` module calls this. */
+  async setAssistantOptInAt(id: string, at: Date | null): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { assistantOptInAt: at } });
+  }
 }

@@ -30,6 +30,9 @@ model User {
   entryReminderDays Int?      @default(3)
   emailVerifiedAt   DateTime? @db.Timestamptz(6)
   lastLoginAt       DateTime? @db.Timestamptz(6)
+  // ADR-0019 RG-AP8 (lot A1.1): when the user accepted that questions go to an external model provider.
+  // Null = no consent. The proof of consent required by law 2019-014; a date, never text.
+  assistantOptInAt  DateTime? @db.Timestamptz(6)
   createdAt         DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt         DateTime? @db.Timestamptz(6)

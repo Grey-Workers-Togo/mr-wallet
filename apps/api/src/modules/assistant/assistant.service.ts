@@ -26,8 +26,16 @@ export interface AskResponse {
 export interface AssistantStatus {
   /** Whether a question would be accepted now: flag, allowlist and cost ceiling. */
   enabled: boolean;
+  /** Whether the user has accepted that their questions go to an external model provider (RG-AP8). */
+  optedIn: boolean;
   dailyQuota: number;
   remainingToday: number;
+}
+
+export interface AssistantOptInState {
+  optedIn: boolean;
+  /** ISO instant of the consent; `null` when there is none. */
+  optedInAt: string | null;
 }
 
 /**
@@ -68,12 +76,37 @@ export class AssistantService {
   async status(userId: string, now: Date = new Date()): Promise<AssistantStatus> {
     const requests = await this.usage.requestsToday(userId, now);
     const enabled = isAllowed(this.access, userId) && !(await this.costCeilingReached(now));
-    return { enabled, dailyQuota: this.dailyQuota, remainingToday: Math.max(this.dailyQuota - requests, 0) };
+    const optedIn = (await this.users.assistantOptInAt(userId)) !== null;
+    return { enabled, optedIn, dailyQuota: this.dailyQuota, remainingToday: Math.max(this.dailyQuota - requests, 0) };
+  }
+
+  /**
+   * RG-AP8: the user accepts. The first date is kept when they accept again, so the record stays the
+   * moment of the consent rather than of the last click. Not available where the assistant is not.
+   */
+  async optIn(userId: string, now: Date = new Date()): Promise<AssistantOptInState> {
+    if (!isAllowed(this.access, userId)) {
+      throw new AppError('ASSISTANT_DISABLED', HttpStatus.FORBIDDEN, { reason: 'NOT_AVAILABLE' });
+    }
+    const existing = await this.users.assistantOptInAt(userId);
+    const at = existing ?? now;
+    if (!existing) await this.users.setAssistantOptInAt(userId, at);
+    return { optedIn: true, optedInAt: at.toISOString() };
+  }
+
+  /** Withdrawing consent is always possible, whatever the flags say. Nothing else is stored to delete. */
+  async optOut(userId: string): Promise<AssistantOptInState> {
+    await this.users.setAssistantOptInAt(userId, null);
+    return { optedIn: false, optedInAt: null };
   }
 
   async ask(userId: string, dto: AskDto, now: Date = new Date()): Promise<AskResponse> {
     const startedAt = Date.now();
     await this.assertAvailable(userId, now);
+    // RG-AP8: no question reaches the provider without the user's recorded consent.
+    if ((await this.users.assistantOptInAt(userId)) === null) {
+      throw new AppError('ASSISTANT_OPT_IN_REQUIRED', HttpStatus.FORBIDDEN);
+    }
 
     // Before anything is spent: a turn of the history that carries a figure never reaches the provider.
     const history = validateHistory(dto.history);

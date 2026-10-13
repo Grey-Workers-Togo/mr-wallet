@@ -85,6 +85,8 @@ export async function seedDataset(prisma: PrismaService, live: Live, tag: string
       baseCurrency: 'XOF',
       timezone: 'Africa/Porto-Novo',
       locale: 'fr-FR',
+      // Has accepted the assistant (RG-AP8); the opt-in tests build their own user without it.
+      assistantOptInAt: new Date('2026-09-01T00:00:00Z'),
     },
   });
   const userId = user.id;

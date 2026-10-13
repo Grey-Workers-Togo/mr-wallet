@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AUDIT_METADATA_KEY } from '../../../common/audit/audit.decorator';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { UsersService } from '../../users/users.service';
 import { FakeLlmProvider, type FakeStep } from '../../llm/adapters/fake.adapter';
 import { LlmUnavailableError } from '../../llm/llm.errors';
 import { LlmFacade } from '../../llm/llm.facade';
@@ -186,6 +187,100 @@ describe('AssistantService — POST /assistant/ask behind the façades (lot A1)'
       const open = build([], { ASSISTANT_ALLOWLIST: a.userId });
       expect(await open.service.status(a.userId, NOW)).toMatchObject({ enabled: true, dailyQuota: 20 });
       expect(await open.service.status(b.userId, NOW)).toMatchObject({ enabled: false });
+    });
+  });
+
+  describe('opt-in (RG-AP8): the consent is a recorded date, enforced by the server', () => {
+    it('refuses a question from a user who has not accepted, before the provider and the quota', async () => {
+      const user = await seedDataset(prisma, live, 'svc-optin', 1n);
+      try {
+        await prisma.user.update({ where: { id: user.userId }, data: { assistantOptInAt: null } });
+        const { service, fake, usage } = build(spendingScript());
+
+        await expect(
+          service.ask(user.userId, { question: 'Combien ce mois-ci ?', history: [] }, NOW),
+        ).rejects.toMatchObject({ code: 'ASSISTANT_OPT_IN_REQUIRED', status: 403 });
+
+        expect(fake.requests).toHaveLength(0);
+        expect(await usage.requestsToday(user.userId, NOW)).toBe(0);
+        expect(await service.status(user.userId, NOW)).toMatchObject({ enabled: true, optedIn: false });
+      } finally {
+        await cleanup(prisma, [user.userId]);
+      }
+    });
+
+    it('records the date on accepting, keeps the first one if accepted again, and serves questions', async () => {
+      const user = await seedDataset(prisma, live, 'svc-optin2', 1n);
+      try {
+        await prisma.user.update({ where: { id: user.userId }, data: { assistantOptInAt: null } });
+        const { service } = build(spendingScript());
+        const first = new Date('2026-09-15T10:00:00Z');
+
+        expect(await service.optIn(user.userId, first)).toEqual({ optedIn: true, optedInAt: first.toISOString() });
+        expect(await service.optIn(user.userId, new Date('2026-09-20T10:00:00Z'))).toEqual({
+          optedIn: true,
+          optedInAt: first.toISOString(),
+        });
+        expect((await prisma.user.findUniqueOrThrow({ where: { id: user.userId } })).assistantOptInAt).toEqual(first);
+
+        const { answer } = await service.ask(user.userId, { question: 'Combien ce mois-ci ?', history: [] }, NOW);
+        expect(answer.kind).toBe('template');
+        expect(await service.status(user.userId, NOW)).toMatchObject({ optedIn: true });
+      } finally {
+        await cleanup(prisma, [user.userId]);
+      }
+    });
+
+    it('withdraws the consent: questions are refused again, and nothing but a null is left', async () => {
+      const user = await seedDataset(prisma, live, 'svc-optin3', 1n);
+      try {
+        const { service } = build([]);
+        expect(await service.optOut(user.userId)).toEqual({ optedIn: false, optedInAt: null });
+
+        expect((await prisma.user.findUniqueOrThrow({ where: { id: user.userId } })).assistantOptInAt).toBeNull();
+        await expect(
+          service.ask(user.userId, { question: 'Combien ce mois-ci ?', history: [] }, NOW),
+        ).rejects.toMatchObject({ code: 'ASSISTANT_OPT_IN_REQUIRED' });
+      } finally {
+        await cleanup(prisma, [user.userId]);
+      }
+    });
+
+    it('is per user: A accepting does not open the assistant for B', async () => {
+      const other = await seedDataset(prisma, live, 'svc-optin4', 1n);
+      try {
+        await prisma.user.update({ where: { id: other.userId }, data: { assistantOptInAt: null } });
+        const { service } = build(spendingScript());
+
+        await expect(
+          service.ask(other.userId, { question: 'Combien ce mois-ci ?', history: [] }, NOW),
+        ).rejects.toMatchObject({ code: 'ASSISTANT_OPT_IN_REQUIRED' });
+        // `a` consented in the seed and is served.
+        const { answer } = await service.ask(a.userId, { question: 'Combien ce mois-ci ?', history: [] }, NOW);
+        expect(answer.kind).toBe('template');
+      } finally {
+        await cleanup(prisma, [other.userId]);
+      }
+    });
+
+    it('cannot be given where the assistant is not available, but can always be withdrawn', async () => {
+      const user = await seedDataset(prisma, live, 'svc-optin5', 1n);
+      try {
+        const { service } = build([], { ASSISTANT_ENABLED: false });
+
+        await expect(service.optIn(user.userId, NOW)).rejects.toMatchObject({ code: 'ASSISTANT_DISABLED' });
+        await expect(service.optOut(user.userId)).resolves.toEqual({ optedIn: false, optedInAt: null });
+      } finally {
+        await cleanup(prisma, [user.userId]);
+      }
+    });
+
+    it('is audited as a write, and the consent date does not leak into the profile', async () => {
+      for (const handler of [AssistantController.prototype.optIn, AssistantController.prototype.optOut]) {
+        expect(Reflect.getMetadata(AUDIT_METADATA_KEY, handler)).toMatchObject({ entityType: 'User' });
+      }
+      const profile = await new UsersService(prisma).getMe(a.userId);
+      expect(JSON.stringify(profile)).not.toContain('assistantOptIn');
     });
   });
 
