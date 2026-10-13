@@ -1,20 +1,23 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Globe2, BookOpenCheck, Smartphone } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
 import { Logo } from '@/components/shared/Logo';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
+const MARKETING_SITE_URL = 'https://mister-wallet.com';
+
 export function AuthLayout({ children }: { children: ReactNode }) {
-  const t = useTranslations('home');
+  const t = useTranslations('authLayout');
+  const locale = useLocale();
+  const marketingHref = `${MARKETING_SITE_URL}/${locale}`;
 
   const points = [
-    { icon: Globe2, label: t('hero.trust.multiCurrencyTitle'), desc: t('hero.trust.multiCurrencyDescription') },
-    { icon: BookOpenCheck, label: t('hero.trust.ledgerTitle'), desc: t('hero.trust.ledgerDescription') },
-    { icon: Smartphone, label: t('hero.trust.mobileTitle'), desc: t('hero.trust.mobileDescription') },
+    { icon: Globe2, label: t('trust.multiCurrencyTitle'), desc: t('trust.multiCurrencyDescription') },
+    { icon: BookOpenCheck, label: t('trust.ledgerTitle'), desc: t('trust.ledgerDescription') },
+    { icon: Smartphone, label: t('trust.mobileTitle'), desc: t('trust.mobileDescription') },
   ] as const;
 
   return (
@@ -29,15 +32,15 @@ export function AuthLayout({ children }: { children: ReactNode }) {
               'radial-gradient(70% 55% at 20% 0%, color-mix(in oklab, var(--color-primary) 24%, transparent), transparent 70%)',
           }}
         />
-        <Link href="/" className="relative w-fit">
+        <a href={marketingHref} className="relative w-fit">
           <Logo size={30} textClassName="text-white" />
-        </Link>
+        </a>
 
         <div className="relative">
           <h2 className="max-w-md text-4xl leading-[1.1] font-bold tracking-tight text-neutral-50">
-            {t('hero.tagline')}
+            {t('tagline')}
           </h2>
-          <p className="mt-4 max-w-sm leading-relaxed text-neutral-400">{t('hero.description')}</p>
+          <p className="mt-4 max-w-sm leading-relaxed text-neutral-400">{t('description')}</p>
           <ul className="mt-8 space-y-3">
             {points.map((p) => (
               <li key={p.label} className="flex items-center gap-3 text-sm">
@@ -59,9 +62,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       {/* Form panel */}
       <main className="relative flex flex-col px-4 py-6 sm:px-8">
         <div className="flex items-center justify-between">
-          <Link href="/" className="lg:invisible">
+          <a href={marketingHref} className="lg:invisible">
             <Logo size={28} textClassName="text-neutral-900 dark:text-white" />
-          </Link>
+          </a>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <ThemeToggle />

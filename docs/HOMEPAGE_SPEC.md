@@ -2,15 +2,17 @@
 
 Specification document for Claude Code. Contains ready-to-use prompts, layouts, animations, and metrics.
 
+> The public landing page this document specifies is implemented today in `apps/web` and is being migrated to a standalone Astro site — see [ADR-0015](adr/0015-marketing-site-separation.md) and [16-marketing-site-split.md](16-marketing-site-split.md).
+
 ---
 
 ## General architecture
 
 ```
 /                      → Public landing page (non-authenticated)
-/dashboard             → Post-login dashboard (authenticated)
-/auth/login            → Login (existing, to be integrated)
-/auth/register         → Register (existing, to be integrated)
+/accounts              → Post-login landing (authenticated; not /dashboard — no such route exists)
+/login                 → Login (existing, to be integrated)
+/register              → Register (existing, to be integrated)
 ```
 
 ---

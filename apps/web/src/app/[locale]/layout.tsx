@@ -1,9 +1,9 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { routing } from '@/i18n/routing';
+import { APP_NAME } from '@/lib/constants';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { PinLockGate } from '@/components/PinLockGate';
@@ -14,36 +14,25 @@ import '@/styles/globals.css';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mister-wallet.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.mister-wallet.com';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'home' });
-  const appName = t('hero.title');
-  const title = t('seo.title');
-
-  return {
-    metadataBase: new URL(SITE_URL),
-    title: { default: title, template: `%s · ${appName}` },
-    applicationName: appName,
-    manifest: '/manifest.json',
-    robots: { index: true, follow: true },
-    icons: [
-      { rel: 'icon', url: '/icon.svg', type: 'image/svg+xml' },
-      { rel: 'icon', url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { rel: 'icon', url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { rel: 'apple-touch-icon', url: '/apple-touch-icon.png', sizes: '180x180' },
-    ],
-  };
-}
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
+  applicationName: APP_NAME,
+  manifest: '/manifest.json',
+  robots: { index: false, follow: false },
+  icons: [
+    { rel: 'icon', url: '/icon.svg', type: 'image/svg+xml' },
+    { rel: 'icon', url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    { rel: 'icon', url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    { rel: 'apple-touch-icon', url: '/apple-touch-icon.png', sizes: '180x180' },
+  ],
+};
 
 export const viewport: Viewport = {
   themeColor: '#0f766e',
@@ -64,42 +53,6 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const t = await getTranslations({ locale, namespace: 'home' });
-  const appName = t('hero.title');
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: appName,
-    description: t('hero.description'),
-    url: `${SITE_URL}/${locale}`,
-    applicationCategory: 'FinanceApplication',
-    operatingSystem: 'Web',
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  };
-  const brandJsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'Organization',
-        '@id': `${SITE_URL}/#organization`,
-        name: appName,
-        alternateName: ['Mister Wallet'],
-        url: SITE_URL,
-        logo: `${SITE_URL}/icon-512x512.png`,
-        sameAs: ['https://github.com/Grey-Workers-Togo/mr-wallet'],
-      },
-      {
-        '@type': 'WebSite',
-        '@id': `${SITE_URL}/#website`,
-        name: appName,
-        alternateName: ['Mister Wallet'],
-        url: SITE_URL,
-        publisher: { '@id': `${SITE_URL}/#organization` },
-        inLanguage: routing.locales,
-      },
-    ],
-  };
-
   return (
     <html lang={locale} className={jakarta.variable} suppressHydrationWarning>
       <body>
@@ -108,8 +61,6 @@ export default async function LocaleLayout({
             __html: `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
           }}
         />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }} />
         <NextIntlClientProvider>
           <ServiceWorkerRegistration />
           <InstallPrompt />
