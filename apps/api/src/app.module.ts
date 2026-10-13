@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './common/config/env.schema';
+import { ClockModule } from './common/clock/clock.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { MailModule } from './common/mail/mail.module';
 import { StorageModule } from './common/storage/storage.module';
@@ -47,6 +48,7 @@ import { IpThrottlerGuard, UserThrottlerGuard } from './common/throttling/per-us
     ScheduleModule.forRoot(),
     // Default rate limit for all endpoints; auth endpoints override with a stricter @Throttle (see auth.controller.ts).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ClockModule,
     PrismaModule,
     MailModule,
     StorageModule,

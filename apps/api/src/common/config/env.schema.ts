@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseFixedInstant } from '../clock/clock';
 
 export const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
@@ -74,6 +75,12 @@ export const envSchema = z.object({
   LANGFUSE_HOST: z.string().default(''),
   LANGFUSE_PUBLIC_KEY: z.string().default(''),
   LANGFUSE_SECRET_KEY: z.string().default(''),
+  /**
+   * Evaluation and development only: the instant the application reads as "now" (period resolution, the
+   * cache date, the current budget and forecast). An ISO instant with a zone, e.g. `2026-09-30T12:00:00Z`.
+   * Empty = the system clock. Refused in production.
+   */
+  CLOCK_FIXED_AT: z.string().default(''),
 })
   .refine((env) => (env.GOOGLE_CLIENT_ID === '') === (env.GOOGLE_CLIENT_SECRET === ''), {
     message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be both set or both empty',
@@ -98,6 +105,13 @@ export const envSchema = z.object({
       env.ASSISTANT_MONTHLY_COST_CEILING_MICROS > 0,
     { message: 'ASSISTANT_MONTHLY_COST_CEILING_MICROS is required when the model is priced' },
   )
+  .refine((env) => env.CLOCK_FIXED_AT === '' || parseFixedInstant(env.CLOCK_FIXED_AT) !== null, {
+    message: 'CLOCK_FIXED_AT must be an ISO 8601 instant with a zone, e.g. 2026-09-30T12:00:00Z',
+  })
+  // A frozen clock in production would make every figure for "this month" quietly wrong.
+  .refine((env) => env.CLOCK_FIXED_AT === '' || env.NODE_ENV !== 'production', {
+    message: 'CLOCK_FIXED_AT is not accepted when NODE_ENV is production',
+  })
   .refine((env) => [env.LANGFUSE_HOST, env.LANGFUSE_PUBLIC_KEY, env.LANGFUSE_SECRET_KEY].filter(Boolean).length % 3 === 0, {
     message: 'LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set together',
   })

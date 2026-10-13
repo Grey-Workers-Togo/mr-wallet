@@ -1,4 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { systemClock, type Clock } from '../../../common/clock/clock';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AccountsFacade } from '../../accounts/accounts.facade';
 import { AccountsService } from '../../accounts/accounts.service';
@@ -27,22 +28,31 @@ import { UsersFacade } from '../../users/users.facade';
 import { buildToolContext } from '../assistant.context';
 import type { ToolFacades } from '../tools/catalogue';
 
-/** Real services over the test database, wired as in `AppModule`. Only the LLM is scripted. */
-export function buildLive(prisma: PrismaService) {
+/**
+ * Real services over the test database, wired as in `AppModule`. Only the LLM is scripted. The clock is
+ * the one `ClockModule` provides: the system's, or a frozen one for the tests that read "now".
+ */
+export function buildLive(prisma: PrismaService, clock: Clock = systemClock) {
   const accountsService = new AccountsService(prisma);
   const accounts = new AccountsFacade(accountsService);
   const categories = new CategoriesFacade(new CategoriesService(prisma));
   const rules = new RulesFacade(new RulesService(prisma));
   const events = new EventEmitter2();
-  const transactionsService = new TransactionsService(prisma, accounts, categories, rules, events, new SavedSearchesService(prisma));
+  const transactionsService = new TransactionsService(prisma, accounts, categories, rules, events, new SavedSearchesService(prisma), clock);
   const transactions = new TransactionsFacade(transactionsService);
   const currency = new CurrencyFacade(new CurrencyService(prisma));
   const debts = new DebtsFacade(new DebtsService(prisma, accounts, transactions, events));
-  const budgets = new BudgetsFacade(new BudgetsService(prisma, categories, events));
+  const budgets = new BudgetsFacade(new BudgetsService(prisma, categories, events, clock));
   const goals = new GoalsFacade(new GoalsService(prisma, accounts, transactions, events));
-  const reporting = new ReportingFacade(new ReportingService(prisma, accounts, debts, currency, budgets));
+  const reporting = new ReportingFacade(new ReportingService(prisma, accounts, debts, currency, budgets, clock));
   const forecasting = new ForecastingFacade(
-    new ForecastingService(new RecurrenceFacade(new RecurrenceService(prisma, transactions)), debts, transactions, reporting),
+    new ForecastingService(
+      new RecurrenceFacade(new RecurrenceService(prisma, transactions, clock)),
+      debts,
+      transactions,
+      reporting,
+      clock,
+    ),
   );
   const users = new UsersFacade(prisma);
 

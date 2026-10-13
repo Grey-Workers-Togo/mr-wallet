@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import { afterAll, describe, expect, it } from 'vitest';
+import { ClockModule } from '../../../common/clock/clock.module';
 import { validateEnv } from '../../../common/config/env.schema';
 import { MailModule } from '../../../common/mail/mail.module';
 import { PrismaModule } from '../../../common/prisma/prisma.module';
@@ -34,6 +35,7 @@ async function boot(env: Record<string, string>, fake: FakeLlmProvider) {
           }),
       }),
       EventEmitterModule.forRoot(),
+      ClockModule,
       PrismaModule,
       MailModule,
       StorageModule,

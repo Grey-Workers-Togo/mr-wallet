@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { ConflictAppError, NotFoundAppError } from '../../common/errors/app-error';
 import { TransactionsFacade } from '../transactions/transactions.facade';
 import { computeOccurrences } from './domain/occurrences';
@@ -14,6 +15,7 @@ export class RecurrenceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly transactionsFacade: TransactionsFacade,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {}
 
   list(userId: string) {
@@ -177,7 +179,7 @@ export class RecurrenceService {
 
   async upcoming(userId: string, days: number) {
     const rules = await this.prisma.recurrenceRule.findMany({ where: { userId, isActive: true, deletedAt: null } });
-    const until = new Date(Date.now() + days * 86_400_000);
+    const until = new Date(this.clock.now().getTime() + days * 86_400_000);
     const results: { recurrenceId: string; name: string; occurrenceDate: Date }[] = [];
     for (const rule of rules) {
       const skipped = new Set(rule.skippedOccurrences.map((d) => d.toISOString()));
@@ -191,7 +193,7 @@ export class RecurrenceService {
           maxOccurrences: rule.maxOccurrences,
         },
         until,
-      ).filter((date) => date.getTime() >= Date.now() && !skipped.has(date.toISOString()));
+      ).filter((date) => date.getTime() >= this.clock.now().getTime() && !skipped.has(date.toISOString()));
       for (const occurrenceDate of upcomingOccurrences) {
         results.push({ recurrenceId: rule.id, name: rule.name, occurrenceDate });
       }
@@ -222,7 +224,7 @@ export class RecurrenceService {
           maxOccurrences: rule.maxOccurrences,
         },
         until,
-      ).filter((date) => date.getTime() >= Date.now() && !skipped.has(date.toISOString()));
+      ).filter((date) => date.getTime() >= this.clock.now().getTime() && !skipped.has(date.toISOString()));
       for (const occurrenceDate of occurrences) {
         results.push({
           ruleId: rule.id,

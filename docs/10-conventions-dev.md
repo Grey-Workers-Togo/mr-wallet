@@ -251,6 +251,7 @@ A task is only complete if **all** the points below are true:
 | `ASSISTANT_USD_TO_XOF_RATE` | XOF per US dollar, **display only** (operations log). Never used to bound cost | `600` |
 | `ASSISTANT_TRACE_SECRET` | HMAC key of the pseudonymous user hash in traces (RG-AP4). Mandatory with Langfuse | empty |
 | `LANGFUSE_HOST` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | Metadata-only traces (RG-AP4). Empty disables them; all three together | empty |
+| `CLOCK_FIXED_AT` | Evaluation and development only: the instant the application reads as "now" for the assistant's period resolution, its cache date and the current budget, forecast and net worth the tools read. An ISO 8601 instant with a zone (`2026-09-30T12:00:00Z`); a bare date is refused. **Boot fails in production.** Tokens, sessions, audit and database timestamps keep the real time | empty (system clock) |
 
 The application refuses to start if a mandatory variable is missing — environment schema validation at boot, no silent failure in production.
 

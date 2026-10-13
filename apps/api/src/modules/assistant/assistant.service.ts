@@ -1,5 +1,6 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { AppError, ValidationAppError } from '../../common/errors/app-error';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { CategoriesFacade } from '../categories/categories.facade';
@@ -62,6 +63,7 @@ export class AssistantService {
     private readonly categories: CategoriesFacade,
     private readonly accounts: AccountsFacade,
     @Inject(ASSISTANT_TRACER) private readonly tracer: AssistantTracer,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {
     this.access = {
       enabled: config.getOrThrow<boolean>('ASSISTANT_ENABLED'),
@@ -73,7 +75,7 @@ export class AssistantService {
     this.traceSecret = config.getOrThrow<string>('ASSISTANT_TRACE_SECRET');
   }
 
-  async status(userId: string, now: Date = new Date()): Promise<AssistantStatus> {
+  async status(userId: string, now: Date = this.clock.now()): Promise<AssistantStatus> {
     const requests = await this.usage.requestsToday(userId, now);
     const enabled = isAllowed(this.access, userId) && !(await this.costCeilingReached(now));
     const optedIn = (await this.users.assistantOptInAt(userId)) !== null;
@@ -83,6 +85,7 @@ export class AssistantService {
   /**
    * RG-AP8: the user accepts. The first date is kept when they accept again, so the record stays the
    * moment of the consent rather than of the last click. Not available where the assistant is not.
+   * The date is the proof of the consent: it is the real time, never the injected clock.
    */
   async optIn(userId: string, now: Date = new Date()): Promise<AssistantOptInState> {
     if (!isAllowed(this.access, userId)) {
@@ -100,7 +103,7 @@ export class AssistantService {
     return { optedIn: false, optedInAt: null };
   }
 
-  async ask(userId: string, dto: AskDto, now: Date = new Date()): Promise<AskResponse> {
+  async ask(userId: string, dto: AskDto, now: Date = this.clock.now()): Promise<AskResponse> {
     const startedAt = Date.now();
     await this.assertAvailable(userId, now);
     // RG-AP8: no question reaches the provider without the user's recorded consent.

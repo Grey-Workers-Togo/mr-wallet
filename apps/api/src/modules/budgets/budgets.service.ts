@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { ConflictAppError, NotFoundAppError } from '../../common/errors/app-error';
 import { CategoriesFacade } from '../categories/categories.facade';
 import { nextPeriodStart, periodStart } from './domain/period-bounds';
@@ -28,6 +29,7 @@ export class BudgetsService {
     private readonly prisma: PrismaService,
     private readonly categoriesFacade: CategoriesFacade,
     private readonly events: EventEmitter2,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {}
 
   list(userId: string) {
@@ -118,7 +120,7 @@ export class BudgetsService {
       : periodStart(budget.period, budget.startsOn, monthStartDay);
     let previousRolloverOut = lastPeriod ? lastPeriod.allocatedMinor - lastPeriod.spentMinor : 0n;
 
-    const horizon = new Date();
+    const horizon = this.clock.now();
     horizon.setUTCMonth(horizon.getUTCMonth() + PERIODS_AHEAD);
 
     let guard = 0;
@@ -153,7 +155,7 @@ export class BudgetsService {
 
   async current(userId: string) {
     const budgets = await this.list(userId);
-    const now = new Date();
+    const now = this.clock.now();
     const results = [];
     for (const budget of budgets) {
       const period = await this.prisma.budgetPeriod.findFirst({

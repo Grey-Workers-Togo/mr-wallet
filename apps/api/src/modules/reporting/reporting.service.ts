@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AccountsFacade } from '../accounts/accounts.facade';
@@ -31,6 +32,7 @@ export class ReportingService {
     private readonly debtsFacade: DebtsFacade,
     private readonly currencyFacade: CurrencyFacade,
     private readonly budgetsFacade: BudgetsFacade,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {}
 
   private async baseCurrency(userId: string): Promise<string> {
@@ -104,7 +106,7 @@ export class ReportingService {
       byCategory.set(row.categoryId, list);
     }
 
-    const at = range.to ?? new Date();
+    const at = range.to ?? this.clock.now();
     const lookup = this.rateLookup(userId, baseCurrency, at);
     const items: { categoryId: string | null; totalMinor: string; parentId?: string | null }[] = [];
     let grandTotal = 0n;
@@ -237,7 +239,7 @@ export class ReportingService {
 
   async monthlySummary(userId: string, dto: MonthlySummaryDto) {
     const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
-    const to = new Date();
+    const to = this.clock.now();
     const from = localMonthStart(to, timeZone, dto.months - 1);
     const rows = await this.monthlyRows(userId, from, to, timeZone);
     return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone) };
@@ -250,7 +252,7 @@ export class ReportingService {
    */
   async cashflow(userId: string, range: DateRangeDto, options: { excludeAdjustments?: boolean } = {}) {
     const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
-    const to = range.to ?? new Date();
+    const to = range.to ?? this.clock.now();
     const from = range.from ?? localMonthStart(to, timeZone, 11);
     const rows = await this.monthlyRows(userId, from, to, timeZone, options.excludeAdjustments);
     const months = await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone);
@@ -261,7 +263,7 @@ export class ReportingService {
   /** RG-RP3/RG-RP4: reconstructed from live account balances and debts — never a stored snapshot. */
   async netWorth(userId: string) {
     const baseCurrency = await this.baseCurrency(userId);
-    const at = new Date();
+    const at = this.clock.now();
     const lookup = this.rateLookup(userId, baseCurrency, at);
 
     const accounts = await this.accountsFacade.list(userId);
@@ -376,7 +378,7 @@ export class ReportingService {
     });
     const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: user.timezone });
     const dates = rows.map((row) => formatter.format(row.occurredAt));
-    const today = formatter.format(new Date());
+    const today = formatter.format(this.clock.now());
     return computeStreak(dates, today);
   }
 

@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RecurrenceFacade } from '../recurrence/recurrence.facade';
 import { DebtsFacade } from '../debts/debts.facade';
@@ -48,6 +49,7 @@ export class ForecastingService {
     private readonly debtsFacade: DebtsFacade,
     private readonly transactionsFacade: TransactionsFacade,
     private readonly reportingFacade: ReportingFacade,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {}
 
   private cacheKey(userId: string, months: number): string {
@@ -123,7 +125,7 @@ export class ForecastingService {
     const currency = netWorth.currency;
     const startingBalance = BigInt(netWorth.netWorthMinor);
 
-    const now = new Date();
+    const now = this.clock.now();
     const horizonEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + months + 1, 0));
 
     const [historyRows, occurrences, installments] = await Promise.all([
@@ -153,7 +155,7 @@ export class ForecastingService {
     estimatedMonthly: bigint,
     oneOffsByMonth?: Map<string, { incomeMinor: bigint; expenseMinor: bigint }>,
   ): ForecastMonth[] {
-    const now = new Date();
+    const now = this.clock.now();
     let balance = startingBalance;
     const monthResults: ForecastMonth[] = [];
 

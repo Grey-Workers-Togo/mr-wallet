@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '../../generated/prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CLOCK, systemClock, type Clock } from '../../common/clock/clock';
 import { ConflictAppError, NotFoundAppError, ValidationAppError } from '../../common/errors/app-error';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { CategoriesFacade } from '../categories/categories.facade';
@@ -32,6 +33,7 @@ export class TransactionsService {
     private readonly rulesFacade: RulesFacade,
     private readonly events: EventEmitter2,
     private readonly savedSearches: SavedSearchesService,
+    @Inject(CLOCK) private readonly clock: Clock = systemClock,
   ) {}
 
   /**
@@ -600,7 +602,7 @@ export class TransactionsService {
 
   /** docs/04 §I: monthly totals of non-recurring EXPENSE, one bucket per full past month — feeds `forecasting`. */
   async monthlyNonRecurringExpenseTotals(userId: string, monthsBack: number): Promise<{ month: string; amountMinor: bigint; currency: string }[]> {
-    const now = new Date();
+    const now = this.clock.now();
     const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthsBack, 1));
     const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     // `pg` returns NUMERIC/BIGINT aggregates as strings, never as JS bigint — cast explicitly.
