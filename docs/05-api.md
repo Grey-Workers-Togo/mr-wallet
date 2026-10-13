@@ -26,21 +26,26 @@ ISO 8601 with timezone: `2026-07-28T00:00:00+01:00`. Business dates (`occurredAt
 
 ### Pagination
 
-Cursor-based (no offset — offset drifts when rows are inserted between two pages):
+Cursor-based (no offset — offset drifts when rows are inserted between two pages). Only `GET /transactions` paginates this way; `GET /sync/changes` has its own opaque cursor (`14-sync-protocol.md § 3.2`).
 
 ```
-GET /transactions?limit=50&cursor=eyJpZCI6...
+GET /transactions?limit=50&cursor=0192b7e4-5c1a-7d3e-9f21-3a8b6c4d5e60
 ```
 
 ```json
 {
-  "data": [ ... ],
-  "pageInfo": { "hasNextPage": true, "endCursor": "eyJpZCI6..." },
-  "totalCount": 1284
+  "items": [ ... ],
+  "nextCursor": "0192b7e4-5c1a-7d3e-9f21-3a8b6c4d5e60"
 }
 ```
 
-`totalCount` is only returned if `?withCount=true` (counting is expensive on large tables).
+| Element | Behaviour |
+|---|---|
+| `limit` | Integer from 1 to 200, `50` by default. |
+| `cursor` | The `id` of the last transaction of the previous page, a UUID. Absent for the first page. Anything that is not a UUID is rejected. |
+| `nextCursor` | The `id` of the last item of this page, to pass as `cursor` for the next one; `null` on the last page. |
+| Order | Fixed: `occurredAt` descending, then `id` descending. |
+| Total | **None.** The response carries no count and no `hasNextPage`; "is there another page" is `nextCursor !== null`. |
 
 ### Sorting and filters
 
