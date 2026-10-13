@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './common/config/env.schema';
@@ -37,6 +37,7 @@ import { HealthModule } from './modules/health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
+import { IpThrottlerGuard, UserThrottlerGuard } from './common/throttling/per-user-throttling';
 
 @Module({
   imports: [
@@ -76,8 +77,11 @@ import { AssistantModule } from './modules/assistant/assistant.module';
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Order matters: the IP budget first (it also protects the public routes), then authentication, then
+    // the budget of the routes counted per user, which needs `request.user`.
+    { provide: APP_GUARD, useClass: IpThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {
