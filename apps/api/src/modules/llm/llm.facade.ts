@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { LlmLimits, LlmPricing, LlmProvider, LlmRequest, LlmResponse } from './llm.types';
+import type { z } from 'zod';
+import { toolSchemaFromZod } from './domain/tool-schema';
+import type { LlmLimits, LlmPricing, LlmProvider, LlmRequest, LlmResponse, ToolSchema } from './llm.types';
 
 export const LLM_PROVIDER = Symbol('LLM_PROVIDER');
 
@@ -31,5 +33,10 @@ export class LlmFacade {
 
   complete(request: LlmRequest): Promise<LlmResponse> {
     return this.provider.complete(request);
+  }
+
+  /** RG-LL4: the provider-facing schema of a tool, generated from the Zod schema that validates its arguments. */
+  toolSchema(name: string, description: string, schema: z.ZodType): ToolSchema {
+    return toolSchemaFromZod(name, description, schema);
   }
 }

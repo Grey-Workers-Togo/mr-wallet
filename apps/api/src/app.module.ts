@@ -36,6 +36,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { HealthModule } from './modules/health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { LlmModule } from './modules/llm/llm.module';
+import { AssistantModule } from './modules/assistant/assistant.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { LlmModule } from './modules/llm/llm.module';
     HealthModule,
     SyncModule,
     LlmModule,
+    AssistantModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
