@@ -35,6 +35,7 @@ import { ForecastingModule } from './modules/forecasting/forecasting.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { HealthModule } from './modules/health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { LlmModule } from './modules/llm/llm.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { SyncModule } from './modules/sync/sync.module';
     AuditLogModule,
     HealthModule,
     SyncModule,
+    LlmModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

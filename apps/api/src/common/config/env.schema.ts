@@ -43,6 +43,21 @@ export const envSchema = z.object({
   MIN_CLIENT_VERSION_IOS: z.string().default('0.0.0'),
   MIN_CLIENT_VERSION_ANDROID: z.string().default('0.0.0'),
   MIN_CLIENT_VERSION_WEB: z.string().default('0.0.0'),
+  /** ADR-0017: `fake` = scripted adapter (tests, no network); `openai-compatible` covers cloud candidates and Ollama. */
+  LLM_PROVIDER: z.enum(['fake', 'openai-compatible']).default('fake'),
+  /** Model identifier sent to the provider. Required with `openai-compatible`. */
+  LLM_MODEL: z.string().default(''),
+  /** Base URL of the OpenAI-compatible API, without the `/chat/completions` suffix. Required with `openai-compatible`. */
+  LLM_BASE_URL: z.string().default(''),
+  /** Empty for a self-hosted server (Ollama) that needs no key. */
+  LLM_API_KEY: z.string().default(''),
+  /** RG-LL2: per-call timeout. The 20 s default is the end-to-end bound of ADR-0022 §2. */
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
+  /** RG-LL2: maximum output tokens per call (ADR-0022 §2: configured per model). */
+  LLM_MAX_OUTPUT_TOKENS: z.coerce.number().int().positive().default(512),
+  /** RG-AQ3: price of the configured model, in millionths of a cost unit per million tokens. 0 = unpriced (self-hosted). */
+  LLM_PRICE_INPUT_MICROS_PER_MTOK: z.coerce.number().int().nonnegative().default(0),
+  LLM_PRICE_OUTPUT_MICROS_PER_MTOK: z.coerce.number().int().nonnegative().default(0),
 })
   .refine((env) => (env.GOOGLE_CLIENT_ID === '') === (env.GOOGLE_CLIENT_SECRET === ''), {
     message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be both set or both empty',
@@ -52,6 +67,9 @@ export const envSchema = z.object({
   })
   .refine((env) => env.API_PUBLIC_URL !== '' || (env.GOOGLE_CLIENT_ID === '' && env.GITHUB_CLIENT_ID === ''), {
     message: 'API_PUBLIC_URL is required when a social login provider is configured',
+  })
+  .refine((env) => env.LLM_PROVIDER !== 'openai-compatible' || (env.LLM_MODEL !== '' && env.LLM_BASE_URL !== ''), {
+    message: 'LLM_MODEL and LLM_BASE_URL are required when LLM_PROVIDER is openai-compatible',
   });
 
 export type Env = z.infer<typeof envSchema>;
