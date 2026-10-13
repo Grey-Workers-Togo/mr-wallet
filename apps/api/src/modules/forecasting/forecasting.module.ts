@@ -4,11 +4,13 @@ import { DebtsModule } from '../debts/debts.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { ReportingModule } from '../reporting/reporting.module';
 import { ForecastingController } from './forecasting.controller';
+import { ForecastingFacade } from './forecasting.facade';
 import { ForecastingService } from './forecasting.service';
 
 @Module({
   imports: [RecurrenceModule, DebtsModule, TransactionsModule, ReportingModule],
   controllers: [ForecastingController],
-  providers: [ForecastingService],
+  providers: [ForecastingService, ForecastingFacade],
+  exports: [ForecastingFacade],
 })
 export class ForecastingModule {}

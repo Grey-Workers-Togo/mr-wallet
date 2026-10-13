@@ -246,12 +246,17 @@ export class ReportingService {
     };
   }
 
-  topTransactions(userId: string, dto: TopTransactionsDto) {
+  /**
+   * `excludeAdjustments` (optional, off by default): RG-A10 — a reconciliation adjustment is not an
+   * identified expense. The assistant sets it; the existing endpoint is unchanged.
+   */
+  topTransactions(userId: string, dto: TopTransactionsDto, options: { excludeAdjustments?: boolean } = {}) {
     return this.prisma.transaction.findMany({
       where: {
         userId,
         type: 'EXPENSE',
         transferGroupId: null,
+        ...(options.excludeAdjustments && { source: { not: 'ADJUSTMENT' as const } }),
         ...((dto.from || dto.to) && {
           occurredAt: { ...(dto.from && { gte: dto.from }), ...(dto.to && { lte: dto.to }) },
         }),

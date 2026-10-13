@@ -137,6 +137,15 @@ describe('reporting', () => {
     expect(report.totalMinor).toBe('5000'); // unchanged — the adjustment never joins the per-category items
     expect(report.items.every((i) => i.categoryId !== null)).toBe(true);
   });
+
+  it('RG-A10: top transactions keeps an adjustment by default and drops it on request', async () => {
+    const all = await service.topTransactions(userA, { limit: 10 });
+    expect(all.some((t) => t.source === 'ADJUSTMENT')).toBe(true);
+
+    const identified = await service.topTransactions(userA, { limit: 10 }, { excludeAdjustments: true });
+    expect(identified.length).toBeGreaterThan(0);
+    expect(identified.every((t) => t.source !== 'ADJUSTMENT')).toBe(true);
+  });
 });
 
 describe('reporting — months follow the user timezone', () => {
