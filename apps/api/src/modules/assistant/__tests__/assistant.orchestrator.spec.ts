@@ -36,6 +36,10 @@ describe('AssistantOrchestrator — end to end with the fake adapter', () => {
         'r1.total': { type: 'money', amountMinor: '64500', currency: 'XOF' },
         'r1.share': { type: 'percent', basisPoints: 10_000 },
       },
+      labels: {
+        'r1.total': { key: 'assistant.binding.spending_total' },
+        'r1.share': { key: 'assistant.binding.spending_share' },
+      },
       sources: [{ tool: 'spending_by_category', period: { from: '2026-09-01', to: '2026-09-30' } }],
     });
     expect(stats).toMatchObject({
@@ -73,6 +77,10 @@ describe('AssistantOrchestrator — end to end with the fake adapter', () => {
       bindings: {
         'r1.total': { type: 'money', amountMinor: '64500', currency: 'XOF' },
         'r1.share': { type: 'percent', basisPoints: 10_000 },
+      },
+      labels: {
+        'r1.total': { key: 'assistant.binding.spending_total' },
+        'r1.share': { key: 'assistant.binding.spending_share' },
       },
       sources: [{ tool: 'spending_by_category', period: { from: '2026-09-01', to: '2026-09-30' } }],
     });
