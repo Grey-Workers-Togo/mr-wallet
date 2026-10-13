@@ -138,3 +138,84 @@ describe('reporting', () => {
     expect(report.items.every((i) => i.categoryId !== null)).toBe(true);
   });
 });
+
+describe('reporting — months follow the user timezone', () => {
+  const prisma = new PrismaService();
+  const { service, accountsService, transactionsService } = buildReportingService(prisma);
+  const userIds: string[] = [];
+
+  async function seedUser(timezone: string, occurrences: { at: string; amountMinor: string }[]) {
+    const user = await prisma.user.create({
+      data: { email: `rep-tz-${Date.now()}-${userIds.length}@example.com`, passwordHash: 'x', baseCurrency: 'XOF', timezone },
+    });
+    userIds.push(user.id);
+    const account = await accountsService.create(user.id, {
+      name: 'Main',
+      type: 'CASH',
+      currency: 'XOF',
+      openingBalanceMinor: '0',
+      openingBalanceAt: new Date('2026-01-01'),
+      includeInNetWorth: true,
+    });
+    for (const occurrence of occurrences) {
+      await transactionsService.create(user.id, {
+        accountId: account.id,
+        type: 'EXPENSE',
+        amountMinor: occurrence.amountMinor,
+        occurredAt: new Date(occurrence.at),
+        description: 'x',
+        status: 'CLEARED',
+        tagIds: [],
+      });
+    }
+    return user.id;
+  }
+
+  beforeAll(async () => {
+    await prisma.$connect();
+  });
+
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    await prisma.$disconnect();
+  });
+
+  it('buckets a transaction just after local midnight into the new month (UTC+1)', async () => {
+    const userId = await seedUser('Africa/Porto-Novo', [
+      { at: '2026-08-31T23:30:00Z', amountMinor: '300' }, // 1 Sep 00:30 local
+      { at: '2026-09-15T12:00:00Z', amountMinor: '200' },
+      { at: '2026-09-30T23:30:00Z', amountMinor: '1000' }, // 1 Oct 00:30 local
+    ]);
+
+    const report = await service.cashflow(userId, {
+      from: new Date('2026-08-31T23:00:00Z'), // 1 Sep 00:00 local
+      to: new Date('2026-10-31T22:59:59.999Z'),
+    });
+
+    const byMonth = Object.fromEntries(report.months.map((m) => [m.month, m.expenseMinor]));
+    expect(byMonth).toEqual({ '2026-09': '500', '2026-10': '1000' });
+  });
+
+  it('keeps a late-evening transaction in the previous month for a user behind UTC', async () => {
+    const userId = await seedUser('America/New_York', [
+      { at: '2026-10-01T02:00:00Z', amountMinor: '700' }, // 30 Sep 22:00 local
+    ]);
+
+    const report = await service.cashflow(userId, {
+      from: new Date('2026-09-01T04:00:00Z'),
+      to: new Date('2026-10-01T03:59:59.999Z'),
+    });
+
+    expect(report.months).toEqual([{ month: '2026-09', incomeMinor: '0', expenseMinor: '700', netMinor: '-700' }]);
+  });
+
+  it('leaves the report working, bucketed by UTC, for a stored timezone that is not an IANA name', async () => {
+    const userId = await seedUser('Mars/Olympus', [{ at: '2026-09-15T12:00:00Z', amountMinor: '200' }]);
+
+    const report = await service.cashflow(userId, { from: new Date('2026-09-01'), to: new Date('2026-09-30') });
+
+    expect(report.months).toEqual([{ month: '2026-09', incomeMinor: '0', expenseMinor: '200', netMinor: '-200' }]);
+  });
+});

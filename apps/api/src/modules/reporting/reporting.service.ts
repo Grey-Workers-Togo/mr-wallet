@@ -6,11 +6,13 @@ import { DebtsFacade } from '../debts/debts.facade';
 import { CurrencyFacade } from '../currency/currency.facade';
 import { BudgetsFacade } from '../budgets/budgets.facade';
 import { consolidateToBase } from './domain/consolidate';
+import { isValidTimeZone, localMonthKey, localMonthStart } from './domain/local-month';
 import { computeStreak, Streak } from './domain/streak';
 import { ComparisonDto, DateRangeDto, MonthlySummaryDto, TopTransactionsDto } from './dto/report.dto';
 
 interface MonthRow {
-  month: Date;
+  /** `YYYY-MM` in the user's timezone. */
+  key: string;
   type: 'EXPENSE' | 'INCOME';
   currency: string;
   total: bigint;
@@ -29,6 +31,16 @@ export class ReportingService {
   private async baseCurrency(userId: string): Promise<string> {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { baseCurrency: true } });
     return user.baseCurrency;
+  }
+
+  /**
+   * Months are the user's local months (docs/02-architecture.md §7). `users.timezone` is not validated as an
+   * IANA name at input (docs/QUESTIONS.md): a stored value that is not one keeps the report working,
+   * bucketed by UTC as before, rather than failing it.
+   */
+  private async reportingTimeZone(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { timezone: true } });
+    return isValidTimeZone(user.timezone) ? user.timezone : 'UTC';
   }
 
   /** RG-RP2 (simplified — docs/QUESTIONS.md): one applicable rate per currency, not per transaction. */
@@ -100,27 +112,37 @@ export class ReportingService {
     };
   }
 
-  private async monthlyRows(userId: string, from: Date, to: Date): Promise<MonthRow[]> {
+  private async monthlyRows(userId: string, from: Date, to: Date, timeZone: string): Promise<MonthRow[]> {
     // `pg` returns NUMERIC/BIGINT aggregates as strings, never as JS bigint — cast explicitly.
-    const rows = await this.prisma.$queryRaw<{ month: Date; type: 'EXPENSE' | 'INCOME'; currency: string; total: string }[]>(Prisma.sql`
-      SELECT date_trunc('month', "occurredAt") AS month, "type" AS type, "currency" AS currency, SUM("amountMinor")::text AS total
+    // The month is cut in the user's timezone: `date_trunc` alone would use the database session's.
+    const rows = await this.prisma.$queryRaw<{ key: string; type: 'EXPENSE' | 'INCOME'; currency: string; total: string }[]>(Prisma.sql`
+      SELECT to_char(date_trunc('month', "occurredAt" AT TIME ZONE ${timeZone}), 'YYYY-MM') AS key,
+        "type" AS type, "currency" AS currency, SUM("amountMinor")::text AS total
       FROM "Transaction"
       WHERE "userId" = ${userId} AND "deletedAt" IS NULL AND "transferGroupId" IS NULL
         AND "occurredAt" >= ${from} AND "occurredAt" < ${to}
-      GROUP BY month, "type", "currency"
-      ORDER BY month ASC
+      GROUP BY key, "type", "currency"
+      ORDER BY key ASC
     `);
     return rows.map((r) => ({ ...r, total: BigInt(r.total) }));
   }
 
-  private async consolidateMonths(userId: string, baseCurrency: string, rows: MonthRow[], from: Date, to: Date) {
+  private async consolidateMonths(
+    userId: string,
+    baseCurrency: string,
+    rows: MonthRow[],
+    from: Date,
+    to: Date,
+    timeZone: string,
+  ) {
     const months: { month: string; incomeMinor: string; expenseMinor: string; netMinor: string }[] = [];
-    const cursor = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1));
-    const end = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), 1));
+    const [fromKey, toKey] = [localMonthKey(from, timeZone), localMonthKey(to, timeZone)];
+    const cursor = new Date(Date.UTC(Number(fromKey.slice(0, 4)), Number(fromKey.slice(5, 7)) - 1, 1));
+    const end = new Date(Date.UTC(Number(toKey.slice(0, 4)), Number(toKey.slice(5, 7)) - 1, 1));
 
     while (cursor.getTime() <= end.getTime()) {
       const key = cursor.toISOString().slice(0, 7);
-      const monthRows = rows.filter((r) => new Date(r.month).toISOString().slice(0, 7) === key);
+      const monthRows = rows.filter((r) => r.key === key);
       const at = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0));
       const lookup = this.rateLookup(userId, baseCurrency, at);
 
@@ -147,19 +169,19 @@ export class ReportingService {
   }
 
   async monthlySummary(userId: string, dto: MonthlySummaryDto) {
-    const baseCurrency = await this.baseCurrency(userId);
+    const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
     const to = new Date();
-    const from = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth() - dto.months + 1, 1));
-    const rows = await this.monthlyRows(userId, from, to);
-    return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to) };
+    const from = localMonthStart(to, timeZone, dto.months - 1);
+    const rows = await this.monthlyRows(userId, from, to, timeZone);
+    return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone) };
   }
 
   async cashflow(userId: string, range: DateRangeDto) {
-    const baseCurrency = await this.baseCurrency(userId);
+    const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
     const to = range.to ?? new Date();
-    const from = range.from ?? new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth() - 11, 1));
-    const rows = await this.monthlyRows(userId, from, to);
-    return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to) };
+    const from = range.from ?? localMonthStart(to, timeZone, 11);
+    const rows = await this.monthlyRows(userId, from, to, timeZone);
+    return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone) };
   }
 
   /** RG-RP3/RG-RP4: reconstructed from live account balances and debts — never a stored snapshot. */
@@ -197,9 +219,9 @@ export class ReportingService {
   }
 
   async comparison(userId: string, dto: ComparisonDto) {
-    const baseCurrency = await this.baseCurrency(userId);
-    const currentRows = await this.monthlyRows(userId, dto.currentFrom, dto.currentTo);
-    const previousRows = await this.monthlyRows(userId, dto.previousFrom, dto.previousTo);
+    const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
+    const currentRows = await this.monthlyRows(userId, dto.currentFrom, dto.currentTo, timeZone);
+    const previousRows = await this.monthlyRows(userId, dto.previousFrom, dto.previousTo, timeZone);
 
     const sum = async (rows: MonthRow[], type: 'INCOME' | 'EXPENSE', at: Date) =>
       consolidateToBase(
