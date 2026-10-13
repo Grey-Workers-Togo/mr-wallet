@@ -15,20 +15,20 @@ export class ReportingFacade {
     return this.reportingService.netWorth(userId);
   }
 
-  spendingByCategory(userId: string, range: DateRangeDto) {
-    return this.reportingService.spendingByCategory(userId, range);
+  spendingByCategory(userId: string, range: DateRangeDto, options?: { includeDescendants?: boolean }) {
+    return this.reportingService.spendingByCategory(userId, range, options);
   }
 
   monthlySummary(userId: string, dto: MonthlySummaryDto) {
     return this.reportingService.monthlySummary(userId, dto);
   }
 
-  cashflow(userId: string, range: DateRangeDto) {
-    return this.reportingService.cashflow(userId, range);
+  cashflow(userId: string, range: DateRangeDto, options?: { excludeAdjustments?: boolean }) {
+    return this.reportingService.cashflow(userId, range, options);
   }
 
-  comparison(userId: string, dto: ComparisonDto) {
-    return this.reportingService.comparison(userId, dto);
+  comparison(userId: string, dto: ComparisonDto, options?: { excludeAdjustments?: boolean }) {
+    return this.reportingService.comparison(userId, dto, options);
   }
 
   topTransactions(userId: string, dto: TopTransactionsDto, options?: { excludeAdjustments?: boolean }) {

@@ -55,12 +55,26 @@ export class ReportingService {
     };
   }
 
+  /** `categoryId` to `parentId` for the user's subcategories; a top-level category is absent. */
+  private async parentIds(userId: string): Promise<Map<string, string>> {
+    const categories = await this.prisma.category.findMany({
+      where: { userId, parentId: { not: null } },
+      select: { id: true, parentId: true },
+    });
+    return new Map(categories.flatMap((c) => (c.parentId === null ? [] : [[c.id, c.parentId] as const])));
+  }
+
   /**
    * RG-RP1: aggregated in SQL via `groupBy`, never loaded row-by-row into memory.
    * RG-A10 (lot 19): a reconciliation adjustment is not identified spending — excluded from the
    * per-category breakdown, surfaced instead as its own explicit `unaccountedMinor` line.
+   *
+   * `includeDescendants` (optional, off by default): each item also carries what is booked on its
+   * subcategories, and says which category it sits under (`parentId`). A subcategory stays listed on its
+   * own, so items overlap; `totalMinor` is still the true total, counted once. The assistant sets it;
+   * the existing endpoint is unchanged.
    */
-  async spendingByCategory(userId: string, range: DateRangeDto) {
+  async spendingByCategory(userId: string, range: DateRangeDto, options: { includeDescendants?: boolean } = {}) {
     const baseCurrency = await this.baseCurrency(userId);
     const dateFilter = (range.from || range.to) && {
       occurredAt: { ...(range.from && { gte: range.from }), ...(range.to && { lte: range.to }) },
@@ -87,12 +101,32 @@ export class ReportingService {
 
     const at = range.to ?? new Date();
     const lookup = this.rateLookup(userId, baseCurrency, at);
-    const items: { categoryId: string | null; totalMinor: string }[] = [];
+    const items: { categoryId: string | null; totalMinor: string; parentId?: string | null }[] = [];
     let grandTotal = 0n;
     for (const [categoryId, amounts] of byCategory) {
       const totalMinor = await consolidateToBase(amounts, baseCurrency, lookup);
-      items.push({ categoryId, totalMinor: totalMinor.toString() });
       grandTotal += totalMinor;
+      if (!options.includeDescendants) items.push({ categoryId, totalMinor: totalMinor.toString() });
+    }
+
+    if (options.includeDescendants) {
+      // A subcategory's amounts join its parent's before consolidation: one conversion per currency,
+      // so the parent's figure is what consolidating the whole family would give.
+      const parentOf = await this.parentIds(userId);
+      const family = new Map<string | null, { currency: string; amountMinor: bigint }[]>();
+      const add = (categoryId: string | null, amounts: { currency: string; amountMinor: bigint }[]) => {
+        family.set(categoryId, [...(family.get(categoryId) ?? []), ...amounts]);
+      };
+      for (const [categoryId, amounts] of byCategory) {
+        add(categoryId, amounts);
+        const parentId = categoryId === null ? null : (parentOf.get(categoryId) ?? null);
+        if (parentId !== null) add(parentId, amounts);
+      }
+      for (const [categoryId, amounts] of family) {
+        const totalMinor = await consolidateToBase(amounts, baseCurrency, lookup);
+        const parentId = categoryId === null ? null : (parentOf.get(categoryId) ?? null);
+        items.push({ categoryId, totalMinor: totalMinor.toString(), parentId });
+      }
     }
 
     const unaccountedMinor = await consolidateToBase(
@@ -112,7 +146,13 @@ export class ReportingService {
     };
   }
 
-  private async monthlyRows(userId: string, from: Date, to: Date, timeZone: string): Promise<MonthRow[]> {
+  private async monthlyRows(
+    userId: string,
+    from: Date,
+    to: Date,
+    timeZone: string,
+    excludeAdjustments = false,
+  ): Promise<MonthRow[]> {
     // `pg` returns NUMERIC/BIGINT aggregates as strings, never as JS bigint — cast explicitly.
     // The month is cut in the user's timezone: `date_trunc` alone would use the database session's.
     const rows = await this.prisma.$queryRaw<{ key: string; type: 'EXPENSE' | 'INCOME'; currency: string; total: string }[]>(Prisma.sql`
@@ -121,6 +161,7 @@ export class ReportingService {
       FROM "Transaction"
       WHERE "userId" = ${userId} AND "deletedAt" IS NULL AND "transferGroupId" IS NULL
         AND "occurredAt" >= ${from} AND "occurredAt" < ${to}
+        ${excludeAdjustments ? Prisma.sql`AND "source" <> 'ADJUSTMENT'` : Prisma.empty}
       GROUP BY key, "type", "currency"
       ORDER BY key ASC
     `);
@@ -168,6 +209,27 @@ export class ReportingService {
     return months;
   }
 
+  /**
+   * RG-A10: the reconciliation adjustments of `[from, to)`, by direction, in the base currency. What a
+   * report opted into `excludeAdjustments` leaves out is shown here rather than dropped.
+   */
+  private async adjustmentTotals(userId: string, baseCurrency: string, from: Date, to: Date) {
+    const rows = await this.prisma.transaction.groupBy({
+      by: ['type', 'currency'],
+      where: { userId, source: 'ADJUSTMENT', transferGroupId: null, occurredAt: { gte: from, lt: to } },
+      _sum: { amountMinor: true },
+    });
+    const lookup = this.rateLookup(userId, baseCurrency, to);
+    const total = (type: 'INCOME' | 'EXPENSE') =>
+      consolidateToBase(
+        rows.filter((r) => r.type === type).map((r) => ({ currency: r.currency, amountMinor: r._sum.amountMinor ?? 0n })),
+        baseCurrency,
+        lookup,
+      );
+    const [income, expense] = await Promise.all([total('INCOME'), total('EXPENSE')]);
+    return { incomeMinor: income.toString(), expenseMinor: expense.toString() };
+  }
+
   async monthlySummary(userId: string, dto: MonthlySummaryDto) {
     const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
     const to = new Date();
@@ -176,12 +238,19 @@ export class ReportingService {
     return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone) };
   }
 
-  async cashflow(userId: string, range: DateRangeDto) {
+  /**
+   * `excludeAdjustments` (optional, off by default): RG-A10 — the months leave out reconciliation
+   * adjustments, which come back as `unaccounted` over `[from, to)`. The assistant sets it; the existing
+   * endpoint is unchanged and keeps counting them.
+   */
+  async cashflow(userId: string, range: DateRangeDto, options: { excludeAdjustments?: boolean } = {}) {
     const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
     const to = range.to ?? new Date();
     const from = range.from ?? localMonthStart(to, timeZone, 11);
-    const rows = await this.monthlyRows(userId, from, to, timeZone);
-    return { currency: baseCurrency, months: await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone) };
+    const rows = await this.monthlyRows(userId, from, to, timeZone, options.excludeAdjustments);
+    const months = await this.consolidateMonths(userId, baseCurrency, rows, from, to, timeZone);
+    if (!options.excludeAdjustments) return { currency: baseCurrency, months };
+    return { currency: baseCurrency, months, unaccounted: await this.adjustmentTotals(userId, baseCurrency, from, to) };
   }
 
   /** RG-RP3/RG-RP4: reconstructed from live account balances and debts — never a stored snapshot. */
@@ -218,10 +287,12 @@ export class ReportingService {
     };
   }
 
-  async comparison(userId: string, dto: ComparisonDto) {
+  /** `excludeAdjustments`: as for `cashflow`; the adjustments come back as `unaccounted`, per period. */
+  async comparison(userId: string, dto: ComparisonDto, options: { excludeAdjustments?: boolean } = {}) {
     const [baseCurrency, timeZone] = await Promise.all([this.baseCurrency(userId), this.reportingTimeZone(userId)]);
-    const currentRows = await this.monthlyRows(userId, dto.currentFrom, dto.currentTo, timeZone);
-    const previousRows = await this.monthlyRows(userId, dto.previousFrom, dto.previousTo, timeZone);
+    const exclude = options.excludeAdjustments;
+    const currentRows = await this.monthlyRows(userId, dto.currentFrom, dto.currentTo, timeZone, exclude);
+    const previousRows = await this.monthlyRows(userId, dto.previousFrom, dto.previousTo, timeZone, exclude);
 
     const sum = async (rows: MonthRow[], type: 'INCOME' | 'EXPENSE', at: Date) =>
       consolidateToBase(
@@ -237,13 +308,19 @@ export class ReportingService {
       sum(previousRows, 'EXPENSE', dto.previousTo),
     ]);
 
-    return {
+    const report = {
       currency: baseCurrency,
       current: { incomeMinor: currentIncome.toString(), expenseMinor: currentExpense.toString() },
       previous: { incomeMinor: previousIncome.toString(), expenseMinor: previousExpense.toString() },
       deltaIncomeMinor: (currentIncome - previousIncome).toString(),
       deltaExpenseMinor: (currentExpense - previousExpense).toString(),
     };
+    if (!exclude) return report;
+    const [current, previous] = await Promise.all([
+      this.adjustmentTotals(userId, baseCurrency, dto.currentFrom, dto.currentTo),
+      this.adjustmentTotals(userId, baseCurrency, dto.previousFrom, dto.previousTo),
+    ]);
+    return { ...report, unaccounted: { current, previous } };
   }
 
   /**

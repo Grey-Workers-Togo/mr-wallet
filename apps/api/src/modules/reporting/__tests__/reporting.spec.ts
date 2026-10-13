@@ -228,3 +228,169 @@ describe('reporting — months follow the user timezone', () => {
     expect(report.months).toEqual([{ month: '2026-09', incomeMinor: '0', expenseMinor: '200', netMinor: '-200' }]);
   });
 });
+
+describe('reporting — options used by the assistant', () => {
+  const prisma = new PrismaService();
+  const { service, accountsService, transactionsService } = buildReportingService(prisma);
+  const userIds: string[] = [];
+
+  let userId: string;
+  let otherUserId: string;
+  let transportId: string;
+  let taxiId: string;
+  let foodId: string;
+
+  async function seedAccount(owner: string) {
+    return accountsService.create(owner, {
+      name: 'Main',
+      type: 'CASH',
+      currency: 'XOF',
+      openingBalanceMinor: '0',
+      openingBalanceAt: new Date('2025-01-01'),
+      includeInNetWorth: true,
+    });
+  }
+
+  async function book(
+    owner: string,
+    accountId: string,
+    type: 'EXPENSE' | 'INCOME',
+    amountMinor: string,
+    at: string,
+    categoryId?: string,
+    source?: 'ADJUSTMENT',
+  ) {
+    await transactionsService.create(
+      owner,
+      { accountId, type, amountMinor, occurredAt: new Date(at), description: 'x', status: 'CLEARED', tagIds: [], ...(categoryId && { categoryId }) },
+      source ? { source } : undefined,
+    );
+  }
+
+  beforeAll(async () => {
+    await prisma.$connect();
+    const stamp = Date.now();
+    const [a, b] = await Promise.all(
+      ['a', 'b'].map((tag) =>
+        prisma.user.create({
+          data: { email: `rep-opt-${tag}-${stamp}@example.com`, passwordHash: 'x', baseCurrency: 'XOF', timezone: 'UTC' },
+        }),
+      ),
+    );
+    userId = a!.id;
+    otherUserId = b!.id;
+    userIds.push(userId, otherUserId);
+
+    const transport = await prisma.category.create({ data: { userId, name: 'Transport', kind: 'EXPENSE' } });
+    const taxi = await prisma.category.create({ data: { userId, name: 'Taxi', kind: 'EXPENSE', parentId: transport.id } });
+    const food = await prisma.category.create({ data: { userId, name: 'Food', kind: 'EXPENSE' } });
+    transportId = transport.id;
+    taxiId = taxi.id;
+    foodId = food.id;
+
+    const account = await seedAccount(userId);
+    await book(userId, account.id, 'EXPENSE', '1000', '2026-03-10T12:00:00Z', transportId);
+    await book(userId, account.id, 'EXPENSE', '400', '2026-03-11T12:00:00Z', taxiId);
+    await book(userId, account.id, 'EXPENSE', '200', '2026-03-12T12:00:00Z', foodId);
+    await book(userId, account.id, 'INCOME', '10000', '2026-03-01T12:00:00Z');
+    await book(userId, account.id, 'EXPENSE', '300', '2026-03-20T12:00:00Z', undefined, 'ADJUSTMENT');
+    await book(userId, account.id, 'INCOME', '500', '2026-03-21T12:00:00Z', undefined, 'ADJUSTMENT');
+    // The month before, for the comparison.
+    await book(userId, account.id, 'EXPENSE', '900', '2026-02-10T12:00:00Z', foodId);
+    await book(userId, account.id, 'EXPENSE', '50', '2026-02-20T12:00:00Z', undefined, 'ADJUSTMENT');
+
+    // Another user's adjustments must never reach the first user's figures.
+    const otherAccount = await seedAccount(otherUserId);
+    await book(otherUserId, otherAccount.id, 'EXPENSE', '77777', '2026-03-15T12:00:00Z', undefined, 'ADJUSTMENT');
+  });
+
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.category.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    await prisma.$disconnect();
+  });
+
+  const march = { from: new Date('2026-03-01T00:00:00Z'), to: new Date('2026-04-01T00:00:00Z') };
+  // `cashflow` lists every month its bound touches: an exclusive bound on the 1st adds an empty trailing month.
+  const marchOf = (report: { months: { month: string }[] }) => report.months.find((row) => row.month === '2026-03');
+
+  describe('spendingByCategory — includeDescendants', () => {
+    it('leaves the existing report as it was: exact categories, no parent information', async () => {
+      const report = await service.spendingByCategory(userId, march);
+      const byId = Object.fromEntries(report.items.map((item) => [item.categoryId, item]));
+
+      expect(byId[transportId]?.totalMinor).toBe('1000');
+      expect(byId[taxiId]?.totalMinor).toBe('400');
+      expect(report.items.every((item) => !('parentId' in item))).toBe(true);
+    });
+
+    it('adds a subcategory to its parent, keeps it listed, and counts the total once', async () => {
+      const report = await service.spendingByCategory(userId, march, { includeDescendants: true });
+      const byId = Object.fromEntries(report.items.map((item) => [item.categoryId, item]));
+
+      expect(byId[transportId]?.totalMinor).toBe('1400');
+      expect(byId[transportId]?.parentId).toBeNull();
+      expect(byId[taxiId]?.totalMinor).toBe('400');
+      expect(byId[taxiId]?.parentId).toBe(transportId);
+      expect(byId[foodId]?.totalMinor).toBe('200');
+      expect(report.totalMinor).toBe('1600');
+      // The adjustments stay out of the breakdown and in their own line (RG-A10).
+      expect(report.unaccountedMinor).toBe('300');
+    });
+
+    it("does not read another user's categories or spending", async () => {
+      const report = await service.spendingByCategory(otherUserId, march, { includeDescendants: true });
+
+      expect(report.items).toEqual([]);
+      expect(report.totalMinor).toBe('0');
+    });
+  });
+
+  describe('cashflow and comparison — excludeAdjustments', () => {
+    it('keeps counting adjustments by default, as the existing screens do', async () => {
+      const report = await service.cashflow(userId, march);
+
+      expect(marchOf(report)).toEqual({ month: '2026-03', incomeMinor: '10500', expenseMinor: '1900', netMinor: '8600' });
+      expect('unaccounted' in report).toBe(false);
+    });
+
+    it('leaves adjustments out of both directions and reports them on their own', async () => {
+      const report = await service.cashflow(userId, march, { excludeAdjustments: true });
+
+      expect(marchOf(report)).toEqual({ month: '2026-03', incomeMinor: '10000', expenseMinor: '1600', netMinor: '8400' });
+      expect(report.unaccounted).toEqual({ incomeMinor: '500', expenseMinor: '300' });
+    });
+
+    it('compares two periods without adjustments, and reports each period’s adjustments', async () => {
+      const dto = {
+        currentFrom: march.from,
+        currentTo: march.to,
+        previousFrom: new Date('2026-02-01T00:00:00Z'),
+        previousTo: new Date('2026-03-01T00:00:00Z'),
+      };
+
+      const plain = await service.comparison(userId, dto);
+      expect(plain.current.expenseMinor).toBe('1900');
+      expect(plain.previous.expenseMinor).toBe('950');
+      expect('unaccounted' in plain).toBe(false);
+
+      const identified = await service.comparison(userId, dto, { excludeAdjustments: true });
+      expect(identified.current).toEqual({ incomeMinor: '10000', expenseMinor: '1600' });
+      expect(identified.previous).toEqual({ incomeMinor: '0', expenseMinor: '900' });
+      expect(identified.deltaExpenseMinor).toBe('700');
+      expect(identified.unaccounted).toEqual({
+        current: { incomeMinor: '500', expenseMinor: '300' },
+        previous: { incomeMinor: '0', expenseMinor: '50' },
+      });
+    });
+
+    it("never counts another user's adjustments", async () => {
+      const report = await service.cashflow(otherUserId, march, { excludeAdjustments: true });
+
+      expect(report.unaccounted).toEqual({ incomeMinor: '0', expenseMinor: '77777' });
+      expect(marchOf(report)).toEqual({ month: '2026-03', incomeMinor: '0', expenseMinor: '0', netMinor: '0' });
+    });
+  });
+});
