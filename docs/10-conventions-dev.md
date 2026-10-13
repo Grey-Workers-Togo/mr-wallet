@@ -236,6 +236,14 @@ A task is only complete if **all** the points below are true:
 | `VAPID_SUBJECT` | `mailto:` contact required by the Web Push spec | empty |
 | `IP_HASH_SALT` | IP hashing salt | — (mandatory) |
 | `LOG_LEVEL` | Log level | `info` |
+| `LLM_PROVIDER` | Language model adapter: `fake` (scripted, no network) or `openai-compatible` (cloud candidates, Ollama) — ADR-0017 | `fake` |
+| `LLM_MODEL` | Model identifier sent to the provider (mandatory with `openai-compatible`) | empty |
+| `LLM_BASE_URL` | Base URL of the OpenAI-compatible API (mandatory with `openai-compatible`) | empty |
+| `LLM_API_KEY` | Provider key (empty for a self-hosted server) | empty |
+| `LLM_TIMEOUT_MS` | Per-call timeout (RG-LL2); also the end-to-end bound of ADR-0022 § 2 | `20000` |
+| `LLM_MAX_OUTPUT_TOKENS` | Maximum output tokens per call (RG-LL2) | `512` |
+| `LLM_PRICE_INPUT_MICROS_PER_MTOK` | Price of the configured model, input, in millionths of a cost unit per million tokens (RG-AQ3) | `0` |
+| `LLM_PRICE_OUTPUT_MICROS_PER_MTOK` | Same, output | `0` |
 
 The application refuses to start if a mandatory variable is missing — environment schema validation at boot, no silent failure in production.
 
