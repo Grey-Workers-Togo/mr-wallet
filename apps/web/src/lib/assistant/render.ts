@@ -36,19 +36,19 @@ export function plainText(segments: readonly Segment[]): string {
 /**
  * RG-AP2: at most the last 6 turns, kept in memory only. A fallback or a refusal carries no prose to
  * send back, so it contributes no turn.
+ *
+ * An answer goes back as the *template* the server gave (`{{r1.total}}`), never as the text rendered for
+ * the user: the model sees no value, including those of earlier turns (ADR-0019 §1), and the server
+ * refuses a turn that carries a figure.
  */
 export function historyFor(
   conversation: readonly { question: string; answer: AssistantAnswer | null }[],
-  context: FormatContext,
 ): HistoryTurn[] {
   const turns: HistoryTurn[] = [];
   for (const entry of conversation) {
     if (entry.answer?.kind !== 'template') continue;
     turns.push({ role: 'user', content: entry.question });
-    turns.push({
-      role: 'assistant',
-      content: plainText(renderTemplate(entry.answer.template, entry.answer.bindings, context)),
-    });
+    turns.push({ role: 'assistant', content: entry.answer.template });
   }
   return turns.slice(-MAX_HISTORY_TURNS);
 }

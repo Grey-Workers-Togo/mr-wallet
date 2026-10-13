@@ -11,6 +11,7 @@ import {
   SourceRef,
   qualifiedName,
 } from './domain/bindings';
+import { highestCallIndex } from './domain/history';
 import { TemplateViolationCode, validateTemplate } from './domain/template-validator';
 import type { ToolContext, ToolError, ToolRunResult } from './tools/tool-definition';
 import { ToolRegistry } from './tools/tool-registry';
@@ -30,7 +31,10 @@ const declineSchema = z.object({ reason: z.enum(['WRITE_REQUEST', 'FINANCIAL_ADV
 
 export interface ConversationTurn {
   role: 'user' | 'assistant';
-  /** What the client rendered and showed: plain text, with values already substituted. */
+  /**
+   * For the user, their question. For the assistant, the *template* it was given (`{{r1.total}}`), never
+   * the text shown: the model sees no value, including those of earlier turns (ADR-0019 §1).
+   */
   content: string;
 }
 
@@ -126,7 +130,8 @@ export class AssistantOrchestrator {
       outcome: 'accepted',
       violations: [],
     };
-    let callIndex = 0;
+    // Numbered after the history's own placeholders, so `{{r1.total}}` of an earlier turn is never the new one.
+    let callIndex = highestCallIndex(input.history ?? []);
     let corrected = false;
 
     const fallback = (reason: FallbackReason): AskResult => {

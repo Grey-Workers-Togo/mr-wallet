@@ -739,6 +739,8 @@
     "DEVICE_TOKEN_NOT_FOUND": "Cet appareil n'est pas enregistré pour les notifications push.",
     "OFFLINE_WRITE_DISABLED": "Vous êtes hors ligne — les modifications ne peuvent pas être enregistrées.",
     "ASSISTANT_DISABLED": "L’assistant n’est pas disponible pour le moment.",
+    "ASSISTANT_HISTORY_INVALID": "La conversation ne peut pas être reprise telle quelle. Recommencez avec une nouvelle question.",
+    "ASSISTANT_OPT_IN_REQUIRED": "Vous devez accepter l’utilisation de l’assistant avant de poser une question.",
     "ASSISTANT_QUOTA_EXCEEDED": "Vous avez atteint votre limite de questions pour aujourd’hui. Revenez demain.",
     "LLM_UNAVAILABLE": "L’assistant est momentanément indisponible. Le reste de l’application fonctionne normalement.",
     "USER_TIMEZONE_INVALID": "Votre fuseau horaire n’est pas valide. Corrigez-le dans les préférences."

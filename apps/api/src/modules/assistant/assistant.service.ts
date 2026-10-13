@@ -1,6 +1,6 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AppError } from '../../common/errors/app-error';
+import { AppError, ValidationAppError } from '../../common/errors/app-error';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { CategoriesFacade } from '../categories/categories.facade';
 import { LlmFacade } from '../llm/llm.facade';
@@ -13,6 +13,7 @@ import { isAllowed } from './domain/access';
 import { AnswerCache, cacheKey } from './domain/answer-cache';
 import type { AssistantAnswer } from './domain/bindings';
 import { estimateCostMicros, microUsdToXof } from './domain/cost';
+import { validateHistory } from './domain/history';
 import { buildSystemPrompt } from './domain/system-prompt';
 import type { AskDto } from './dto/ask.dto';
 import { localDate } from './tools/shaping';
@@ -73,6 +74,12 @@ export class AssistantService {
   async ask(userId: string, dto: AskDto, now: Date = new Date()): Promise<AskResponse> {
     const startedAt = Date.now();
     await this.assertAvailable(userId, now);
+
+    // Before anything is spent: a turn of the history that carries a figure never reaches the provider.
+    const history = validateHistory(dto.history);
+    if (!history.ok) {
+      throw new ValidationAppError('ASSISTANT_HISTORY_INVALID', { turn: history.turn, violations: history.violations });
+    }
 
     const context = await buildToolContext(
       { users: this.users, categories: this.categories, accounts: this.accounts },

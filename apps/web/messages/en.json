@@ -739,6 +739,8 @@
     "DEVICE_TOKEN_NOT_FOUND": "This device is not registered for push notifications.",
     "OFFLINE_WRITE_DISABLED": "You're offline — changes can't be saved right now.",
     "ASSISTANT_DISABLED": "The assistant is not available right now.",
+    "ASSISTANT_HISTORY_INVALID": "The conversation cannot be resumed as it is. Start again with a new question.",
+    "ASSISTANT_OPT_IN_REQUIRED": "You need to accept the use of the assistant before asking a question.",
     "ASSISTANT_QUOTA_EXCEEDED": "You have reached your question limit for today. Come back tomorrow.",
     "LLM_UNAVAILABLE": "The assistant is temporarily unavailable. The rest of the app works as usual.",
     "USER_TIMEZONE_INVALID": "Your timezone is not valid. Fix it in your preferences."

@@ -8,7 +8,7 @@ const MAX_TURN_LENGTH = 2000;
 const turnSchema = z
   .object({
     role: z.enum(['user', 'assistant']),
-    /** What the client rendered and showed: plain text, values already substituted. */
+    /** A question as typed; an answer as its template (`{{r1.total}}`), never the rendered text. */
     content: z.string().trim().min(1).max(MAX_TURN_LENGTH),
   })
   .strict();

@@ -287,12 +287,17 @@ describe('AssistantService — POST /assistant/ask behind the façades (lot A1)'
     });
 
     it('does not cache a question that carries a history', async () => {
-      const { service, fake } = build([...spendingScript(), ...spendingScript()]);
+      // The history mentions r1, so this question's tool call is numbered r2.
+      const followUp = (): FakeStep[] => [
+        { toolCalls: [{ name: 'spending_by_category', arguments: { period: 'this_month' } }] },
+        { text: 'Ce mois-ci, vous avez dépensé {{r2.total}}.' },
+      ];
+      const { service, fake } = build([...followUp(), ...followUp()]);
       const dto = {
         question: 'Et ce mois-ci ?',
         history: [
           { role: 'user' as const, content: 'Combien le mois dernier ?' },
-          { role: 'assistant' as const, content: 'Vous avez dépensé 42 000 F CFA.' },
+          { role: 'assistant' as const, content: 'Vous avez dépensé {{r1.total}}.' },
         ],
       };
       await service.ask(a.userId, dto, NOW);
@@ -338,6 +343,94 @@ describe('AssistantService — POST /assistant/ask behind the façades (lot A1)'
     expect(serialized).not.toContain(a.userId);
     expect(serialized).not.toMatch(/dépensé|Combien|73500|2026-09/);
     expect(trace?.userHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  describe('history carries templates, never values (ADR-0019 §1, lot A1.1)', () => {
+    const firstQuestion = 'Combien ai-je dépensé ce mois-ci ?';
+
+    async function firstTurn() {
+      const { service } = build(spendingScript());
+      const { answer } = await service.ask(a.userId, { question: firstQuestion, history: [] }, NOW);
+      if (answer.kind !== 'template') throw new Error('expected a template answer');
+      // What the client sends back: the template it was given, not what it rendered.
+      return [
+        { role: 'user' as const, content: firstQuestion },
+        { role: 'assistant' as const, content: answer.template },
+      ];
+    }
+
+    it('sends the provider no value of a previous answer, only its placeholders', async () => {
+      const history = await firstTurn();
+      const { service, fake } = build([
+        { toolCalls: [{ name: 'spending_by_category', arguments: { period: 'last_month' } }] },
+        { text: 'Le mois dernier, vous aviez dépensé {{r2.total}}.' },
+      ]);
+
+      const { answer } = await service.ask(a.userId, { question: 'Et le mois dernier ?', history }, NOW);
+
+      expect(answer.kind).toBe('template');
+      const sent = JSON.stringify(fake.requests);
+      // Every figure and date the first answer was computed from: none is in the request.
+      for (const value of ['73500', '73 500', '50000', '50 000', '23500', '2026-09-01', '2026-09-30']) {
+        expect(sent, value).not.toContain(value);
+      }
+      expect(sent).toContain('{{r1.total}}'); // the earlier turn, as the template it was
+    });
+
+    it('numbers this question’s bindings after the history’s, so an old placeholder is never a new value', async () => {
+      const history = await firstTurn();
+      const { service } = build([
+        { toolCalls: [{ name: 'spending_by_category', arguments: { period: 'last_month' } }] },
+        { text: 'Le mois dernier, vous aviez dépensé {{r2.total}}.' },
+      ]);
+
+      const { answer } = await service.ask(a.userId, { question: 'Et le mois dernier ?', history }, NOW);
+
+      expect(answer.kind).toBe('template');
+      if (answer.kind !== 'template') return;
+      expect(Object.keys(answer.bindings).every((name) => name.startsWith('r2.'))).toBe(true);
+      expect(answer.bindings['r2.total']).toEqual({ type: 'money', amountMinor: '42000', currency: 'XOF' });
+    });
+
+    it('rejects an answer that reuses a placeholder of an earlier turn, then accepts the correction', async () => {
+      const history = await firstTurn();
+      const { service, tracer } = build([
+        { toolCalls: [{ name: 'spending_by_category', arguments: { period: 'last_month' } }] },
+        { text: 'Le mois dernier, vous aviez dépensé {{r1.total}}.' },
+        { text: 'Le mois dernier, vous aviez dépensé {{r2.total}}.' },
+      ]);
+
+      const { answer } = await service.ask(a.userId, { question: 'Et le mois dernier ?', history }, NOW);
+
+      expect(answer.kind).toBe('template');
+      expect(tracer.traces[0]).toMatchObject({ outcome: 'accepted_after_correction', violations: ['UNKNOWN_PLACEHOLDER'] });
+    });
+
+    it('refuses a turn that carries a figure, with a code, before anything is spent or sent', async () => {
+      const { service, fake, usage } = build(spendingScript());
+      const before = await usage.requestsToday(a.userId, NOW);
+
+      await expect(
+        service.ask(
+          a.userId,
+          {
+            question: 'Et le mois dernier ?',
+            history: [
+              { role: 'user', content: firstQuestion },
+              { role: 'assistant', content: 'Vous avez dépensé 73 500 FCFA ce mois-ci.' },
+            ],
+          },
+          NOW,
+        ),
+      ).rejects.toMatchObject({
+        code: 'ASSISTANT_HISTORY_INVALID',
+        status: 400,
+        params: { turn: 1, violations: ['DIGIT_OUTSIDE_PLACEHOLDER'] },
+      });
+
+      expect(fake.requests).toHaveLength(0);
+      expect(await usage.requestsToday(a.userId, NOW)).toBe(before);
+    });
   });
 
   describe('request shape (RG-AP2)', () => {

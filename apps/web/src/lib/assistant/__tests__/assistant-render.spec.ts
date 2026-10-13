@@ -82,12 +82,14 @@ describe('historyFor (RG-AP2)', () => {
     sources: [],
   });
 
-  it('sends what the user saw, values substituted', () => {
-    const history = historyFor([{ question: 'How much?', answer: template('You spent {{r1.total}}.') }], context);
+  it('sends the template, never the text rendered for the user', () => {
+    const history = historyFor([{ question: 'How much?', answer: template('You spent {{r1.total}}.') }]);
     expect(history).toEqual([
       { role: 'user', content: 'How much?' },
-      { role: 'assistant', content: 'You spent 100 XOF.' },
+      { role: 'assistant', content: 'You spent {{r1.total}}.' },
     ]);
+    // No value of the answer is in what goes back to the server.
+    expect(JSON.stringify(history)).not.toMatch(/100|XOF/);
   });
 
   it('keeps at most the last six turns', () => {
@@ -95,20 +97,17 @@ describe('historyFor (RG-AP2)', () => {
       question: `q${index}`,
       answer: template('ok'),
     }));
-    const history = historyFor(conversation, context);
+    const history = historyFor(conversation);
     expect(history).toHaveLength(6);
     expect(history[0]).toEqual({ role: 'user', content: 'q2' });
   });
 
   it('skips a fallback and a refusal, which carry no prose', () => {
-    const history = historyFor(
-      [
-        { question: 'a', answer: { kind: 'fallback', bindings: {}, labels: {}, sources: [] } },
-        { question: 'b', answer: { kind: 'declined', code: 'OFF_TOPIC' } },
-        { question: 'c', answer: null },
-      ],
-      context,
-    );
+    const history = historyFor([
+      { question: 'a', answer: { kind: 'fallback', bindings: {}, labels: {}, sources: [] } },
+      { question: 'b', answer: { kind: 'declined', code: 'OFF_TOPIC' } },
+      { question: 'c', answer: null },
+    ]);
     expect(history).toEqual([]);
   });
 });

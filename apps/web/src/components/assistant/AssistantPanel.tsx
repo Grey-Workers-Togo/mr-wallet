@@ -63,10 +63,7 @@ export function AssistantPanel({ remainingToday, onAsked }: AssistantPanelProps)
     if (!canSend) return;
 
     const id = nextId.current++;
-    const history = historyFor(
-      exchanges.map(({ question: asked, answer }) => ({ question: asked, answer })),
-      format,
-    );
+    const history = historyFor(exchanges.map(({ question: asked, answer }) => ({ question: asked, answer })));
     setExchanges((current) => [...current, { id, question: trimmed, answer: null, error: null }]);
     setQuestion('');
     setPending(true);
