@@ -18,6 +18,11 @@ interface MonthRow {
   total: bigint;
 }
 
+interface AdjustmentTotals {
+  incomeMinor: string;
+  expenseMinor: string;
+}
+
 @Injectable()
 export class ReportingService {
   constructor(
@@ -213,7 +218,7 @@ export class ReportingService {
    * RG-A10: the reconciliation adjustments of `[from, to)`, by direction, in the base currency. What a
    * report opted into `excludeAdjustments` leaves out is shown here rather than dropped.
    */
-  private async adjustmentTotals(userId: string, baseCurrency: string, from: Date, to: Date) {
+  private async adjustmentTotals(userId: string, baseCurrency: string, from: Date, to: Date): Promise<AdjustmentTotals> {
     const rows = await this.prisma.transaction.groupBy({
       by: ['type', 'currency'],
       where: { userId, source: 'ADJUSTMENT', transferGroupId: null, occurredAt: { gte: from, lt: to } },
@@ -308,7 +313,14 @@ export class ReportingService {
       sum(previousRows, 'EXPENSE', dto.previousTo),
     ]);
 
-    const report = {
+    const report: {
+      currency: string;
+      current: { incomeMinor: string; expenseMinor: string };
+      previous: { incomeMinor: string; expenseMinor: string };
+      deltaIncomeMinor: string;
+      deltaExpenseMinor: string;
+      unaccounted?: { current: AdjustmentTotals; previous: AdjustmentTotals };
+    } = {
       currency: baseCurrency,
       current: { incomeMinor: currentIncome.toString(), expenseMinor: currentExpense.toString() },
       previous: { incomeMinor: previousIncome.toString(), expenseMinor: previousExpense.toString() },
@@ -320,7 +332,8 @@ export class ReportingService {
       this.adjustmentTotals(userId, baseCurrency, dto.currentFrom, dto.currentTo),
       this.adjustmentTotals(userId, baseCurrency, dto.previousFrom, dto.previousTo),
     ]);
-    return { ...report, unaccounted: { current, previous } };
+    report.unaccounted = { current, previous };
+    return report;
   }
 
   /**

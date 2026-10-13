@@ -14,10 +14,46 @@ const MAX_FORECAST_MONTHS = 6;
  * touches, so a bound falling exactly on a month start yields one trailing empty month: dropped here.
  */
 async function monthsOf(reporting: ReportingFacade, context: ToolContext, period: ResolvedPeriod) {
-  const report = await reporting.cashflow(context.userId, { from: period.from, to: period.to });
+  // RG-A10: income and expenses leave reconciliation adjustments out; they come back as `unaccounted`.
+  const report = await reporting.cashflow(
+    context.userId,
+    { from: period.from, to: period.to },
+    { excludeAdjustments: true },
+  );
   const first = period.localFrom.slice(0, 7);
   const last = period.localTo.slice(0, 7);
-  return { currency: report.currency, months: report.months.filter((row) => row.month >= first && row.month <= last) };
+  return {
+    currency: report.currency,
+    months: report.months.filter((row) => row.month >= first && row.month <= last),
+    unaccounted: report.unaccounted,
+  };
+}
+
+/** Adjustments excluded from the figures, as their own bindings, only when there is something to say. */
+function unaccountedValues(
+  figures: { incomeMinor: string; expenseMinor: string },
+  currency: string,
+  scope: string,
+  suffix = '',
+): Record<string, BoundValue> {
+  const values: Record<string, BoundValue> = {};
+  if (BigInt(figures.expenseMinor) > 0n) {
+    values[`unaccounted_expense${suffix}`] = money(
+      figures.expenseMinor,
+      currency,
+      `Ajustements de réconciliation en dépense ${scope}, exclus des dépenses : écart non identifié`,
+      { key: `assistant.binding.unaccounted_expense${suffix}` },
+    );
+  }
+  if (BigInt(figures.incomeMinor) > 0n) {
+    values[`unaccounted_income${suffix}`] = money(
+      figures.incomeMinor,
+      currency,
+      `Ajustements de réconciliation en revenu ${scope}, exclus des revenus : écart non identifié`,
+      { key: `assistant.binding.unaccounted_income${suffix}` },
+    );
+  }
+  return values;
 }
 
 /** A net figure as `surplus` (≥ 0) or `deficit`: the key carries the sign, since the model never sees values. */
@@ -44,11 +80,13 @@ function net(
 export function cashflowTool(reporting: ReportingFacade): Tool {
   return defineTool({
     name: 'cashflow',
-    description: 'Revenus, dépenses et solde net (excédent ou déficit) de l’utilisateur sur une période, en totaux.',
+    description:
+      'Revenus, dépenses et solde net (excédent ou déficit) de l’utilisateur sur une période, en totaux. ' +
+      'Hors ajustements de réconciliation, renvoyés à part quand il y en a.',
     argsSchema: z.object({ period: symbolicPeriodSchema }).strict(),
     async execute(context, args) {
       const period = resolvePeriod(args.period, { now: context.now, timeZone: context.timeZone });
-      const { currency, months } = await monthsOf(reporting, context, period);
+      const { currency, months, unaccounted } = await monthsOf(reporting, context, period);
       // Sum of the façade's per-month figures, already consolidated in the base currency.
       const income = months.reduce((sum, row) => sum + BigInt(row.incomeMinor), 0n);
       const expense = months.reduce((sum, row) => sum + BigInt(row.expenseMinor), 0n);
@@ -60,6 +98,7 @@ export function cashflowTool(reporting: ReportingFacade): Tool {
           income: money(income, currency, `Revenus ${text}`, { key: 'assistant.binding.income' }),
           expense: money(expense, currency, `Dépenses ${text}`, { key: 'assistant.binding.expense' }),
           [netKey]: netValue,
+          ...(unaccounted && unaccountedValues(unaccounted, currency, text)),
         },
       };
     },
@@ -75,11 +114,12 @@ export function monthlySummaryTool(reporting: ReportingFacade): Tool {
     name: 'monthly_summary',
     description:
       'Revenus, dépenses et solde net (excédent ou déficit) de l’utilisateur mois par mois sur une période. ' +
-      'Le mois figure dans le nom de chaque repère.',
+      'Le mois figure dans le nom de chaque repère. Hors ajustements de réconciliation, renvoyés à part ' +
+      'pour toute la période quand il y en a.',
     argsSchema: z.object({ period: symbolicPeriodSchema }).strict(),
     async execute(context, args) {
       const period = resolvePeriod(args.period, { now: context.now, timeZone: context.timeZone });
-      const { currency, months } = await monthsOf(reporting, context, period);
+      const { currency, months, unaccounted } = await monthsOf(reporting, context, period);
       const values: Record<string, BoundValue> = {};
       for (const row of months) {
         const suffix = `_${row.month.replace('-', '_')}`;
@@ -92,6 +132,9 @@ export function monthlySummaryTool(reporting: ReportingFacade): Tool {
         });
         const [netKey, netValue] = net(suffix, BigInt(row.netMinor), currency, scope, params);
         values[netKey] = netValue;
+      }
+      if (unaccounted) {
+        Object.assign(values, unaccountedValues(unaccounted, currency, periodText(period.localFrom, period.localTo)));
       }
       return { period, values };
     },
@@ -107,19 +150,24 @@ export function comparePeriodsTool(reporting: ReportingFacade): Tool {
     name: 'compare_periods',
     description:
       'Compare revenus et dépenses de deux périodes : `current` et `previous`. Renvoie les deux totaux et, quand ' +
-      'elle existe, la hausse ou la baisse en montant et en pourcentage.',
+      'elle existe, la hausse ou la baisse en montant et en pourcentage. Hors ajustements de réconciliation, ' +
+      'renvoyés à part quand il y en a.',
     argsSchema: z.object({ current: symbolicPeriodSchema, previous: symbolicPeriodSchema }).strict(),
     async execute(context, args) {
       const resolve = (period: string) => resolvePeriod(period, { now: context.now, timeZone: context.timeZone });
       const current = resolve(args.current);
       const previous = resolve(args.previous);
       // `comparison` filters with `<`: the exclusive bounds go through unchanged.
-      const report = await reporting.comparison(context.userId, {
-        currentFrom: current.from,
-        currentTo: current.to,
-        previousFrom: previous.from,
-        previousTo: previous.to,
-      });
+      const report = await reporting.comparison(
+        context.userId,
+        {
+          currentFrom: current.from,
+          currentTo: current.to,
+          previousFrom: previous.from,
+          previousTo: previous.to,
+        },
+        { excludeAdjustments: true },
+      );
       const values: Record<string, BoundValue> = {};
       const currentText = periodText(current.localFrom, current.localTo);
       const previousText = periodText(previous.localFrom, previous.localTo);
@@ -157,6 +205,13 @@ export function comparePeriodsTool(reporting: ReportingFacade): Tool {
             { key: `assistant.binding.${kind.name}_${direction}_pct` },
           );
         }
+      }
+      if (report.unaccounted) {
+        Object.assign(
+          values,
+          unaccountedValues(report.unaccounted.current, report.currency, currentText, '_current'),
+          unaccountedValues(report.unaccounted.previous, report.currency, previousText, '_previous'),
+        );
       }
       return { period: current, comparedTo: previous, values };
     },

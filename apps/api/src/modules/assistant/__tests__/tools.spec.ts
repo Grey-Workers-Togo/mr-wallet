@@ -202,6 +202,103 @@ describe('assistant tools (RG-AS2, RG-AS3, RG-AS6)', () => {
     });
   });
 
+  describe('subcategories and reconciliation adjustments (RG-A10, lot A1.1)', () => {
+    let roll: Dataset;
+    let rollContext: ToolContext;
+    let taxiId: string;
+
+    beforeAll(async () => {
+      roll = await seedDataset(prisma, live, 'roll', 1n);
+      const taxi = await prisma.category.create({
+        data: { userId: roll.userId, name: 'Taxi roll', kind: 'EXPENSE', parentId: roll.transportId },
+      });
+      taxiId = taxi.id;
+      const base = { accountId: roll.accountId, status: 'CLEARED' as const, tagIds: [] };
+      await live.transactionsService.create(roll.userId, {
+        ...base,
+        type: 'EXPENSE',
+        amountMinor: '5000',
+        occurredAt: new Date('2026-09-08T08:00:00Z'),
+        description: 'Course',
+        categoryId: taxi.id,
+      });
+      const adjust = (type: 'EXPENSE' | 'INCOME', amountMinor: string, at: string) =>
+        live.transactionsService.create(
+          roll.userId,
+          { ...base, status: 'RECONCILED', type, amountMinor, occurredAt: new Date(at), description: 'Ajustement' },
+          { source: 'ADJUSTMENT' },
+        );
+      await adjust('EXPENSE', '700', '2026-09-12T08:00:00Z');
+      await adjust('INCOME', '900', '2026-09-13T08:00:00Z');
+      await adjust('EXPENSE', '100', '2026-08-14T08:00:00Z');
+      rollContext = await live.toolContext(roll.userId, NOW);
+    });
+
+    afterAll(async () => {
+      await cleanup(prisma, [roll.userId]);
+    });
+
+    it('spending_by_category: a parent counts its subcategories, which are not ranked separately', async () => {
+      const output = await run('spending_by_category', rollContext, { period: 'this_month' });
+      expect(amounts(output)).toMatchObject({
+        total: '78500',
+        top_1_amount: '50000', // food
+        top_2_amount: '28500', // transport 23500 + taxi 5000
+        unaccounted: '700',
+      });
+      expect(Object.keys(output.values)).not.toContain('top_3_amount');
+    });
+
+    it('spending_by_category: asking for the parent or for the subcategory gives each its own figure', async () => {
+      const parent = rollContext.aliases.categories.aliasFor(roll.transportId);
+      const child = rollContext.aliases.categories.aliasFor(taxiId);
+      expect(amounts(await run('spending_by_category', rollContext, { period: 'this_month', category: parent }))).toMatchObject({
+        category_total: '28500',
+      });
+      expect(amounts(await run('spending_by_category', rollContext, { period: 'this_month', category: child }))).toMatchObject({
+        category_total: '5000',
+      });
+    });
+
+    it('cashflow: adjustments are out of income and expenses and bound on their own', async () => {
+      const output = await run('cashflow', rollContext, { period: 'this_month' });
+      expect(amounts(output)).toEqual({
+        income: '300000',
+        expense: '78500',
+        surplus: '221500',
+        unaccounted_expense: '700',
+        unaccounted_income: '900',
+      });
+    });
+
+    it('monthly_summary and compare_periods say what they left out, per period', async () => {
+      const summary = await run('monthly_summary', rollContext, { period: 'last_3_months' });
+      expect(amounts(summary)).toMatchObject({
+        expense_2026_09: '78500',
+        income_2026_09: '300000',
+        unaccounted_expense: '800',
+        unaccounted_income: '900',
+      });
+
+      const comparison = await run('compare_periods', rollContext, { current: 'this_month', previous: 'last_month' });
+      expect(amounts(comparison)).toMatchObject({
+        expense_current: '78500',
+        expense_previous: '42000',
+        income_current: '300000',
+        unaccounted_expense_current: '700',
+        unaccounted_income_current: '900',
+        unaccounted_expense_previous: '100',
+      });
+      expect(Object.keys(comparison.values)).not.toContain('unaccounted_income_previous');
+    });
+
+    it('binds nothing about adjustments for a user who has none, and never user B’s', async () => {
+      // `a` and `b` have no adjustment; `roll` has. Nothing of `roll` shows in `a`.
+      const output = await run('cashflow', contextA, { period: 'this_month' });
+      expect(Object.keys(output.values).some((key) => key.startsWith('unaccounted'))).toBe(false);
+    });
+  });
+
   describe('RG-AS6: a tool run for user A never returns user B data', () => {
     const calls: [string, unknown][] = [
       ['spending_by_category', { period: 'this_month' }],

@@ -19,16 +19,19 @@ export function spendingByCategoryTool(reporting: ReportingFacade): Tool {
   return defineTool({
     name: 'spending_by_category',
     description:
-      'Dépenses de l’utilisateur sur une période, par catégorie. Sans `category`, renvoie le total et les ' +
-      `${MAX_CATEGORIES} premières catégories par montant ; avec \`category\` (alias c1, c2…), uniquement cette catégorie.`,
+      'Dépenses de l’utilisateur sur une période, par catégorie. Une catégorie compte ses sous-catégories. ' +
+      `Sans \`category\`, renvoie le total et les ${MAX_CATEGORIES} premières catégories par montant ; ` +
+      'avec `category` (alias c1, c2…), uniquement cette catégorie.',
     argsSchema: z.object({ period: symbolicPeriodSchema, category: z.string().regex(CATEGORY_ALIAS).optional() }).strict(),
     async execute(context, args) {
       const period = resolvePeriod(args.period, { now: context.now, timeZone: context.timeZone });
       // `spendingByCategory` filters with `lte`: the resolved bound is exclusive, so the last millisecond is dropped.
-      const report = await reporting.spendingByCategory(context.userId, {
-        from: period.from,
-        to: new Date(period.to.getTime() - 1),
-      });
+      // A parent counts its subcategories (RG-B2 does the same for budgets); the screens keep exact categories.
+      const report = await reporting.spendingByCategory(
+        context.userId,
+        { from: period.from, to: new Date(period.to.getTime() - 1) },
+        { includeDescendants: true },
+      );
       const total = BigInt(report.totalMinor);
       const text = periodText(period.localFrom, period.localTo);
       const values: Record<string, BoundValue> = {};
@@ -63,7 +66,10 @@ export function spendingByCategoryTool(reporting: ReportingFacade): Tool {
         );
       }
       // Largest first; ties broken by id so two questions on the same data list the same order.
+      // Only top-level categories: a subcategory is already inside its parent's figure, and listing both
+      // would count it twice in the reader's head.
       const ranked = report.items
+        .filter((item) => !item.parentId)
         .map((item) => ({ ...item, amount: BigInt(item.totalMinor) }))
         .sort((a, b) =>
           a.amount === b.amount ? String(a.categoryId).localeCompare(String(b.categoryId)) : a.amount > b.amount ? -1 : 1,
