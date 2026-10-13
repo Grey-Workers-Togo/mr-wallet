@@ -766,7 +766,7 @@
       "title": "Activer l’assistant ?",
       "intro": "L’assistant répond à vos questions en langage naturel à partir de vos propres données.",
       "providerNotice": "Vos questions sont traitées par un fournisseur de modèle externe. Les noms de vos catégories et de vos comptes lui sont transmis ; vos transactions, vos montants et votre identité ne le sont pas.",
-      "storageNotice": "Rien n’est enregistré : ni vos questions, ni les réponses. La conversation disparaît quand vous quittez la page.",
+      "storageNotice": "Rien n’est enregistré : ni vos questions, ni les réponses. La conversation disparaît quand vous quittez la page. Seule la date de votre accord est conservée ; vous pouvez le retirer à tout moment.",
       "accept": "J’accepte et j’active l’assistant",
       "decline": "Pas maintenant",
       "revoke": "Désactiver l’assistant"

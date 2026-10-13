@@ -41,11 +41,16 @@ export interface AskResponse {
 
 export interface AssistantStatus {
   enabled: boolean;
+  /** The user accepted the assistant (RG-AP8); recorded on the server, not in this browser. */
+  optedIn: boolean;
   dailyQuota: number;
   remainingToday: number;
 }
 
-/** What goes back to the server as history: the text the user saw, values already substituted (RG-AP2). */
+/**
+ * What goes back to the server as history (RG-AP2): the question as typed, and an answer as the template
+ * the server gave (`{{r1.total}}`) — never the text rendered for the user, which carries values.
+ */
 export interface HistoryTurn {
   role: 'user' | 'assistant';
   content: string;

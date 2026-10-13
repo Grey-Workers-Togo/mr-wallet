@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 interface AssistantOptInProps {
+  busy: boolean;
   onAccept: () => void;
   onDecline: () => void;
 }
 
 /** RG-AP8: states, before any question, that questions go to an external model provider. */
-export function AssistantOptIn({ onAccept, onDecline }: AssistantOptInProps) {
+export function AssistantOptIn({ busy, onAccept, onDecline }: AssistantOptInProps) {
   const t = useTranslations('assistant.optIn');
 
   return (
@@ -26,8 +27,10 @@ export function AssistantOptIn({ onAccept, onDecline }: AssistantOptInProps) {
           <p className="text-sm text-neutral-700 dark:text-neutral-300">{t('providerNotice')}</p>
           <p className="text-sm text-neutral-700 dark:text-neutral-300">{t('storageNotice')}</p>
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={onAccept}>{t('accept')}</Button>
-            <Button variant="outline" onClick={onDecline}>
+            <Button disabled={busy} onClick={onAccept}>
+              {t('accept')}
+            </Button>
+            <Button variant="outline" disabled={busy} onClick={onDecline}>
               {t('decline')}
             </Button>
           </div>

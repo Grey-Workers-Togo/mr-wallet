@@ -766,7 +766,7 @@
       "title": "Turn on the assistant?",
       "intro": "The assistant answers your questions in plain language, using your own data.",
       "providerNotice": "Your questions are processed by an external model provider. The names of your categories and accounts are sent to it; your transactions, amounts and identity are not.",
-      "storageNotice": "Nothing is stored: neither your questions nor the answers. The conversation disappears when you leave the page.",
+      "storageNotice": "Nothing is stored: neither your questions nor the answers. The conversation disappears when you leave the page. Only the date of your agreement is kept; you can withdraw it at any time.",
       "accept": "I agree, turn it on",
       "decline": "Not now",
       "revoke": "Turn off the assistant"
