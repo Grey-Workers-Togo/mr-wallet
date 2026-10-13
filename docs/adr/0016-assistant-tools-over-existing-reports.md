@@ -40,7 +40,12 @@ The reports the tools need already exist. `ReportingService` computes spending b
 | `goals_progress` | `GoalsFacade` |
 | `debts_summary` | `DebtsFacade` |
 
-`ReportingFacade` currently exposes only `netWorth`. The other report methods are added to the façade as pass-throughs. This is additive: no existing endpoint or behavior changes.
+`ReportingFacade` currently exposes only `netWorth`. The other report methods are added to the façade as pass-throughs. This is additive: no existing endpoint or behavior changes. `ForecastingFacade` is created for the same purpose.
+
+Two implementation notes (lot A1):
+
+- `monthly_summary` is served by `ReportingFacade.cashflow` over the resolved period, not by `monthlySummary`: the latter only knows "the last N months counted from now" and cannot follow a symbolic period such as `last_month`. The `monthlySummary` pass-through exists for completeness.
+- Budget, goal and debt names are user-entered and are **not** among the names ADR-0019 allows to leave the server (categories and accounts only). These tools designate their items by rank and, for budgets, by category alias; the client resolves the real name from the id carried in each binding's label. Debt counterparties never appear.
 
 No tool contains business logic of its own. A tool adapts arguments and shapes the result; the computation is the façade's.
 
@@ -58,6 +63,8 @@ No tool contains business logic of its own. A tool adapts arguments and shapes t
 | RG-AS3 | The `userId` passed to a tool comes from the authenticated request, never from model output. |
 | RG-AS4 | A single question triggers at most 3 rounds of tool calls (ADR-0022). |
 | RG-AS5 | Requests outside the catalogue — writes, financial advice (a non-goal of `01-vision-perimetre.md § 4`), unrelated topics — are declined with a stable reason code. |
+
+**Declining (RG-AS5).** The model refuses through a pseudo-tool of the orchestrator, `decline_request`, whose single argument `reason` is `WRITE_REQUEST`, `FINANCIAL_ADVICE` or `OFF_TOPIC`. It is not in the tool registry, so it can never run a query. A valid call ends the question with `{ kind: 'declined', code }`; the client renders the text from the code. These three codes are the stable set.
 | RG-AS6 | Each tool has a multi-user isolation test: a tool run for user A never returns user B's data. |
 | RG-AS7 | Every answer lists its sources: which tools ran, with which resolved period. |
 

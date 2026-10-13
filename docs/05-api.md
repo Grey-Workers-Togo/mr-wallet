@@ -457,6 +457,7 @@ The audit log is **read-only**: no write or delete endpoint is exposed.
 | `/auth/login`, `/auth/password/*` | 5 requests / 15 min / IP |
 | `/import/upload` | 20 / hour / user |
 | `/export/*` | 10 / hour / user |
+| `/assistant/ask` | 10 / min (on top of the daily question quota, RG-AQ4) |
 | Rest of the API | 300 / min / user |
 
 ## 18. Sync (docs/14-sync-protocol.md)
@@ -473,3 +474,67 @@ mobile client consumes it yet.
 `account.create`/`category.create`/etc. accept an optional client-supplied `id` (UUIDv7) on
 every business module's create endpoint — an id already used by that user is a replay, not an
 error (RG-SY3). This is additive: existing callers that never send an `id` see no change.
+
+---
+
+## 19. Assistant (ADR-0016 to ADR-0022)
+
+Behind `ASSISTANT_ENABLED` and a per-user allowlist. Both endpoints exist in every build and answer
+`ASSISTANT_DISABLED` while the assistant is closed. Nothing about a question or an answer is stored (RG-AP1);
+the endpoint is deliberately **not audited**, since the audit log would record the response.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/assistant/ask` | Asks one question. Stateless: the client sends the last turns itself. |
+| GET | `/assistant/status` | `{ enabled, dailyQuota, remainingToday }` — whether a question would be accepted now. Counters only. |
+
+### `POST /assistant/ask`
+
+```json
+{
+  "question": "Combien ai-je dépensé en transport ce mois-ci ?",
+  "history": [ { "role": "user", "content": "…" }, { "role": "assistant", "content": "…" } ]
+}
+```
+
+- `question`: 1–500 characters. `history`: at most 6 turns, each 1–2000 characters, oldest first (RG-AP2).
+  It is the text the user was shown, values already substituted. Any other field is refused, `userId` included.
+- The user comes from the access token only (RG-AS3).
+
+Response `200`, one of three shapes (ADR-0018 §3):
+
+```json
+{ "answer": { "kind": "template",
+              "template": "Ce mois-ci, vous avez dépensé {{r1.total}}.",
+              "bindings": { "r1.total": { "type": "money", "amountMinor": "73500", "currency": "XOF" },
+                            "r1.period": { "type": "period", "from": "2026-09-01", "to": "2026-09-30" } },
+              "labels": { "r1.total": { "key": "assistant.binding.spending_total" } },
+              "sources": [ { "tool": "spending_by_category", "period": { "from": "2026-09-01", "to": "2026-09-30" } } ] } }
+```
+
+```json
+{ "answer": { "kind": "fallback", "bindings": { … }, "labels": { … }, "sources": [ … ] } }
+{ "answer": { "kind": "declined", "code": "WRITE_REQUEST" } }
+```
+
+| Field | Meaning |
+|---|---|
+| `bindings` | Every value, structured: `money` (`amountMinor` string + `currency`), `percent` (`basisPoints`), `period` / `date` (local calendar days, `YYYY-MM-DD`, both bounds inclusive), `count`. The client formats them with the `money` kernel and the user's locale. |
+| `labels` | Per binding, a stable i18n `key` and `params` (internal ids of the user's own entities, a month, a rank…). Never prose. |
+| `sources` | Which tools ran and over which resolved dates (RG-AS7). `comparedWith` for `compare_periods`. |
+| `kind: template` | The only human-readable text the API returns (ADR-0018 §4): generated per request, never stored, with no digit outside a placeholder (RG-AT1). |
+| `kind: fallback` | A template rejected twice (RG-AT4), or the rounds spent: the computed values with no prose. The client shows a labelled table. |
+| `kind: declined` | `WRITE_REQUEST`, `FINANCIAL_ADVICE` or `OFF_TOPIC` (RG-AS5). The client renders the text. |
+
+Errors (standard envelope, § 1):
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | `VALIDATION_FAILED` | Question or history out of bounds, unknown field. |
+| 400 | `USER_TIMEZONE_INVALID` | The stored `timezone` is not an IANA name. No fallback to UTC: it could state a wrong figure. |
+| 403 | `ASSISTANT_DISABLED` | Flag off, user not on the allowlist, or the monthly cost ceiling reached (RG-AQ2). `params.reason`: `NOT_AVAILABLE` or `COST_CEILING`. |
+| 429 | `ASSISTANT_QUOTA_EXCEEDED` | Daily question quota spent (RG-AQ1). `params.limit`. |
+| 503 | `LLM_UNAVAILABLE` | Provider unreachable or erroring after one retry (RG-LL3). The question is not counted. |
+
+A repeated question is served from an in-memory cache (10 min, keyed on user, normalized question, data
+version and local date) when it carries no history, and costs no quota.

@@ -114,7 +114,7 @@ notifications→ budgets, debts, goals, recurrence
 reconciliation → money, accounts, transactions, categories
 sync         → accounts, transactions, categories, tags, budgets, goals, debts, recurrence, notifications, reconciliation
 llm          → (none)
-assistant    → llm, reporting, budgets, accounts, categories, forecasting, goals, debts
+assistant    → llm, users, reporting, budgets, accounts, categories, forecasting, goals, debts
 capture      → llm, rules, categories
 ```
 

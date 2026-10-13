@@ -242,8 +242,15 @@ A task is only complete if **all** the points below are true:
 | `LLM_API_KEY` | Provider key (empty for a self-hosted server) | empty |
 | `LLM_TIMEOUT_MS` | Per-call timeout (RG-LL2); also the end-to-end bound of ADR-0022 § 2 | `20000` |
 | `LLM_MAX_OUTPUT_TOKENS` | Maximum output tokens per call (RG-LL2) | `512` |
-| `LLM_PRICE_INPUT_MICROS_PER_MTOK` | Price of the configured model, input, in millionths of a cost unit per million tokens (RG-AQ3) | `0` |
+| `LLM_PRICE_INPUT_MICROS_PER_MTOK` | Price of the configured model, input, in micro-USD (millionths of a US dollar) per million tokens (RG-AQ3) | `0` |
 | `LLM_PRICE_OUTPUT_MICROS_PER_MTOK` | Same, output | `0` |
+| `ASSISTANT_ENABLED` | Opens the assistant endpoints (ADR-0022 § 5). Boot fails if `true` with `LLM_PROVIDER=fake` outside `NODE_ENV=test`, or with a priced model and no ceiling | `false` |
+| `ASSISTANT_ALLOWLIST` | Comma-separated user ids allowed to use the assistant, or `*` for everyone. Empty = nobody, even when enabled | empty |
+| `ASSISTANT_DAILY_QUESTION_QUOTA` | Questions per user per UTC day (RG-AQ1) | `20` |
+| `ASSISTANT_MONTHLY_COST_CEILING_MICROS` | Global monthly ceiling, micro-USD (RG-AQ2). `0` = none, accepted only for an unpriced model | `0` |
+| `ASSISTANT_USD_TO_XOF_RATE` | XOF per US dollar, **display only** (operations log). Never used to bound cost | `600` |
+| `ASSISTANT_TRACE_SECRET` | HMAC key of the pseudonymous user hash in traces (RG-AP4). Mandatory with Langfuse | empty |
+| `LANGFUSE_HOST` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | Metadata-only traces (RG-AP4). Empty disables them; all three together | empty |
 
 The application refuses to start if a mandatory variable is missing — environment schema validation at boot, no silent failure in production.
 

@@ -24,7 +24,9 @@ The product is in production. The assistant and the capture endpoints must be in
 | Bound | Initial value |
 |---|---|
 | Tool-call rounds (RG-AS4) | 3 |
+| Tool calls executed per round | 5 (the excess are answered `TOOL_CALL_LIMIT_EXCEEDED` and not run) |
 | Corrective retries for a rejected template (RG-AT4) | 1 |
+| Template length (RG-AT3) | 600 characters |
 | Maximum output tokens per call | Configured per model |
 | End-to-end timeout | 20 s |
 
@@ -41,11 +43,15 @@ A table `AssistantUsage(userId, day, requests, inputTokens, outputTokens, estima
 | RG-AQ1 | A daily per-user question quota applies (configurable). Beyond it, the assistant answers `ASSISTANT_QUOTA_EXCEEDED`. |
 | RG-AQ2 | A global monthly cost ceiling applies. When reached, the assistant answers `ASSISTANT_DISABLED` until the next period. Capture fallback is subject to the same ceiling. |
 | RG-AQ3 | Estimated cost is computed from `usage` (ADR-0017) and a configured price per model. |
+
+**Cost unit.** `estimatedCostMicros` and the `LLM_PRICE_*` settings are in **micro-USD** (millionths of a US dollar), because providers price in USD. A configurable USD→XOF rate (`ASSISTANT_USD_TO_XOF_RATE`) is used for display only and never to bound cost. The estimate is rounded up.
 | RG-AQ4 | The existing API throttling applies on top of quotas. |
 
 ### 5. Staged rollout
 
 `ASSISTANT_ENABLED` and `CAPTURE_ENABLED` flags, plus a per-user allowlist, gate the new endpoints. Rollout order: the synthetic evaluation user, then volunteer users, then everyone. All schema changes are additive and reversible: one enum value (`TxSource.SMS`), one table (`AssistantUsage`), optional sync fields.
+
+An empty allowlist admits nobody, even with the flag on; `*` is the explicit "everyone" of the last stage. The API refuses to boot with `ASSISTANT_ENABLED=true` on the `fake` adapter outside the test environment, and with a priced model but no monthly cost ceiling.
 
 ## Consequences
 

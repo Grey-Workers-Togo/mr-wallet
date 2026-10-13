@@ -870,6 +870,36 @@ Notes:
 
 ---
 
+### AssistantUsage (lot A1, ADR-0022 §4)
+
+Daily counters of assistant use. **Counters and nothing else**: no question, answer, prompt or tool
+argument is persisted anywhere (RG-AP1, RG-AP3). One row per user per UTC day. No `id` and no
+`deletedAt`: it is a technical counter table, outside the soft-delete convention. Migration
+`20261013180000_add_assistant_usage` is additive and reversible (`DROP TABLE "AssistantUsage"`).
+
+```prisma
+model AssistantUsage {
+  userId              String
+  day                 DateTime @db.Date          // UTC day
+  requests            Int      @default(0)       // questions that reached the model (cache hits excluded)
+  inputTokens         Int      @default(0)
+  outputTokens        Int      @default(0)
+  estimatedCostMicros BigInt   @default(0)       // micro-USD (RG-AQ3)
+
+  createdAt           Dt       @default(now())
+  updatedAt           Dt       @updatedAt
+
+  @@id([userId, day])
+  @@index([day])
+}
+```
+
+The daily quota is taken in one conditional upsert (`requests < limit`), so two concurrent questions
+cannot both take the last unit. The monthly cost ceiling is the sum of `estimatedCostMicros` over the
+UTC month, across users.
+
+---
+
 ## 18. Overview of relationships
 
 All business entities belong directly to `User` via `userId`. Arrows indicate secondary attachments.
@@ -903,6 +933,7 @@ User
 ├── PasswordResetToken
 ├── IdempotencyKey
 ├── ExportJob
+├── AssistantUsage (counters per UTC day)
 └── AuditLog
 ```
 
