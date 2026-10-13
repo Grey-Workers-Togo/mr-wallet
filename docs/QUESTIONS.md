@@ -206,27 +206,48 @@ availability becomes an operational concern.
 
 **Left as they are, and visible to the assistant.**
 
-- **Reconciliation adjustments are counted differently by two reports.** `spendingByCategory` excludes them (RG-A10) and shows `unaccountedMinor`; `cashflow` and `comparison` (via `monthlyRows`) include them in expenses. So `spending_by_category`'s total and `cashflow`'s expenses for the same month can differ by the adjustments. The assistant states each as its tool returns it. Decide whether the cash-flow reports should exclude adjustments too (it would change existing figures). `top_expenses` excludes them through a new opt-in (`excludeAdjustments`).
-- **A parent category does not include its children.** `spendingByCategory` groups by exact `categoryId`; asking for "Transport" returns only what is booked on that category, not on its subcategories. Rolling up would change an existing report.
+- **Reconciliation adjustments are counted differently by two reports.** `spendingByCategory` excludes them (RG-A10) and shows `unaccountedMinor`; `cashflow` and `comparison` (via `monthlyRows`) include them in expenses. So the totals of the existing screens for the same month can differ by the adjustments. **Decided at A1.1:** for the assistant, expenses always exclude adjustments, exposed as a separate binding, through an additive option (`excludeAdjustments`, like `topTransactions`); the screens are unchanged. **Still open:** the *screens* remain inconsistent with each other. Aligning them would change existing figures and is a product decision.
+- **A parent category does not include its children.** `spendingByCategory` groups by exact `categoryId`; asking for "Transport" returns only what is booked on that category, not on its subcategories. **Decided at A1.1:** an additive option `includeDescendants`, switched on by the tool only; the screens are unchanged (see "Lot A1.1").
 - **`monthly_summary` is served by `cashflow`, not `monthlySummary`** (ADR-0016 note): `monthlySummary` cannot follow a symbolic period.
 
 **Privacy lines drawn here.**
 
 - **Budget, goal and debt names are not sent to the provider.** ADR-0019 lists category and account names only. These tools designate items by rank (and budgets by category alias); the response carries ids in each label so the client shows the real name. If answer quality needs names, extend the list in ADR-0019 deliberately; debt counterparties should stay out.
-- **The model still sees no tool value.** Direction is carried by which key exists (`surplus`/`deficit`, `expense_increase`/`expense_decrease`, `remaining`/`overrun`, `balance`/`shortfall`), ranking by the order and the `top_n` keys. History turns do carry the values the user was shown, as ADR-0019 § 1 allows.
+- **The model still sees no tool value.** Direction is carried by which key exists (`surplus`/`deficit`, `expense_increase`/`expense_decrease`, `remaining`/`overrun`, `balance`/`shortfall`), ranking by the order and the `top_n` keys. **Corrected at A1.1:** history turns carried the values the user was shown, which put figures in the provider request — that was a defect, not an allowance. Earlier answers now go back as templates (RG-AP9).
 - **A transaction's description reaches the client, never the provider** (`top_expenses` label).
 - **The answer cache holds answers in memory for 10 minutes**, keyed on a hash; that is the only place a computed answer outlives the request, per ADR-0022 § 3.
 
 **Rules and bounds.**
 
-- **Opt-in (RG-AP8) is kept in the browser**, per account, not on the server: RG-AP3 limits persisted assistant data to `AssistantUsage` counters, and the lot lists no schema change besides that table. Consequence: it is per browser and cannot be enforced server-side. If you want server-side proof of consent, it needs a column or table and an amendment to RG-AP3.
+- **Opt-in (RG-AP8) was kept in the browser** at A1. **Decided at A1.1:** it is a server-side timestamp (`User.assistantOptInAt`), enforced on every question; RG-AP3 and RG-AP8 are amended in ADR-0019.
 - **`GET /assistant/status`** exists although the roadmap lists only `POST /assistant/ask`: the web app needs to know whether to show the entry and the questions left. It returns counters only.
 - **The allowlist is an environment variable of user ids (or `*`)**, not a table. Fine for volunteers; a table would be needed for self-service.
 - **Cache.** Only a question asked without history is cached (the ADR's key has no room for it); a fallback is never cached; a cache hit takes nothing from the quota. The key also carries the user's local date, so "this month" is not served across a month change. The data version reads `updatedAt` of other modules' tables through one raw query, as ADR-0022 § 3 prescribes; it includes soft-deleted rows so it only moves forward.
 - **Quota day is the UTC day**, not the user's local day; an outage gives the unit back; the monthly ceiling check is strict (a cache hit is refused too) and approximate under concurrency (a few questions can overshoot, never unboundedly).
-- **Throttling is per IP, not per user.** `ThrottlerGuard` uses its default tracker, so the 10/min on `/assistant/ask` (and the 100/min default) are per IP, although `05-api.md § 17` says "per user". Behind a shared NAT several users share the budget. Not changed here; the daily quota is per user.
+- **Throttling was per IP, not per user** at A1, although `05-api.md § 17` says "per user". **Decided at A1.1:** `/assistant` routes are counted per user (see "Lot A1.1").
 - **Traces.** `LangfuseTracer` posts one `trace-create` per question to the ingestion API with `fetch`, metadata only. It has only been exercised against a stub; per-step spans can be added in A2.
 
 **Not verifiable in this repository.**
 
 - The exit criterion's "ten representative questions answered from the web app on the synthetic user" needs the synthetic user generator (**[research]**, private repository), a real provider, and a human in a browser. The API side is covered end to end with the scripted adapter on a real database; the web side has unit tests for rendering and a successful production build, no browser test.
+
+### Lot A1.1 — decisions from the A1 review
+
+**Applied as decided.**
+
+- **History without values (blocking).** The client sends an answer back as its template; the server rejects an assistant turn with a digit outside a placeholder, reusing `validateTemplate`, with `ASSISTANT_HISTORY_INVALID` (400, `params.turn`, `params.violations`); the system prompt says earlier placeholders are no longer available. Test: no value of a previous answer is in the provider request. Recorded as RG-AP9 in ADR-0019.
+- **Server-side consent.** `User.assistantOptInAt` (additive, reversible), `PUT`/`DELETE /assistant/opt-in`, `ASSISTANT_OPT_IN_REQUIRED` on `ask`. RG-AP3 and RG-AP8 amended in ADR-0019 (law 2019-014).
+- **Throttle per user** on `/assistant`: a flag `@ThrottlePerUser()`; the global IP guard skips flagged routes and a second global guard, registered after `JwtAuthGuard` (so `request.user` exists), counts them by `userId`.
+- **Adjustments and parent categories**: additive report options used by the assistant tools only; ADR-0016 amended.
+- **Accepted as they were:** quota day in UTC (no effect in Togo); cost ceiling approximate under concurrency (bounded by the per-user throttle); the figures that moved with the timezone fix are reported as a correction (see below).
+
+**Choices made while applying them.**
+
+- **Numbering after the history.** New tool calls start after the highest `rN` the history mentions. Without it, `{{r1.total}}` in an earlier turn and the new `r1.total` are the same name, and a model reusing the old one would print a different figure silently.
+- **Consent date.** Accepting again keeps the first date (the record is the moment of consent). Accepting is refused (`ASSISTANT_DISABLED`) where the assistant is not open; withdrawing is always possible. Both are audited with a date and nothing else.
+- **Existing browser flags are ignored.** A1's `localStorage` opt-in is no longer read: a user who accepted under A1 is asked again, because the server holds no proof of that choice. A1 was never exposed beyond the allowlist.
+- **"Not now"** on the opt-in screen leaves the page (to accounts); it records nothing.
+- **Subcategory overlap.** With `includeDescendants`, a parent's item includes its children and each child stays listed, so the items overlap; `totalMinor` is still counted once. Consumers that rank must use top-level items (`parentId` null), as the tool does. Only one level of nesting is rolled up, like `CategoriesService.descendantIds` and RG-B2.
+- **Both directions of adjustments** are left out of the assistant's income and expenses: an adjustment typed `INCOME` is no more identified income than an `EXPENSE` one is identified spending. They are bound separately, so nothing is hidden.
+- **`reporting` reads the user's subcategories** through its own `PrismaService` (like it already reads `Transaction`), not through `CategoriesFacade`: one `findMany` of `id, parentId`, no new module dependency in `02-architecture.md`.
+- **CHANGELOG.** `CHANGELOG.md` is generated by release-please from commit subjects. The month-boundary fix is its own `fix(reporting)` commit and will be listed under "Bug Fixes" at the next release; a hand-written entry would be duplicated or overwritten. The commit body states that figures near month boundaries change for users outside UTC.

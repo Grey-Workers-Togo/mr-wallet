@@ -45,7 +45,7 @@ A table `AssistantUsage(userId, day, requests, inputTokens, outputTokens, estima
 | RG-AQ3 | Estimated cost is computed from `usage` (ADR-0017) and a configured price per model. |
 
 **Cost unit.** `estimatedCostMicros` and the `LLM_PRICE_*` settings are in **micro-USD** (millionths of a US dollar), because providers price in USD. A configurable USD→XOF rate (`ASSISTANT_USD_TO_XOF_RATE`) is used for display only and never to bound cost. The estimate is rounded up.
-| RG-AQ4 | The existing API throttling applies on top of quotas. |
+| RG-AQ4 | The existing API throttling applies on top of quotas. On `/assistant` it is counted **per user**, not per IP (amended at A1.1): many users share the NAT address of their mobile operator. |
 
 ### 5. Staged rollout
 

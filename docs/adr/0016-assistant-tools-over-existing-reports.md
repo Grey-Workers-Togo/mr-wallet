@@ -92,3 +92,11 @@ No existing module depends on `assistant`. The graph in `02-architecture.md § 4
 ## Re-examination
 
 If `packages/analytics-core` is built for the mobile client, tools may target it instead of the SQL reports without changing their contract. If tool-selection accuracy on the evaluation set stays below target with the selected model, revisit the tool granularity before revisiting the pattern.
+
+## Amendments
+
+### Lot A1.1
+
+- **Adjustments.** `cashflow`, `monthly_summary` and `compare_periods` call the reports with the opt-in `excludeAdjustments`: reconciliation adjustments (RG-A10) are left out of income and expenses and come back as their own bindings, `unaccounted_expense` and `unaccounted_income` (`_current` / `_previous` for a comparison), present only when non-zero. The existing endpoints are unchanged and keep counting them.
+- **Parent categories.** `spending_by_category` calls `spendingByCategory` with the opt-in `includeDescendants`: a parent's figure includes its subcategories, each item says its `parentId`, and the tool ranks top-level categories only. A subcategory asked by alias still gets its own figure.
+- Both options are additive, off by default, and used by no screen.

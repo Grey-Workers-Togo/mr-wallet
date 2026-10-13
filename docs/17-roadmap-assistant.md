@@ -46,6 +46,15 @@ No endpoint, no UI. Everything is tested against the fake adapter.
 
 **Exit criterion**: on a test instance seeded with the synthetic user, ten representative questions are answered from the web app with correct figures. A forced template violation shows the fallback table. Airplane mode disables the panel.
 
+### A1.1 — Review follow-up (before A2)
+
+Decisions taken on reviewing A1; none changes an existing endpoint or screen.
+
+- History without values: an answer goes back as its template; the server refuses a turn carrying a figure (RG-AP9).
+- Server-side consent: `User.assistantOptInAt`, `PUT`/`DELETE /assistant/opt-in`, `ASSISTANT_OPT_IN_REQUIRED` (RG-AP3, RG-AP8 amended).
+- `/assistant` throttled per user, not per IP (RG-AQ4).
+- Assistant figures exclude reconciliation adjustments and roll subcategories into their parent, through additive report options.
+
 ---
 
 ## A2 — Evaluation and provider selection (week 3)

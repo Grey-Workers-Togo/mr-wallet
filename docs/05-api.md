@@ -457,7 +457,8 @@ The audit log is **read-only**: no write or delete endpoint is exposed.
 | `/auth/login`, `/auth/password/*` | 5 requests / 15 min / IP |
 | `/import/upload` | 20 / hour / user |
 | `/export/*` | 10 / hour / user |
-| `/assistant/ask` | 10 / min (on top of the daily question quota, RG-AQ4) |
+| `/assistant/ask` | 10 / min / user (on top of the daily question quota, RG-AQ4) |
+| `/assistant/*` | Counted per user (`userId` from the token), not per IP: users behind one operator NAT do not share a budget |
 | Rest of the API | 300 / min / user |
 
 ## 18. Sync (docs/14-sync-protocol.md)
@@ -479,14 +480,17 @@ error (RG-SY3). This is additive: existing callers that never send an `id` see n
 
 ## 19. Assistant (ADR-0016 to ADR-0022)
 
-Behind `ASSISTANT_ENABLED` and a per-user allowlist. Both endpoints exist in every build and answer
+Behind `ASSISTANT_ENABLED` and a per-user allowlist. The endpoints exist in every build and answer
 `ASSISTANT_DISABLED` while the assistant is closed. Nothing about a question or an answer is stored (RG-AP1);
-the endpoint is deliberately **not audited**, since the audit log would record the response.
+`POST /assistant/ask` is deliberately **not audited**, since the audit log would record the response. The
+opt-in endpoints are audited: the entry is part of the proof of consent (RG-AP8).
 
 | Method | Path | Description |
 |---|---|---|
 | POST | `/assistant/ask` | Asks one question. Stateless: the client sends the last turns itself. |
-| GET | `/assistant/status` | `{ enabled, dailyQuota, remainingToday }` — whether a question would be accepted now. Counters only. |
+| GET | `/assistant/status` | `{ enabled, optedIn, dailyQuota, remainingToday }` — whether a question would be accepted now, and whether the user has consented. Counters only. |
+| PUT | `/assistant/opt-in` | Records the consent (RG-AP8): `{ optedIn: true, optedInAt }`. Idempotent: the first date is kept. `403 ASSISTANT_DISABLED` where the assistant is not open. Audited. |
+| DELETE | `/assistant/opt-in` | Withdraws it: `{ optedIn: false, optedInAt: null }`. Always allowed. Audited. |
 
 ### `POST /assistant/ask`
 
@@ -498,7 +502,9 @@ the endpoint is deliberately **not audited**, since the audit log would record t
 ```
 
 - `question`: 1–500 characters. `history`: at most 6 turns, each 1–2000 characters, oldest first (RG-AP2).
-  It is the text the user was shown, values already substituted. Any other field is refused, `userId` included.
+  A user turn is the question as typed; an assistant turn is the **template** of that answer
+  (`"Vous avez dépensé {{r1.total}}."`), never the text shown, which carries values (RG-AP9). Any other
+  field is refused, `userId` included.
 - The user comes from the access token only (RG-AS3).
 
 Response `200`, one of three shapes (ADR-0018 §3):
@@ -532,7 +538,9 @@ Errors (standard envelope, § 1):
 |---|---|---|
 | 400 | `VALIDATION_FAILED` | Question or history out of bounds, unknown field. |
 | 400 | `USER_TIMEZONE_INVALID` | The stored `timezone` is not an IANA name. No fallback to UTC: it could state a wrong figure. |
+| 400 | `ASSISTANT_HISTORY_INVALID` | An assistant turn of the history has a digit outside a placeholder, a malformed placeholder, or is over 600 characters. `params.turn` (index), `params.violations`. Nothing is sent to the provider nor counted. |
 | 403 | `ASSISTANT_DISABLED` | Flag off, user not on the allowlist, or the monthly cost ceiling reached (RG-AQ2). `params.reason`: `NOT_AVAILABLE` or `COST_CEILING`. |
+| 403 | `ASSISTANT_OPT_IN_REQUIRED` | The user has not accepted the assistant, or withdrew (RG-AP8). Nothing is sent to the provider. |
 | 429 | `ASSISTANT_QUOTA_EXCEEDED` | Daily question quota spent (RG-AQ1). `params.limit`. |
 | 503 | `LLM_UNAVAILABLE` | Provider unreachable or erroring after one retry (RG-LL3). The question is not counted. |
 

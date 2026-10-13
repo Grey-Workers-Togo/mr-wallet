@@ -50,6 +50,7 @@ model User {
   monthStartDay     Int       @default(1)        // budget anchored on the 1st, or on payday
   hasSeenOnboarding Boolean   @default(false)    // guided tour shown once, never repeats
   entryReminderDays Int?      @default(3)        // nudge after N days with no entry; null = off
+  assistantOptInAt  Dt?                          // consent to the assistant (RG-AP8); null = none. A date, not text
   emailVerifiedAt   Dt?
   lastLoginAt       Dt?
   createdAt         Dt        @default(now())
@@ -893,6 +894,11 @@ model AssistantUsage {
   @@index([day])
 }
 ```
+
+The assistant's other persisted datum is `User.assistantOptInAt`: the date the user accepted that their
+questions go to an external model provider (RG-AP8, amended at A1.1). Migration
+`20261013190000_add_user_assistant_opt_in` is additive and reversible
+(`ALTER TABLE "User" DROP COLUMN "assistantOptInAt"`). It is not part of the `/me` profile.
 
 The daily quota is taken in one conditional upsert (`requests < limit`), so two concurrent questions
 cannot both take the last unit. The monthly cost ceiling is the sum of `estimatedCostMicros` over the
