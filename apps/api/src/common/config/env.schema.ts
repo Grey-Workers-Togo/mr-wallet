@@ -55,9 +55,25 @@ export const envSchema = z.object({
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
   /** RG-LL2: maximum output tokens per call (ADR-0022 §2: configured per model). */
   LLM_MAX_OUTPUT_TOKENS: z.coerce.number().int().positive().default(512),
-  /** RG-AQ3: price of the configured model, in millionths of a cost unit per million tokens. 0 = unpriced (self-hosted). */
+  /** RG-AQ3: price of the configured model in micro-USD (millionths of a US dollar) per million tokens. 0 = unpriced (self-hosted). */
   LLM_PRICE_INPUT_MICROS_PER_MTOK: z.coerce.number().int().nonnegative().default(0),
   LLM_PRICE_OUTPUT_MICROS_PER_MTOK: z.coerce.number().int().nonnegative().default(0),
+  /** ADR-0022 §5: the assistant endpoints answer ASSISTANT_DISABLED unless this is true. */
+  ASSISTANT_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  /** ADR-0022 §5: comma-separated user ids allowed to use the assistant, or `*` for everyone. Empty = nobody. */
+  ASSISTANT_ALLOWLIST: z.string().default(''),
+  /** RG-AQ1: questions per user per UTC day. */
+  ASSISTANT_DAILY_QUESTION_QUOTA: z.coerce.number().int().positive().default(20),
+  /** RG-AQ2: global monthly ceiling in micro-USD. 0 = none, accepted only for an unpriced model. */
+  ASSISTANT_MONTHLY_COST_CEILING_MICROS: z.coerce.number().int().nonnegative().default(0),
+  /** Display only: XOF per US dollar, to show the micro-USD cost in the user's currency. Never used to bound cost. */
+  ASSISTANT_USD_TO_XOF_RATE: z.coerce.number().positive().default(600),
+  /** RG-AP4: HMAC key of the pseudonymous user hash in traces. Required when Langfuse is configured. */
+  ASSISTANT_TRACE_SECRET: z.string().default(''),
+  /** RG-AP4: empty disables traces. All three must be set together. */
+  LANGFUSE_HOST: z.string().default(''),
+  LANGFUSE_PUBLIC_KEY: z.string().default(''),
+  LANGFUSE_SECRET_KEY: z.string().default(''),
 })
   .refine((env) => (env.GOOGLE_CLIENT_ID === '') === (env.GOOGLE_CLIENT_SECRET === ''), {
     message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be both set or both empty',
@@ -70,6 +86,23 @@ export const envSchema = z.object({
   })
   .refine((env) => env.LLM_PROVIDER !== 'openai-compatible' || (env.LLM_MODEL !== '' && env.LLM_BASE_URL !== ''), {
     message: 'LLM_MODEL and LLM_BASE_URL are required when LLM_PROVIDER is openai-compatible',
+  })
+  // A scripted adapter answering real users would look like a working assistant. Only tests may do it.
+  .refine((env) => !env.ASSISTANT_ENABLED || env.LLM_PROVIDER !== 'fake' || env.NODE_ENV === 'test', {
+    message: 'ASSISTANT_ENABLED requires a real LLM_PROVIDER outside the test environment',
+  })
+  .refine(
+    (env) =>
+      !env.ASSISTANT_ENABLED ||
+      (env.LLM_PRICE_INPUT_MICROS_PER_MTOK === 0 && env.LLM_PRICE_OUTPUT_MICROS_PER_MTOK === 0) ||
+      env.ASSISTANT_MONTHLY_COST_CEILING_MICROS > 0,
+    { message: 'ASSISTANT_MONTHLY_COST_CEILING_MICROS is required when the model is priced' },
+  )
+  .refine((env) => [env.LANGFUSE_HOST, env.LANGFUSE_PUBLIC_KEY, env.LANGFUSE_SECRET_KEY].filter(Boolean).length % 3 === 0, {
+    message: 'LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set together',
+  })
+  .refine((env) => env.LANGFUSE_HOST === '' || env.ASSISTANT_TRACE_SECRET !== '', {
+    message: 'ASSISTANT_TRACE_SECRET is required when Langfuse is configured',
   });
 
 export type Env = z.infer<typeof envSchema>;
