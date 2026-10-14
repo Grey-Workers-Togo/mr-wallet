@@ -177,10 +177,14 @@ availability becomes an operational concern.
   - Any budget, rollover or not, whose period had spending before the period was created, and no transaction
     event since: `spentMinor` stored at 0.
   - Not affected: non-rollover budgets whose spending all arrived after their periods were created.
-- **Repair is not part of the fix and has not been run anywhere.** Stored values are derivable from
-  `amountMinor` and the transactions, so a repair is an idempotent recompute (re-cascade for each rollover
-  budget, recompute `spentMinor` per period). Decision needed: a one-off script run by an operator, or a
-  data migration. Neither keeps the former values, which are wrong by construction.
+- **Repair: a script, not a migration** (`apps/api/scripts/repair-budget-periods.ts`). The stored values are
+  derived (`amountMinor` + transactions) and the rule lives in `cascadeRollover`; a SQL migration would
+  duplicate it. Simulation by default (`--dry-run`: counts of users, budgets and periods, total gap per
+  currency, no amount per user); `--apply` recomputes, one transaction per budget, one `SYSTEM` audit entry
+  (`budget_period.repair`, before/after) per modified period. It sends no notification, and raises
+  `lastAlertPct` to the threshold the corrected figures already cross, so no past overshoot is announced
+  (the cost: a repaired period currently above a threshold will not alert on its next transaction).
+  Idempotent. Not run on any database by the author of the change; the operator runs the dry-run first.
 - **Count the affected rows (read-only, run by the operator).**
 
 ```sql

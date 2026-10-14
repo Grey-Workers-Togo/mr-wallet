@@ -14,7 +14,9 @@ apps/api/storage/
 *.tsbuildinfo
 
 # One-off ops scripts (mass-email/mass-delete against the live DB) — never publish these.
-apps/api/scripts/
+apps/api/scripts/*
+# The one reviewed exception: it simulates by default and is idempotent (docs/QUESTIONS.md, RG-B5).
+!apps/api/scripts/repair-budget-periods.ts
 
 # Bubblewrap/TWA build output (regenerate via `npx @bubblewrap/cli build`)
 apps/web/.gradle/
