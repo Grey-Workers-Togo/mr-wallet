@@ -153,7 +153,7 @@ Analysis of history to suggest rules: group transactions by (account, `normalize
 | RG-B2 | A budget on a parent category counts the expenses of all its subcategories. |
 | RG-B3 | Only non-deleted `EXPENSE` transactions, within the period, in the targeted category, feed `spentMinor`. Transfers and income are excluded. |
 | RG-B4 | Two active budgets cannot target the same category over overlapping periods. |
-| RG-B5 | `rollover = true`: `allocatedMinor(n) = amountMinor + (allocatedMinor(n-1) − spentMinor(n-1))`. The carryover can be negative (overspending carries forward). |
+| RG-B5 | `rollover = true`: `allocatedMinor(n) = amountMinor + (allocatedMinor(n-1) − spentMinor(n-1))`. The carryover can be negative (overspending carries forward). The periods are materialized ahead of time, so every change of spending, amount or rollover re-cascades the periods after it; a new period starts from the spending already recorded. |
 | RG-B6 | Alerts trigger on **crossing** a threshold, only once per period and per threshold (`lastAlertPct`). Dropping back below the threshold and crossing it again does not re-notify within the same period. |
 | RG-B7 | A budget in a currency different from a transaction converts at the rate on the transaction's date (`occurredAt`), not at the current day's rate. |
 | RG-B8 | Budget periods are generated in advance over a rolling 12 months by a daily job. |
