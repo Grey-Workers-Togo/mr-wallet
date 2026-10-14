@@ -5,6 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConflictAppError, NotFoundAppError } from '../../common/errors/app-error';
 import { CategoriesFacade } from '../categories/categories.facade';
 import { nextPeriodStart, periodStart } from './domain/period-bounds';
+import { cascadeRollover } from './domain/rollover';
 import { CreateBudgetDto, FromTemplateDto, UpdateBudgetDto } from './dto/budget.dto';
 
 const PERIODS_AHEAD = 12; // RG-B8: periods are materialized 12 rolling months ahead.
@@ -86,7 +87,7 @@ export class BudgetsService {
 
   async update(userId: string, id: string, dto: UpdateBudgetDto) {
     const existing = await this.getById(userId, id);
-    return this.prisma.budget.update({
+    const updated = await this.prisma.budget.update({
       where: { id: existing.id },
       data: {
         name: dto.name,
@@ -97,6 +98,11 @@ export class BudgetsService {
         isActive: dto.isActive,
       },
     });
+    // RG-B5: the materialized allocations derive from the amount and the rollover.
+    if (updated.amountMinor !== existing.amountMinor || updated.rollover !== existing.rollover) {
+      await this.recascade(updated.id);
+    }
+    return updated;
   }
 
   async remove(userId: string, id: string): Promise<void> {
@@ -116,7 +122,8 @@ export class BudgetsService {
     let cursorStart = lastPeriod
       ? nextPeriodStart(budget.period, lastPeriod.periodStart, monthStartDay)
       : periodStart(budget.period, budget.startsOn, monthStartDay);
-    let previousRolloverOut = lastPeriod ? lastPeriod.allocatedMinor - lastPeriod.spentMinor : 0n;
+    // The stored last period is right: every change of spending carries through (`recascade`).
+    let carry = lastPeriod ? lastPeriod.allocatedMinor - lastPeriod.spentMinor : 0n;
 
     const horizon = new Date();
     horizon.setUTCMonth(horizon.getUTCMonth() + PERIODS_AHEAD);
@@ -125,20 +132,64 @@ export class BudgetsService {
     while (cursorStart.getTime() <= horizon.getTime() && (!budget.endsOn || cursorStart.getTime() <= budget.endsOn.getTime()) && guard < 60) {
       guard += 1;
       const periodEnd = nextPeriodStart(budget.period, cursorStart, monthStartDay);
-      const rolloverIn = budget.rollover ? previousRolloverOut : 0n;
-      const created = await this.prisma.budgetPeriod.create({
+      // A period materialized over spending that already exists (a start date in the past, a nightly
+      // extension) starts from what was spent, not from zero: the carry out of it depends on it.
+      const spentMinor = await this.spentIn(budget, cursorStart, periodEnd);
+      const [allocation] = cascadeRollover(budget.amountMinor, budget.rollover, [{ spentMinor }], carry);
+      await this.prisma.budgetPeriod.create({
         data: {
           userId: budget.userId,
           budgetId: budget.id,
           periodStart: cursorStart,
           periodEnd,
-          allocatedMinor: budget.amountMinor + rolloverIn,
-          rolloverInMinor: rolloverIn,
+          allocatedMinor: allocation!.allocatedMinor,
+          rolloverInMinor: allocation!.rolloverInMinor,
+          spentMinor,
         },
       });
-      previousRolloverOut = created.allocatedMinor - created.spentMinor;
+      carry = allocation!.allocatedMinor - spentMinor;
       cursorStart = periodEnd;
     }
+  }
+
+  /** RG-B3: only non-deleted `EXPENSE` transactions, outside transfers, in the budget's category and its descendants. */
+  private async spentIn(
+    budget: { userId: string; categoryId: string | null },
+    from: Date,
+    to: Date,
+  ): Promise<bigint> {
+    // A budget without a category is out of scope for per-category spending (see `recomputePeriodFor`).
+    if (!budget.categoryId) return 0n;
+    const scopeIds = await this.categoriesFacade.descendantIds(budget.userId, budget.categoryId);
+    const sum = await this.prisma.transaction.aggregate({
+      where: {
+        userId: budget.userId,
+        categoryId: { in: scopeIds },
+        type: 'EXPENSE',
+        transferGroupId: null,
+        occurredAt: { gte: from, lt: to },
+      },
+      _sum: { amountMinor: true },
+    });
+    return sum._sum.amountMinor ?? 0n;
+  }
+
+  /**
+   * RG-B5: the periods are materialized ahead of time, so a change to the spending of one of them, or to
+   * the budget's amount or rollover, must reach every period after it. Rewrites the stored allocation of
+   * each period to what the rule gives from the stored spending, in chronological order.
+   */
+  private async recascade(budgetId: string): Promise<void> {
+    const budget = await this.prisma.budget.findUniqueOrThrow({ where: { id: budgetId } });
+    const periods = await this.prisma.budgetPeriod.findMany({ where: { budgetId }, orderBy: { periodStart: 'asc' } });
+    const allocations = cascadeRollover(budget.amountMinor, budget.rollover, periods);
+    const stale = periods.flatMap((period, index) => {
+      const allocation = allocations[index]!;
+      return period.allocatedMinor === allocation.allocatedMinor && period.rolloverInMinor === allocation.rolloverInMinor
+        ? []
+        : [this.prisma.budgetPeriod.update({ where: { id: period.id }, data: allocation })];
+    });
+    if (stale.length > 0) await this.prisma.$transaction(stale);
   }
 
   /** RG-B8: nightly extension of the rolling 12-month horizon for every active budget. */
@@ -235,18 +286,10 @@ export class BudgetsService {
       });
       if (!period) continue;
 
-      const sum = await this.prisma.transaction.aggregate({
-        where: {
-          userId,
-          categoryId: { in: scopeIds },
-          type: 'EXPENSE',
-          transferGroupId: null,
-          occurredAt: { gte: period.periodStart, lt: period.periodEnd },
-        },
-        _sum: { amountMinor: true },
-      });
-      const spentMinor = sum._sum.amountMinor ?? 0n;
+      const spentMinor = await this.spentIn(budget, period.periodStart, period.periodEnd);
       const updated = await this.prisma.budgetPeriod.update({ where: { id: period.id }, data: { spentMinor } });
+      // RG-B5: what this period spent changes what the next ones are allocated.
+      if (budget.rollover) await this.recascade(budget.id);
       await this.evaluateAlert(userId, budget, updated);
     }
   }

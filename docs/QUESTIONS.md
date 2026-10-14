@@ -157,3 +157,51 @@ would silently violate the one-entry-per-mutation rule.
 Impact: rare transient failures surface as errors on already-applied mutations, so clients retrying must
 tolerate replayed writes (idempotent POST replay is already required by docs/10 §6). Revisit if audit-table
 availability becomes an operational concern.
+
+## Budget rollover cascade (RG-B5) — fixed, repair of stored data to decide
+
+- **Defect (found by the research harness, reproduced in `budgets/__tests__/rollover.spec.ts`).** The periods are
+  materialized 12 months ahead in one pass while nothing is spent, so with `rollover` each future period was
+  allocated `amount + previous allocation` (71 000, 142 000, 213 000…). A transaction only rewrote the
+  `spentMinor` of its own period: the periods after it kept the inflated allocation. The same applied to a
+  change of the budget's amount or rollover. Separately, a period materialized over spending that already
+  existed (start date in the past, or a budget created mid-month) was stored with `spentMinor = 0` until a
+  later transaction touched it.
+- **Fix.** `cascadeRollover` (pure, `budgets/domain/rollover.ts`) gives the rule. Spending changes and
+  amount/rollover updates re-cascade the budget's periods; new periods start from the spending already there.
+- **Who is affected in production.**
+  - Rollover budgets (`rollover = true`) with at least one future period materialized — in practice all of
+    them: `allocatedMinor` and `rolloverInMinor` are too high from the first period that has spending
+    onwards. Visible effects: remaining amount overstated, RG-B6 alerts fire late or never (they are a
+    percentage of the allocation), wrong figures in the budgets screen and in the assistant's `budget_status`.
+  - Any budget, rollover or not, whose period had spending before the period was created, and no transaction
+    event since: `spentMinor` stored at 0.
+  - Not affected: non-rollover budgets whose spending all arrived after their periods were created.
+- **Repair is not part of the fix and has not been run anywhere.** Stored values are derivable from
+  `amountMinor` and the transactions, so a repair is an idempotent recompute (re-cascade for each rollover
+  budget, recompute `spentMinor` per period). Decision needed: a one-off script run by an operator, or a
+  data migration. Neither keeps the former values, which are wrong by construction.
+- **Count the affected rows (read-only, run by the operator).**
+
+```sql
+-- Periods whose stored spending differs from the transactions (exact category; a parent budget that
+-- includes subcategories can be flagged wrongly, so read it as an upper bound).
+SELECT count(*) AS periods, count(DISTINCT bp."userId") AS users
+FROM "BudgetPeriod" bp JOIN "Budget" b ON b.id = bp."budgetId"
+WHERE bp."deletedAt" IS NULL AND b."deletedAt" IS NULL AND b."categoryId" IS NOT NULL
+  AND bp."spentMinor" <> COALESCE((
+        SELECT SUM(t."amountMinor") FROM "Transaction" t
+        WHERE t."userId" = bp."userId" AND t."deletedAt" IS NULL AND t.type = 'EXPENSE'
+          AND t."transferGroupId" IS NULL AND t."categoryId" = b."categoryId"
+          AND t."occurredAt" >= bp."periodStart" AND t."occurredAt" < bp."periodEnd"), 0);
+
+-- Rollover budgets with at least one future period: the population of the first defect.
+SELECT count(DISTINCT b.id) AS budgets, count(DISTINCT b."userId") AS users
+FROM "Budget" b JOIN "BudgetPeriod" bp ON bp."budgetId" = b.id AND bp."deletedAt" IS NULL
+WHERE b."deletedAt" IS NULL AND b.rollover AND bp."periodStart" > now();
+```
+
+  The research repo's `harness/expected/diagnostics/budget-rollover.sql` gives the per-period difference for one user.
+- **Not changed, to decide.** (1) A budget without a category has no per-category spending, so its
+  `spentMinor` stays 0 (unchanged behavior). (2) A re-cascade moves the allocation of later periods without
+  re-evaluating their alert thresholds: an alert fires on a spending event, not on a change of allocation.
