@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService, RawPrismaService } from '../../../common/prisma/prisma.service';
 import { AccountsFacade } from '../../accounts/accounts.facade';
 import { AccountsService } from '../../accounts/accounts.service';
 import { CategoriesFacade } from '../../categories/categories.facade';
@@ -19,7 +18,7 @@ import { repairBudgetPeriods } from '../../../../scripts/repair-budget-periods';
  */
 describe('repair-budget-periods', () => {
   const prisma = new PrismaService();
-  const raw = new PrismaClient();
+  const raw = new RawPrismaService();
   const categoriesService = new CategoriesService(prisma);
   const categoriesFacade = new CategoriesFacade(categoriesService);
   const accountsService = new AccountsService(prisma);

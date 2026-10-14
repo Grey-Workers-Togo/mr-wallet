@@ -16,10 +16,11 @@
  *
  * It uses the raw client: soft-deleted rows are excluded explicitly in every query.
  */
-import { Prisma, PrismaClient } from '@prisma/client';
+import 'dotenv/config';
+import { RawPrismaService } from '../src/common/prisma/prisma.service';
 import { cascadeRollover } from '../src/modules/budgets/domain/rollover';
 
-type Db = Pick<PrismaClient, 'budget' | 'budgetPeriod' | 'transaction' | 'category' | 'auditLog'>;
+type Db = Pick<RawPrismaService, 'budget' | 'budgetPeriod' | 'transaction' | 'category' | 'auditLog'>;
 
 export interface RepairOptions {
   apply: boolean;
@@ -60,7 +61,16 @@ interface PeriodChange {
   after: PeriodValues;
 }
 
-type BudgetRow = Prisma.BudgetGetPayload<Record<string, never>>;
+/** The columns of a budget the repair reads. */
+interface BudgetRow {
+  id: string;
+  userId: string;
+  categoryId: string | null;
+  currency: string;
+  amountMinor: bigint;
+  rollover: boolean;
+  alertThresholds: number[];
+}
 
 /** Reads the budget's periods and spending and returns the periods that differ from what the rule gives. */
 async function planBudget(db: Db, budget: BudgetRow): Promise<PeriodChange[]> {
@@ -136,7 +146,7 @@ async function planBudget(db: Db, budget: BudgetRow): Promise<PeriodChange[]> {
   return changes;
 }
 
-const asJson = (values: PeriodValues): Prisma.InputJsonObject => ({
+const asJson = (values: PeriodValues): Record<string, string | number | null> => ({
   allocatedMinor: values.allocatedMinor.toString(),
   rolloverInMinor: values.rolloverInMinor.toString(),
   spentMinor: values.spentMinor.toString(),
@@ -161,7 +171,7 @@ async function writeChanges(db: Db, changes: readonly PeriodChange[]): Promise<v
   }
 }
 
-export async function repairBudgetPeriods(prisma: PrismaClient, options: RepairOptions): Promise<RepairReport> {
+export async function repairBudgetPeriods(prisma: RawPrismaService, options: RepairOptions): Promise<RepairReport> {
   const report: RepairReport = {
     mode: options.apply ? 'apply' : 'dry-run',
     budgetsScanned: 0,
@@ -223,7 +233,7 @@ function target(): string {
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
-  const prisma = new PrismaClient();
+  const prisma = new RawPrismaService();
   try {
     process.stdout.write(`repair-budget-periods: ${options.apply ? 'APPLY' : 'dry-run (nothing is written)'} on ${target()}
 `);
