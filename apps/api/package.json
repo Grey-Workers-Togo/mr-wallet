@@ -28,7 +28,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
-    "@sentry/nestjs": "^10.74.0",
+    "@sentry/nestjs": "^10.75.0",
     "@sentry/node": "^10.69.0",
     "archiver": "^8.0.0",
     "argon2": "^0.45.1",
